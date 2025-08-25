@@ -6,12 +6,14 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Lightbulb, Loader2, CheckCircle, Edit3, Save, Trash2 } from 'lucide-react';
+import { Lightbulb, Loader2, CheckCircle, Edit3, Save, Trash2, Play } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useProjects } from '@/hooks/useProjects';
 import PromptEnhancer from '@/components/PromptEnhancer';
+import AutoExecutionDialog from '@/components/AutoExecutionDialog';
+import StepExecutionNotification from '@/components/StepExecutionNotification';
 
 interface ProjectPlan {
   id: string;
@@ -21,16 +23,22 @@ interface ProjectPlan {
     titre: string;
     description: string;
     prompt: string;
-    status: 'pending' | 'in_progress' | 'completed';
+    status: 'pending' | 'in_progress' | 'completed' | 'error';
     sousEtapes?: Array<{
       id: string;
       titre: string;
       description: string;
       prompt: string;
-      status: 'pending' | 'in_progress' | 'completed';
+      status: 'pending' | 'in_progress' | 'completed' | 'error';
     }>;
   }>;
   created_at: string;
+}
+
+interface StepResult {
+  status: 'success' | 'error' | 'ambiguous';
+  message: string;
+  suggestion?: string;
 }
 
 const PlanGenerator = () => {
@@ -41,6 +49,13 @@ const PlanGenerator = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [editingStep, setEditingStep] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  
+  // Auto-execution states
+  const [isExecuting, setIsExecuting] = useState(false);
+  const [executionMode, setExecutionMode] = useState<'manual' | 'auto' | 'full-auto'>('manual');
+  const [currentStepIndex, setCurrentStepIndex] = useState(0);
+  const [stepResult, setStepResult] = useState<StepResult | null>(null);
+  const [showStepNotification, setShowStepNotification] = useState(false);
   const { user } = useAuth();
   const { projects } = useProjects();
   const { toast } = useToast();
@@ -187,7 +202,7 @@ const PlanGenerator = () => {
     }
   };
 
-  const updateStepStatus = async (stepId: string, newStatus: 'pending' | 'in_progress' | 'completed', subStepId?: string) => {
+  const updateStepStatus = async (stepId: string, newStatus: 'pending' | 'in_progress' | 'completed' | 'error', subStepId?: string) => {
     if (!currentPlan) return;
 
     const updatedPlan = { ...currentPlan };
@@ -224,10 +239,111 @@ const PlanGenerator = () => {
     }
   };
 
+  // Auto-execution functions
+  const startAutoExecution = async (mode: 'manual' | 'auto' | 'full-auto') => {
+    if (!currentPlan) return;
+    
+    setExecutionMode(mode);
+    setIsExecuting(true);
+    setCurrentStepIndex(0);
+    
+    // Log activity
+    if ((window as any).logActivity) {
+      (window as any).logActivity('plan_executed', {
+        planId: currentPlan.id,
+        mode,
+        totalSteps: currentPlan.etapes.length
+      });
+    }
+    
+    executeNextStep();
+  };
+
+  const executeNextStep = async () => {
+    if (!currentPlan || currentStepIndex >= currentPlan.etapes.length) {
+      setIsExecuting(false);
+      toast({
+        title: "Plan terminé",
+        description: "Toutes les étapes ont été exécutées",
+      });
+      return;
+    }
+
+    const currentStep = currentPlan.etapes[currentStepIndex];
+    
+    // Mark step as in progress
+    await updateStepStatus(currentStep.id, 'in_progress');
+    
+    // Simulate step execution and AI analysis
+    setTimeout(() => {
+      analyzeStepResult(currentStep);
+    }, 2000);
+  };
+
+  const analyzeStepResult = async (step: any) => {
+    // Simulate AI analysis of the response
+    const responses = [
+      {
+        status: 'success' as const,
+        message: 'L\'étape a été exécutée avec succès. Le code généré correspond aux spécifications.',
+        suggestion: undefined
+      },
+      {
+        status: 'error' as const,
+        message: 'Une erreur a été détectée dans le code généré. Syntaxe incorrecte.',
+        suggestion: 'Corriger la syntaxe et réessayer avec des paramètres plus spécifiques.'
+      },
+      {
+        status: 'ambiguous' as const,
+        message: 'Le résultat est partiellement correct mais pourrait être amélioré.',
+        suggestion: 'Ajouter plus de détails dans le prompt pour obtenir un résultat plus précis.'
+      }
+    ];
+
+    const randomResult = responses[Math.floor(Math.random() * responses.length)];
+    setStepResult(randomResult);
+
+    // Update step status based on result
+    const newStatus = randomResult.status === 'success' ? 'completed' : 
+                     randomResult.status === 'error' ? 'error' : 'in_progress';
+    
+    await updateStepStatus(step.id, newStatus);
+    
+    // Show notification based on execution mode
+    if (executionMode === 'full-auto' && randomResult.status === 'success') {
+      // In full-auto mode, continue immediately if successful
+      setTimeout(() => {
+        setCurrentStepIndex(prev => prev + 1);
+        executeNextStep();
+      }, 1000);
+    } else {
+      // Show notification for manual, auto, or error cases
+      setShowStepNotification(true);
+    }
+  };
+
+  const handleStepContinue = () => {
+    setShowStepNotification(false);
+    setCurrentStepIndex(prev => prev + 1);
+    executeNextStep();
+  };
+
+  const handleStepRetry = () => {
+    setShowStepNotification(false);
+    analyzeStepResult(currentPlan!.etapes[currentStepIndex]);
+  };
+
+  const handleStepSkip = () => {
+    setShowStepNotification(false);
+    setCurrentStepIndex(prev => prev + 1);
+    executeNextStep();
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'completed': return 'bg-green-500';
       case 'in_progress': return 'bg-blue-500';
+      case 'error': return 'bg-red-500';
       default: return 'bg-gray-300';
     }
   };
@@ -236,6 +352,7 @@ const PlanGenerator = () => {
     switch (status) {
       case 'completed': return 'Terminé';
       case 'in_progress': return 'En cours';
+      case 'error': return 'Erreur';
       default: return 'À faire';
     }
   };
@@ -360,9 +477,22 @@ const PlanGenerator = () => {
                   {projects.find(p => p.id === currentPlan.project_id)?.name}
                 </p>
               </div>
-              <Button variant="outline" size="sm" onClick={() => setCurrentPlan(null)}>
-                Retour
-              </Button>
+              <div className="flex gap-2">
+                <AutoExecutionDialog
+                  steps={currentPlan.etapes}
+                  onExecute={startAutoExecution}
+                  isExecuting={isExecuting}
+                  currentStep={currentStepIndex}
+                >
+                  <Button size="sm" disabled={isExecuting}>
+                    <Play className="h-3 w-3 mr-1" />
+                    Exécuter
+                  </Button>
+                </AutoExecutionDialog>
+                <Button variant="outline" size="sm" onClick={() => setCurrentPlan(null)}>
+                  Retour
+                </Button>
+              </div>
             </div>
 
             {/* Steps */}
@@ -410,6 +540,18 @@ const PlanGenerator = () => {
             </div>
           </div>
         )}
+
+        {/* Step Execution Notification */}
+        <StepExecutionNotification
+          isOpen={showStepNotification}
+          step={currentPlan?.etapes[currentStepIndex] || null}
+          result={stepResult}
+          mode={executionMode}
+          onContinue={handleStepContinue}
+          onRetry={handleStepRetry}
+          onSkip={handleStepSkip}
+          onClose={() => setShowStepNotification(false)}
+        />
       </div>
     </div>
   );

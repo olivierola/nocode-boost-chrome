@@ -5,6 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Plus, Loader2 } from 'lucide-react';
 import CreateProjectDialog from '@/components/CreateProjectDialog';
 import ProjectCard from '@/components/ProjectCard';
+import ActivityLogger from '@/components/ActivityLogger';
+import ProjectStatistics from '@/components/ProjectStatistics';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -30,6 +32,12 @@ const Dashboard = () => {
           </p>
         </CardContent>
       </Card>
+
+      {/* Statistics and Activity Row */}
+      <div className="grid grid-cols-2 gap-4">
+        <ProjectStatistics />
+        <ActivityLogger />
+      </div>
 
       {/* Projects Section */}
       <div className="space-y-3">
