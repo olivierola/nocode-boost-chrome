@@ -3,13 +3,16 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { LogOut, Home, Code, Map, Search } from 'lucide-react';
+import { LogOut, Home, Code, Map, Search, Palette, Upload, Users } from 'lucide-react';
 
 // Import all components
 import Dashboard from '@/pages/Dashboard';
 import Components from '@/pages/Components';
 import PlanGenerator from '@/pages/PlanGenerator';
 import UXAudit from '@/pages/UXAudit';
+import VisualIdentity from '@/pages/VisualIdentity';
+import MediaUpload from '@/pages/MediaUpload';
+import Collaboration from '@/pages/Collaboration';
 
 const MainLayout = () => {
   const { user, signOut } = useAuth();
@@ -58,24 +61,38 @@ const MainLayout = () => {
 
       {/* Navigation Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
-        <TabsList className="grid w-full grid-cols-4 mx-6 mt-4 mb-0">
-          <TabsTrigger value="dashboard" className="flex items-center gap-2 text-xs">
-            <Home className="h-3 w-3" />
-            Dashboard
-          </TabsTrigger>
-          <TabsTrigger value="components" className="flex items-center gap-2 text-xs">
-            <Code className="h-3 w-3" />
-            Components
-          </TabsTrigger>
-          <TabsTrigger value="plans" className="flex items-center gap-2 text-xs">
-            <Map className="h-3 w-3" />
-            Plans
-          </TabsTrigger>
-          <TabsTrigger value="audits" className="flex items-center gap-2 text-xs">
-            <Search className="h-3 w-3" />
-            Audits
-          </TabsTrigger>
-        </TabsList>
+        <div className="px-6 mt-4 overflow-x-auto">
+          <TabsList className="grid w-full grid-cols-7 min-w-[700px]">
+            <TabsTrigger value="dashboard" className="flex items-center gap-1 text-xs px-2">
+              <Home className="h-3 w-3" />
+              Dashboard
+            </TabsTrigger>
+            <TabsTrigger value="components" className="flex items-center gap-1 text-xs px-2">
+              <Code className="h-3 w-3" />
+              Components
+            </TabsTrigger>
+            <TabsTrigger value="plans" className="flex items-center gap-1 text-xs px-2">
+              <Map className="h-3 w-3" />
+              Plans
+            </TabsTrigger>
+            <TabsTrigger value="audits" className="flex items-center gap-1 text-xs px-2">
+              <Search className="h-3 w-3" />
+              Audits
+            </TabsTrigger>
+            <TabsTrigger value="visual" className="flex items-center gap-1 text-xs px-2">
+              <Palette className="h-3 w-3" />
+              Identité
+            </TabsTrigger>
+            <TabsTrigger value="media" className="flex items-center gap-1 text-xs px-2">
+              <Upload className="h-3 w-3" />
+              Médias
+            </TabsTrigger>
+            <TabsTrigger value="collaboration" className="flex items-center gap-1 text-xs px-2">
+              <Users className="h-3 w-3" />
+              Équipe
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         {/* Tab Contents */}
         <div className="flex-1 overflow-hidden">
@@ -95,6 +112,18 @@ const MainLayout = () => {
 
           <TabsContent value="audits" className="h-full m-0 data-[state=active]:flex data-[state=active]:flex-col">
             <UXAudit />
+          </TabsContent>
+
+          <TabsContent value="visual" className="h-full m-0 data-[state=active]:flex data-[state=active]:flex-col">
+            <VisualIdentity />
+          </TabsContent>
+
+          <TabsContent value="media" className="h-full m-0 data-[state=active]:flex data-[state=active]:flex-col">
+            <MediaUpload />
+          </TabsContent>
+
+          <TabsContent value="collaboration" className="h-full m-0 data-[state=active]:flex data-[state=active]:flex-col">
+            <Collaboration />
           </TabsContent>
         </div>
       </Tabs>
