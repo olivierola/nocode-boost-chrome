@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Lightbulb, Loader2, CheckCircle, Edit3, Save, Trash2, Play } from 'lucide-react';
+import { Lightbulb, Loader2, CheckCircle, Edit3, Save, Trash2, Play, MessageCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -14,10 +14,12 @@ import { useProjects } from '@/hooks/useProjects';
 import PromptEnhancer from '@/components/PromptEnhancer';
 import AutoExecutionDialog from '@/components/AutoExecutionDialog';
 import StepExecutionNotification from '@/components/StepExecutionNotification';
+import PlanValidationChat from '@/components/PlanValidationChat';
 
 interface ProjectPlan {
   id: string;
   project_id: string;
+  status?: 'draft' | 'validated' | 'executing' | 'completed';
   etapes: Array<{
     id: string;
     titre: string;
@@ -33,6 +35,7 @@ interface ProjectPlan {
     }>;
   }>;
   created_at: string;
+  updated_at: string;
 }
 
 interface StepResult {
@@ -95,103 +98,60 @@ const PlanGenerator = () => {
     setIsGenerating(true);
 
     try {
-      // Simulated plan generation - in real app, this would call OpenAI
-      const generatedPlan = {
-        id: crypto.randomUUID(),
-        project_id: selectedProject,
-        etapes: [
-          {
-            id: crypto.randomUUID(),
-            titre: "Analyse et définition",
-            description: "Analyser les besoins et définir les spécifications du projet",
-            prompt: `Créer une analyse détaillée pour : ${projectIdea}. Inclure les fonctionnalités principales, le public cible et les contraintes techniques.`,
-            status: 'pending' as const,
-            sousEtapes: [
-              {
-                id: crypto.randomUUID(),
-                titre: "Analyse des besoins",
-                description: "Identifier et documenter tous les besoins fonctionnels",
-                prompt: "Lister et prioriser les besoins fonctionnels de l'application",
-                status: 'pending' as const
-              },
-              {
-                id: crypto.randomUUID(),
-                titre: "Définition du MVP",
-                description: "Définir les fonctionnalités minimales viables",
-                prompt: "Définir le MVP avec les fonctionnalités essentielles",
-                status: 'pending' as const
-              }
-            ]
-          },
-          {
-            id: crypto.randomUUID(),
-            titre: "Design et prototypage",
-            description: "Créer les maquettes et prototypes de l'interface",
-            prompt: "Concevoir les wireframes et maquettes pour l'interface utilisateur",
-            status: 'pending' as const,
-            sousEtapes: [
-              {
-                id: crypto.randomUUID(),
-                titre: "Wireframes",
-                description: "Créer les wireframes de base",
-                prompt: "Générer des wireframes pour toutes les pages principales",
-                status: 'pending' as const
-              }
-            ]
-          },
-          {
-            id: crypto.randomUUID(),
-            titre: "Développement",
-            description: "Implémenter les fonctionnalités définies",
-            prompt: "Développer l'application selon les spécifications et maquettes",
-            status: 'pending' as const,
-            sousEtapes: [
-              {
-                id: crypto.randomUUID(),
-                titre: "Configuration projet",
-                description: "Initialiser le projet avec les technologies choisies",
-                prompt: "Configurer un nouveau projet avec les meilleures pratiques",
-                status: 'pending' as const
-              },
-              {
-                id: crypto.randomUUID(),
-                titre: "Fonctionnalités core",
-                description: "Développer les fonctionnalités principales",
-                prompt: "Implémenter les fonctionnalités de base définies dans le MVP",
-                status: 'pending' as const
-              }
-            ]
-          },
-          {
-            id: crypto.randomUUID(),
-            titre: "Tests et déploiement",
-            description: "Tester l'application et la déployer en production",
-            prompt: "Mettre en place les tests et procéder au déploiement",
-            status: 'pending' as const
-          }
-        ],
-        created_at: new Date().toISOString()
-      };
-
-      // Save to database
-      const { error } = await supabase
-        .from('plans')
-        .insert({
-          project_id: selectedProject,
-          etapes: generatedPlan.etapes
-        });
+      const project = projects.find(p => p.id === selectedProject);
+      
+      const { data, error } = await supabase.functions.invoke('generate-plan', {
+        body: {
+          projectIdea,
+          projectName: project?.name || 'Projet'
+        }
+      });
 
       if (error) throw error;
 
-      setCurrentPlan(generatedPlan);
-      
-      toast({
-        title: "Plan généré",
-        description: "Le plan de projet a été créé avec succès",
-      });
+      if (data?.success && data?.plan) {
+        // Créer l'ID du plan
+        const planId = crypto.randomUUID();
+        const generatedPlan: ProjectPlan = {
+          id: planId,
+          project_id: selectedProject,
+          status: 'draft',
+          etapes: data.plan.etapes || [],
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
 
-      await fetchPlans();
+        // Sauvegarder en base
+        const { error: saveError } = await supabase
+          .from('plans')
+          .insert({
+            id: planId,
+            project_id: selectedProject,
+            etapes: generatedPlan.etapes,
+            status: 'draft'
+          });
+
+        if (saveError) throw saveError;
+
+        setCurrentPlan(generatedPlan);
+        
+        // Log activity
+        if ((window as any).logActivity) {
+          (window as any).logActivity('plan_generated', {
+            projectId: selectedProject,
+            stepsCount: generatedPlan.etapes.length
+          });
+        }
+
+        toast({
+          title: "Plan généré",
+          description: "Le plan de projet a été créé avec succès",
+        });
+
+        await fetchPlans();
+      }
     } catch (error: any) {
+      console.error('Error generating plan:', error);
       toast({
         title: "Erreur",
         description: "Impossible de générer le plan",
@@ -339,6 +299,16 @@ const PlanGenerator = () => {
     executeNextStep();
   };
 
+  const handlePlanValidation = () => {
+    if (currentPlan) {
+      setCurrentPlan(prev => prev ? { ...prev, status: 'validated' } : null);
+    }
+  };
+
+  const handlePlanRegeneration = () => {
+    generatePlan();
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'completed': return 'bg-green-500';
@@ -468,32 +438,45 @@ const PlanGenerator = () => {
             )}
           </div>
         ) : (
-          <div className="space-y-4">
-            {/* Plan Header */}
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-base font-semibold">Plan du projet</h2>
-                <p className="text-xs text-muted-foreground">
-                  {projects.find(p => p.id === currentPlan.project_id)?.name}
-                </p>
-              </div>
-              <div className="flex gap-2">
-                <AutoExecutionDialog
-                  steps={currentPlan.etapes}
-                  onExecute={startAutoExecution}
-                  isExecuting={isExecuting}
-                  currentStep={currentStepIndex}
-                >
-                  <Button size="sm" disabled={isExecuting}>
-                    <Play className="h-3 w-3 mr-1" />
-                    Exécuter
+          <div className="grid grid-cols-2 gap-4 h-full">
+            {/* Plan Details */}
+            <div className="space-y-4">
+              {/* Plan Header */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-base font-semibold">Plan du projet</h2>
+                  <p className="text-xs text-muted-foreground">
+                    {projects.find(p => p.id === currentPlan.project_id)?.name}
+                  </p>
+                  {currentPlan.status && (
+                    <Badge 
+                      variant={currentPlan.status === 'validated' ? 'default' : 'secondary'}
+                      className="text-xs mt-1"
+                    >
+                      {currentPlan.status === 'validated' ? 'Validé' : 
+                       currentPlan.status === 'draft' ? 'Brouillon' : currentPlan.status}
+                    </Badge>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  {currentPlan.status === 'validated' && (
+                    <AutoExecutionDialog
+                      steps={currentPlan.etapes}
+                      onExecute={startAutoExecution}
+                      isExecuting={isExecuting}
+                      currentStep={currentStepIndex}
+                    >
+                      <Button size="sm" disabled={isExecuting}>
+                        <Play className="h-3 w-3 mr-1" />
+                        Exécuter
+                      </Button>
+                    </AutoExecutionDialog>
+                  )}
+                  <Button variant="outline" size="sm" onClick={() => setCurrentPlan(null)}>
+                    Retour
                   </Button>
-                </AutoExecutionDialog>
-                <Button variant="outline" size="sm" onClick={() => setCurrentPlan(null)}>
-                  Retour
-                </Button>
+                </div>
               </div>
-            </div>
 
             {/* Steps */}
             <div className="space-y-3">
@@ -539,6 +522,18 @@ const PlanGenerator = () => {
               ))}
             </div>
           </div>
+
+          {/* Chat de validation */}
+          <div className="h-full">
+            <PlanValidationChat
+              planId={currentPlan.id}
+              plan={currentPlan}
+              onValidate={handlePlanValidation}
+              onRegenerate={handlePlanRegeneration}
+              isValidated={currentPlan.status === 'validated'}
+            />
+          </div>
+        </div>
         )}
 
         {/* Step Execution Notification */}
