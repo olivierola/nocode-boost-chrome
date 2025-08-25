@@ -50,10 +50,10 @@ const ProjectCard = ({ project }: ProjectCardProps) => {
                 <Badge variant={isOwner ? "default" : "secondary"} className="text-xs">
                   {isOwner ? "Propriétaire" : "Collaborateur"}
                 </Badge>
-                {project.project_members && project.project_members.length > 1 && (
+                {project.collaborators && project.collaborators.length > 1 && (
                   <div className="flex items-center text-xs text-muted-foreground">
                     <Users className="h-3 w-3 mr-1" />
-                    {project.project_members.length}
+                    {project.collaborators.length}
                   </div>
                 )}
               </div>

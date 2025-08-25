@@ -8,10 +8,11 @@ export interface Project {
   owner_id: string;
   name: string;
   description: string | null;
+  password?: string | null;
   created_at: string;
   updated_at: string;
-  project_members?: Array<{
-    role: 'owner' | 'collaborator';
+  collaborators?: Array<{
+    role: 'owner' | 'collaborator' | 'viewer';
     user_id: string;
   }>;
 }
@@ -30,7 +31,7 @@ export const useProjects = () => {
         .from('projects')
         .select(`
           *,
-          project_members (
+          collaborators (
             role,
             user_id
           )
@@ -139,7 +140,7 @@ export const useProjects = () => {
     if (!user) return null;
     if (project.owner_id === user.id) return 'owner';
     
-    const member = project.project_members?.find(m => m.user_id === user.id);
+    const member = project.collaborators?.find(m => m.user_id === user.id);
     return member?.role || null;
   };
 
