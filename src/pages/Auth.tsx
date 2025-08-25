@@ -54,19 +54,19 @@ const Auth = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <div className="w-[800px] h-[600px] flex items-center justify-center bg-background">
+        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">Super NoCode</CardTitle>
-          <CardDescription>
-            Accélérez vos workflows de développement nocode
+    <div className="w-full h-[600px] flex items-center justify-center bg-background p-6">
+      <Card className="w-full max-w-sm">
+        <CardHeader className="text-center pb-4">
+          <CardTitle className="text-xl font-bold">Super NoCode</CardTitle>
+          <CardDescription className="text-sm">
+            Extension Chrome pour workflows nocode
           </CardDescription>
         </CardHeader>
         <CardContent>

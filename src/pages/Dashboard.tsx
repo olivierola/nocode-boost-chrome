@@ -22,105 +22,102 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="w-[800px] h-[600px] bg-background flex flex-col">
       {/* Header */}
-      <header className="border-b border-border bg-card">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <h1 className="text-2xl font-bold text-foreground">Super NoCode</h1>
-            <span className="text-sm text-muted-foreground">Dashboard</span>
+      <header className="border-b border-border bg-card flex-shrink-0">
+        <div className="px-6 py-3 flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <h1 className="text-lg font-bold text-foreground">Super NoCode</h1>
+            <span className="text-xs text-muted-foreground px-2 py-1 bg-muted rounded-full">Extension</span>
           </div>
           
-          <div className="flex items-center space-x-4">
-            <Avatar className="h-8 w-8">
+          <div className="flex items-center space-x-3">
+            <Avatar className="h-6 w-6">
               <AvatarImage src={user?.user_metadata?.avatar_url} />
               <AvatarFallback className="text-xs">
                 {getInitials(getUserName())}
               </AvatarFallback>
             </Avatar>
-            <span className="text-sm font-medium text-foreground">
+            <span className="text-xs font-medium text-foreground max-w-[100px] truncate">
               {getUserName()}
             </span>
             <Button variant="ghost" size="sm" onClick={signOut}>
-              <LogOut className="h-4 w-4 mr-2" />
-              Déconnexion
+              <LogOut className="h-3 w-3" />
             </Button>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
-        <div className="grid gap-6">
+      <main className="flex-1 px-6 py-4 overflow-y-auto">
+        <div className="space-y-4">
           {/* Welcome Section */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Bienvenue, {getUserName()}!</CardTitle>
-              <CardDescription>
-                Votre espace de travail pour accélérer vos workflows de développement nocode.
+          <Card className="bg-muted/30">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Bienvenue, {getUserName()}!</CardTitle>
+              <CardDescription className="text-xs">
+                Extension Chrome pour workflows nocode
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">
-                Connecté en tant que: <span className="font-medium text-foreground">{user?.email}</span>
-              </p>
-              <p className="text-sm text-muted-foreground mt-1">
-                Session persistante active - vous resterez connecté même après fermeture du navigateur.
+            <CardContent className="pt-0">
+              <p className="text-xs text-muted-foreground">
+                <span className="font-medium text-foreground">{user?.email}</span>
               </p>
             </CardContent>
           </Card>
 
-          {/* Projects Section */}
-          <div className="grid gap-4">
+          {/* Quick Actions */}
+          <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-foreground">Mes Projets</h2>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Nouveau Projet
+              <h2 className="text-sm font-semibold text-foreground">Actions Rapides</h2>
+              <Button size="sm">
+                <Plus className="h-3 w-3 mr-1" />
+                Nouveau
               </Button>
             </div>
             
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {/* Placeholder project cards */}
-              <Card className="hover:shadow-md transition-shadow">
-                <CardHeader>
-                  <CardTitle className="text-lg">Projet Example 1</CardTitle>
-                  <CardDescription>
-                    Workflow d'automatisation pour e-commerce
-                  </CardDescription>
+            <div className="grid gap-3 grid-cols-2">
+              {/* Workflow Actions */}
+              <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm">Automatisation</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Modifié: Il y a 2h</span>
-                    <Button variant="ghost" size="sm">
-                      <Settings className="h-4 w-4" />
-                    </Button>
-                  </div>
+                <CardContent className="pt-0">
+                  <p className="text-xs text-muted-foreground">
+                    Créer workflows
+                  </p>
                 </CardContent>
               </Card>
               
-              <Card className="hover:shadow-md transition-shadow">
-                <CardHeader>
-                  <CardTitle className="text-lg">Projet Example 2</CardTitle>
-                  <CardDescription>
-                    Intégration API et webhooks
-                  </CardDescription>
+              <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm">API Connect</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Modifié: Hier</span>
-                    <Button variant="ghost" size="sm">
-                      <Settings className="h-4 w-4" />
-                    </Button>
-                  </div>
+                <CardContent className="pt-0">
+                  <p className="text-xs text-muted-foreground">
+                    Intégrations API
+                  </p>
                 </CardContent>
               </Card>
               
-              <Card className="border-dashed border-2 hover:border-primary transition-colors cursor-pointer">
-                <CardContent className="flex flex-col items-center justify-center py-8">
-                  <Plus className="h-12 w-12 text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground text-center">
-                    Créer un nouveau projet
+              <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm">Templates</CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <p className="text-xs text-muted-foreground">
+                    Modèles prêts
+                  </p>
+                </CardContent>
+              </Card>
+              
+              <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm">Analytics</CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <p className="text-xs text-muted-foreground">
+                    Métriques
                   </p>
                 </CardContent>
               </Card>
