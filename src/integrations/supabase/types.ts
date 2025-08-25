@@ -321,11 +321,11 @@ export type Database = {
     }
     Functions: {
       user_can_access_project: {
-        Args: { project_id: string }
+        Args: { _project_id: string }
         Returns: boolean
       }
       user_owns_project: {
-        Args: { project_id: string }
+        Args: { _project_id: string }
         Returns: boolean
       }
     }
