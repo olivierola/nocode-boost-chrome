@@ -89,19 +89,38 @@ const PromptEnhancer = ({ value, onChange, onSend }: PromptEnhancerProps) => {
     });
   };
 
-  const transformPrompt = (promptText: string) => {
+  const transformPrompt = async (promptText: string) => {
     let transformedPrompt = promptText;
     
-    // Remplacer les tags {component:nom} par les prompts réels
+    // Check if there are component tags to replace
     const componentRegex = /\{component:([^}]+)\}/g;
-    let match;
+    const matches = [...promptText.matchAll(componentRegex)];
     
-    while ((match = componentRegex.exec(promptText)) !== null) {
-      const componentName = match[1];
-      const component = components.find(c => c.nom === componentName);
-      
-      if (component && component.prompt) {
-        transformedPrompt = transformedPrompt.replace(match[0], component.prompt);
+    if (matches.length > 0) {
+      try {
+        // Use edge function for component tag replacement
+        const { data, error } = await supabase.functions.invoke('enhance-prompt', {
+          body: {
+            prompt: promptText,
+            mode: 'replace'
+          }
+        });
+
+        if (error) throw error;
+        if (data?.enhancedPrompt) {
+          transformedPrompt = data.enhancedPrompt;
+        }
+      } catch (error) {
+        console.error('Error transforming prompt:', error);
+        // Fallback to local replacement
+        for (const match of matches) {
+          const componentName = match[1];
+          const component = components.find(c => c.nom === componentName);
+          
+          if (component && component.prompt) {
+            transformedPrompt = transformedPrompt.replace(match[0], component.prompt);
+          }
+        }
       }
     }
     
@@ -114,32 +133,37 @@ const PromptEnhancer = ({ value, onChange, onSend }: PromptEnhancerProps) => {
     setIsEnhancing(true);
     
     try {
-      // Ici vous pouvez appeler votre edge function OpenAI pour améliorer le prompt
-      const response = await fetch('/api/enhance-prompt', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: value })
+      const { data, error } = await supabase.functions.invoke('enhance-prompt', {
+        body: {
+          prompt: value,
+          mode: 'enhance'
+        }
       });
 
-      if (response.ok) {
-        const { enhancedPrompt } = await response.json();
-        onChange(enhancedPrompt);
+      if (error) throw error;
+
+      if (data?.enhancedPrompt) {
+        onChange(data.enhancedPrompt);
         
         toast({
           title: "Prompt amélioré",
-          description: "Votre prompt a été enrichi par l'IA",
+          description: "Votre prompt a été optimisé par l'IA",
         });
-      } else {
-        throw new Error('Erreur lors de l\'amélioration');
+
+        // Log activity
+        if ((window as any).logActivity) {
+          (window as any).logActivity('prompt_enhanced', {
+            originalLength: value.length,
+            enhancedLength: data.enhancedPrompt.length
+          });
+        }
       }
     } catch (error) {
-      // Pour l'instant, on simule une amélioration simple
-      const enhanced = `${value}\n\n[Enhanced] Ajouter plus de détails spécifiques, de contexte et d'exemples concrets pour optimiser les résultats.`;
-      onChange(enhanced);
-      
+      console.error('Error enhancing prompt:', error);
       toast({
-        title: "Prompt amélioré",
-        description: "Suggestions d'amélioration ajoutées",
+        title: "Erreur",
+        description: "Impossible d'améliorer le prompt",
+        variant: "destructive",
       });
     } finally {
       setIsEnhancing(false);
@@ -147,7 +171,7 @@ const PromptEnhancer = ({ value, onChange, onSend }: PromptEnhancerProps) => {
   };
 
   const copyPrompt = async () => {
-    const finalPrompt = transformPrompt(value);
+    const finalPrompt = await transformPrompt(value);
     
     try {
       await navigator.clipboard.writeText(finalPrompt);
@@ -168,8 +192,8 @@ const PromptEnhancer = ({ value, onChange, onSend }: PromptEnhancerProps) => {
     }
   };
 
-  const handleSend = () => {
-    const finalPrompt = transformPrompt(value);
+  const handleSend = async () => {
+    const finalPrompt = await transformPrompt(value);
     if (onSend) {
       onSend(finalPrompt);
     }

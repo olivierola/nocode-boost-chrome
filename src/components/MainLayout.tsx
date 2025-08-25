@@ -13,6 +13,7 @@ import UXAudit from '@/pages/UXAudit';
 import VisualIdentity from '@/pages/VisualIdentity';
 import MediaUpload from '@/pages/MediaUpload';
 import Collaboration from '@/pages/Collaboration';
+import NotificationCenter from '@/components/NotificationCenter';
 
 const MainLayout = () => {
   const { user, signOut } = useAuth();
@@ -33,7 +34,9 @@ const MainLayout = () => {
   };
 
   return (
-    <div className="w-[800px] h-[600px] bg-background flex flex-col">
+    <div className="w-[800px] h-[600px] bg-background flex flex-col relative">
+      <NotificationCenter />
+      
       {/* Header */}
       <header className="border-b border-border bg-card flex-shrink-0">
         <div className="px-6 py-3 flex items-center justify-between">
