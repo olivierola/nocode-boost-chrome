@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -299,7 +299,7 @@ const MediaUploadEnhanced = () => {
   });
 
   // Load files on component mount
-  React.useEffect(() => {
+  useEffect(() => {
     fetchFiles();
   }, [user]);
 
