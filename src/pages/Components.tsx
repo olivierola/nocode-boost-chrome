@@ -95,18 +95,18 @@ const Components = () => {
   }, [user]);
 
   return (
-    <div className="w-[800px] h-[600px] bg-background flex flex-col">
+    <div className="h-full flex flex-col">
       {/* Header */}
-      <header className="border-b border-border bg-card flex-shrink-0 px-6 py-4">
+      <div className="border-b border-border bg-card flex-shrink-0 px-6 py-4">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-lg font-bold text-foreground">Component Code</h1>
+            <h2 className="text-base font-bold text-foreground">Component Code</h2>
             <p className="text-xs text-muted-foreground">
               Gérez vos composants depuis 21st.dev
             </p>
           </div>
         </div>
-      </header>
+      </div>
 
       {/* Content */}
       <div className="flex-1 overflow-hidden">
@@ -133,7 +133,7 @@ const Components = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent className="flex-1">
-                <div className="h-[400px] border border-border rounded-md overflow-hidden">
+                <div className="h-[350px] border border-border rounded-md overflow-hidden">
                   <iframe 
                     src="https://21st.dev" 
                     className="w-full h-full"

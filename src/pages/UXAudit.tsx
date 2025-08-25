@@ -228,12 +228,12 @@ const UXAudit = () => {
 
   if (currentAudit) {
     return (
-      <div className="w-[800px] h-[600px] bg-background flex flex-col">
+      <div className="h-full flex flex-col">
         {/* Header */}
-        <header className="border-b border-border bg-card flex-shrink-0 px-6 py-4">
+        <div className="border-b border-border bg-card flex-shrink-0 px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-lg font-bold text-foreground">{currentAudit.title}</h1>
+              <h2 className="text-base font-bold text-foreground">{currentAudit.title}</h2>
               <p className="text-xs text-muted-foreground">
                 {projects.find(p => p.id === currentAudit.project_id)?.name}
               </p>
@@ -242,7 +242,7 @@ const UXAudit = () => {
               Retour
             </Button>
           </div>
-        </header>
+        </div>
 
         {/* Audit Steps */}
         <div className="flex-1 px-6 py-4 overflow-y-auto">
@@ -292,12 +292,12 @@ const UXAudit = () => {
   }
 
   return (
-    <div className="w-[800px] h-[600px] bg-background flex flex-col">
+    <div className="h-full flex flex-col">
       {/* Header */}
-      <header className="border-b border-border bg-card flex-shrink-0 px-6 py-4">
+      <div className="border-b border-border bg-card flex-shrink-0 px-6 py-4">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-lg font-bold text-foreground">UX & SEO Audit</h1>
+            <h2 className="text-base font-bold text-foreground">UX & SEO Audit</h2>
             <p className="text-xs text-muted-foreground">
               Analysez et optimisez vos projets
             </p>
@@ -307,7 +307,7 @@ const UXAudit = () => {
             Nouvel Audit
           </Button>
         </div>
-      </header>
+      </div>
 
       {/* Content */}
       <div className="flex-1 px-6 py-4 overflow-y-auto">

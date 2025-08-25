@@ -245,18 +245,18 @@ const PlanGenerator = () => {
   }, [user]);
 
   return (
-    <div className="w-[800px] h-[600px] bg-background flex flex-col">
+    <div className="h-full flex flex-col">
       {/* Header */}
-      <header className="border-b border-border bg-card flex-shrink-0 px-6 py-4">
+      <div className="border-b border-border bg-card flex-shrink-0 px-6 py-4">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-lg font-bold text-foreground">Plan Generator</h1>
+            <h2 className="text-base font-bold text-foreground">Plan Generator</h2>
             <p className="text-xs text-muted-foreground">
               Générez des roadmaps structurées pour vos projets
             </p>
           </div>
         </div>
-      </header>
+      </div>
 
       {/* Content */}
       <div className="flex-1 px-6 py-4 overflow-y-auto">
@@ -285,7 +285,8 @@ const PlanGenerator = () => {
                         <SelectItem key={project.id} value={project.id}>
                           {project.name}
                         </SelectItem>
-                      ))}</SelectContent>
+                      ))}
+                    </SelectContent>
                   </Select>
                 </div>
                 

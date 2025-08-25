@@ -6,10 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
-import Dashboard from "./pages/Dashboard";
-import Components from "./pages/Components";
-import PlanGenerator from "./pages/PlanGenerator";
-import UXAudit from "./pages/UXAudit";
+import MainLayout from "./components/MainLayout";
 import ProtectedRoute from "./components/ProtectedRoute";
 import NotFound from "./pages/NotFound";
 
@@ -24,29 +21,9 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/auth" element={<Auth />} />
-            <Route path="/dashboard" element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            } />
-            <Route path="/components" element={
-              <ProtectedRoute>
-                <Components />
-              </ProtectedRoute>
-            } />
-            <Route path="/plans" element={
-              <ProtectedRoute>
-                <PlanGenerator />
-              </ProtectedRoute>
-            } />
-            <Route path="/audits" element={
-              <ProtectedRoute>
-                <UXAudit />
-              </ProtectedRoute>
-            } />
             <Route path="/" element={
               <ProtectedRoute>
-                <Dashboard />
+                <MainLayout />
               </ProtectedRoute>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
