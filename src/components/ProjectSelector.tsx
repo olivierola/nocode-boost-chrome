@@ -62,10 +62,6 @@ const ProjectSelector = () => {
               <p className="text-muted-foreground mb-4">
                 Créez votre premier projet pour commencer
               </p>
-              <Button onClick={() => setShowCreateDialog(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Créer un projet
-              </Button>
             </CardContent>
           </Card>
         ) : (
@@ -78,17 +74,22 @@ const ProjectSelector = () => {
                 <Card key={project.id} className="cursor-pointer hover:shadow-md transition-shadow">
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between">
-                      <div className="space-y-1 flex-1">
-                        <CardTitle className="text-base flex items-center gap-2">
-                          {project.name}
-                          {hasPassword && <Lock className="h-3 w-3 text-muted-foreground" />}
-                        </CardTitle>
-                        {project.description && (
-                          <CardDescription className="text-sm">
-                            {project.description}
-                          </CardDescription>
-                        )}
-                      </div>
+                    <div className="space-y-1 flex-1">
+                      <CardTitle className="text-base flex items-center gap-2">
+                        {project.name}
+                        {hasPassword && <Lock className="h-3 w-3 text-muted-foreground" />}
+                      </CardTitle>
+                      {project.description && (
+                        <CardDescription className="text-sm">
+                          {project.description}
+                        </CardDescription>
+                      )}
+                      {project.url && (
+                        <p className="text-xs text-blue-600 hover:text-blue-800">
+                          {project.url}
+                        </p>
+                      )}
+                    </div>
                       <Badge variant={userRole === 'owner' ? 'default' : 'secondary'} className="text-xs">
                         {userRole === 'owner' ? 'Propriétaire' : 'Collaborateur'}
                       </Badge>

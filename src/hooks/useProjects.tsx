@@ -8,6 +8,7 @@ export interface Project {
   owner_id: string;
   name: string;
   description: string | null;
+  url: string | null;
   password?: string | null;
   created_at: string;
   updated_at: string;
@@ -51,7 +52,7 @@ export const useProjects = () => {
     }
   };
 
-  const createProject = async (name: string, description?: string, password?: string) => {
+  const createProject = async (name: string, description?: string, password?: string, url?: string) => {
     if (!user) return null;
 
     try {
@@ -60,6 +61,7 @@ export const useProjects = () => {
         .insert({
           name,
           description: description || null,
+          url: url || null,
           password: password || null,
           owner_id: user.id,
         })
@@ -85,7 +87,7 @@ export const useProjects = () => {
     }
   };
 
-  const updateProject = async (id: string, updates: { name?: string; description?: string }) => {
+  const updateProject = async (id: string, updates: { name?: string; description?: string; url?: string }) => {
     try {
       const { error } = await supabase
         .from('projects')

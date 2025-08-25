@@ -23,12 +23,14 @@ const CreateProjectDialog = ({ children }: CreateProjectDialogProps) => {
     const formData = new FormData(e.currentTarget);
     const name = formData.get('name') as string;
     const description = formData.get('description') as string;
+    const url = formData.get('url') as string;
     const password = formData.get('password') as string;
 
     const result = await createProject(
       name, 
       description || undefined, 
-      password || undefined
+      password || undefined,
+      url || undefined
     );
     
     if (result) {
@@ -54,7 +56,7 @@ const CreateProjectDialog = ({ children }: CreateProjectDialogProps) => {
         <DialogHeader>
           <DialogTitle>Créer un nouveau projet</DialogTitle>
           <DialogDescription>
-            Donnez un nom et une description à votre projet
+            Configurez votre nouveau projet avec ses informations principales
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -65,6 +67,16 @@ const CreateProjectDialog = ({ children }: CreateProjectDialogProps) => {
               name="name"
               placeholder="Mon super projet"
               required
+              disabled={isSubmitting}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="url">URL du projet</Label>
+            <Input
+              id="url"
+              name="url"
+              type="url"
+              placeholder="https://monprojet.com"
               disabled={isSubmitting}
             />
           </div>

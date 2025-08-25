@@ -215,6 +215,7 @@ export type Database = {
           owner_id: string
           password: string | null
           updated_at: string
+          url: string | null
         }
         Insert: {
           created_at?: string
@@ -224,6 +225,7 @@ export type Database = {
           owner_id: string
           password?: string | null
           updated_at?: string
+          url?: string | null
         }
         Update: {
           created_at?: string
@@ -233,6 +235,7 @@ export type Database = {
           owner_id?: string
           password?: string | null
           updated_at?: string
+          url?: string | null
         }
         Relationships: []
       }
