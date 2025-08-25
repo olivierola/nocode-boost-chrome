@@ -4,9 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { MoreHorizontal, Edit, Trash2, Users } from 'lucide-react';
+import { MoreHorizontal, Edit, Trash2, Users, Lock, Calendar } from 'lucide-react';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
 import { Project, useProjects } from '@/hooks/useProjects';
 import EditProjectDialog from './EditProjectDialog';
+import ProjectAccessDialog from './ProjectAccessDialog';
 
 interface ProjectCardProps {
   project: Project;
@@ -15,10 +18,12 @@ interface ProjectCardProps {
 const ProjectCard = ({ project }: ProjectCardProps) => {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [accessDialogOpen, setAccessDialogOpen] = useState(false);
   const { deleteProject, getUserRole } = useProjects();
 
   const userRole = getUserRole(project);
   const isOwner = userRole === 'owner';
+  const hasPassword = Boolean(project.password);
 
   const handleDelete = async () => {
     const success = await deleteProject(project.id);
@@ -27,36 +32,44 @@ const ProjectCard = ({ project }: ProjectCardProps) => {
     }
   };
 
+  const handleProjectAccess = () => {
+    if (isOwner || !hasPassword) {
+      // Accès direct pour le propriétaire ou projets sans mot de passe
+      console.log('Accès direct au projet:', project.name);
+    } else {
+      // Demander le mot de passe pour les collaborateurs invités
+      setAccessDialogOpen(true);
+    }
+  };
+
+  const handleAccessSuccess = () => {
+    console.log('Accès autorisé au projet:', project.name);
+    // Ici vous pouvez rediriger vers la page du projet
+  };
+
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('fr-FR', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+    return format(new Date(dateString), 'dd MMM yyyy', { locale: fr });
   };
 
   return (
     <>
-      <Card className="hover:shadow-md transition-shadow cursor-pointer group">
+      <Card className="hover:shadow-md transition-shadow group">
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between">
             <div className="flex-1 min-w-0">
-              <CardTitle className="text-sm font-medium truncate">
-                {project.name}
-              </CardTitle>
-              <div className="flex items-center gap-2 mt-1">
-                <Badge variant={isOwner ? "default" : "secondary"} className="text-xs">
-                  {isOwner ? "Propriétaire" : "Collaborateur"}
-                </Badge>
-                {project.collaborators && project.collaborators.length > 1 && (
-                  <div className="flex items-center text-xs text-muted-foreground">
-                    <Users className="h-3 w-3 mr-1" />
-                    {project.collaborators.length}
-                  </div>
+              <div className="flex items-center gap-2">
+                <CardTitle className="text-sm font-medium truncate">
+                  {project.name}
+                </CardTitle>
+                {hasPassword && !isOwner && (
+                  <Lock className="h-3 w-3 text-muted-foreground" />
                 )}
               </div>
+              {project.description && (
+                <CardDescription className="text-xs line-clamp-2 mt-1">
+                  {project.description}
+                </CardDescription>
+              )}
             </div>
             
             {isOwner && (
@@ -85,14 +98,35 @@ const ProjectCard = ({ project }: ProjectCardProps) => {
         </CardHeader>
         
         <CardContent className="pt-0">
-          {project.description && (
-            <CardDescription className="text-xs line-clamp-2 mb-3">
-              {project.description}
-            </CardDescription>
-          )}
-          <p className="text-xs text-muted-foreground">
-            Créé le {formatDate(project.created_at)}
-          </p>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <Badge variant={isOwner ? "default" : "secondary"} className="text-xs">
+                {isOwner ? "Propriétaire" : "Collaborateur"}
+              </Badge>
+              {project.collaborators && project.collaborators.length > 1 && (
+                <div className="flex items-center text-xs text-muted-foreground">
+                  <Users className="h-3 w-3 mr-1" />
+                  {project.collaborators.length}
+                </div>
+              )}
+            </div>
+            
+            <div className="flex items-center text-xs text-muted-foreground">
+              <Calendar className="h-3 w-3 mr-1" />
+              {formatDate(project.created_at)}
+            </div>
+            
+            <Button size="sm" className="w-full" onClick={handleProjectAccess}>
+              {hasPassword && !isOwner ? (
+                <>
+                  <Lock className="h-3 w-3 mr-2" />
+                  Accéder au projet
+                </>
+              ) : (
+                'Ouvrir le projet'
+              )}
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
@@ -100,6 +134,14 @@ const ProjectCard = ({ project }: ProjectCardProps) => {
         project={project}
         open={editDialogOpen}
         onOpenChange={setEditDialogOpen}
+      />
+
+      <ProjectAccessDialog
+        isOpen={accessDialogOpen}
+        onClose={() => setAccessDialogOpen(false)}
+        onSuccess={handleAccessSuccess}
+        projectName={project.name}
+        expectedPassword={project.password || ''}
       />
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

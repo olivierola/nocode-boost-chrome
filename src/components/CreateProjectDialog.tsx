@@ -23,8 +23,13 @@ const CreateProjectDialog = ({ children }: CreateProjectDialogProps) => {
     const formData = new FormData(e.currentTarget);
     const name = formData.get('name') as string;
     const description = formData.get('description') as string;
+    const password = formData.get('password') as string;
 
-    const result = await createProject(name, description);
+    const result = await createProject(
+      name, 
+      description || undefined, 
+      password || undefined
+    );
     
     if (result) {
       setOpen(false);
@@ -72,6 +77,19 @@ const CreateProjectDialog = ({ children }: CreateProjectDialogProps) => {
               rows={3}
               disabled={isSubmitting}
             />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="password">Mot de passe (optionnel)</Label>
+            <Input
+              id="password"
+              name="password"
+              type="password"
+              placeholder="Mot de passe pour les collaborateurs..."
+              disabled={isSubmitting}
+            />
+            <p className="text-xs text-muted-foreground">
+              Si défini, les collaborateurs devront saisir ce mot de passe pour accéder au projet.
+            </p>
           </div>
           <div className="flex justify-end space-x-2 pt-4">
             <Button

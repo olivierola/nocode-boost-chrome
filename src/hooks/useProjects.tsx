@@ -51,7 +51,7 @@ export const useProjects = () => {
     }
   };
 
-  const createProject = async (name: string, description?: string) => {
+  const createProject = async (name: string, description?: string, password?: string) => {
     if (!user) return null;
 
     try {
@@ -60,6 +60,7 @@ export const useProjects = () => {
         .insert({
           name,
           description: description || null,
+          password: password || null,
           owner_id: user.id,
         })
         .select()
