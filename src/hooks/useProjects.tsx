@@ -55,6 +55,8 @@ export const useProjects = () => {
   const createProject = async (name: string, description?: string, password?: string, url?: string) => {
     if (!user) return null;
 
+    console.log('Creating project with:', { name, description, url, password, owner_id: user.id });
+
     try {
       const { data, error } = await supabase
         .from('projects')
@@ -68,7 +70,12 @@ export const useProjects = () => {
         .select()
         .single();
 
-      if (error) throw error;
+      console.log('Insert result:', { data, error });
+
+      if (error) {
+        console.error('Database error:', error);
+        throw error;
+      }
 
       toast({
         title: "Projet créé",
@@ -78,9 +85,10 @@ export const useProjects = () => {
       await fetchProjects();
       return data;
     } catch (error: any) {
+      console.error('Full error:', error);
       toast({
         title: "Erreur",
-        description: "Impossible de créer le projet",
+        description: error.message || "Impossible de créer le projet",
         variant: "destructive",
       });
       return null;
