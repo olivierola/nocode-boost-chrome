@@ -314,7 +314,7 @@ const PlanAutoExecutor = ({ steps, isOpen, onClose, mode, onUpdateSteps }: PlanA
       status: 'completed',
       result: {
         status: 'success',
-        message: "Étape ignorée par l'utilisateur"
+        message: "Étape ignorée par l\\'utilisateur"
       }
     };
     onUpdateSteps(updatedSteps);
