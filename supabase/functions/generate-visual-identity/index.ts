@@ -24,6 +24,36 @@ serve(async (req) => {
       throw new Error('OpenAI API key not configured');
     }
 
+    // Check usage limits before proceeding
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) throw new Error("Authentication required");
+
+    const supabaseService = createClient(supabaseUrl, supabaseServiceKey);
+    const token = authHeader.replace("Bearer ", "");
+    const { data: userData, error: userError } = await supabaseService.auth.getUser(token);
+    if (userError || !userData.user) throw new Error("Authentication failed");
+
+    // Check usage limit
+    const { data: canProceed, error: limitError } = await supabaseService
+      .rpc('check_usage_limit', {
+        p_user_id: userData.user.id,
+        p_action_type: 'visual_identity'
+      });
+
+    if (limitError) {
+      console.error('Error checking usage limit:', limitError);
+      throw new Error('Unable to verify usage limits');
+    }
+
+    if (!canProceed) {
+      return new Response(JSON.stringify({ 
+        error: 'Usage limit exceeded for visual identity generation this month. Please upgrade your plan.' 
+      }), {
+        status: 429,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -111,6 +141,18 @@ serve(async (req) => {
 
       if (dbError) {
         console.error('Database error:', dbError);
+      }
+
+      // Record usage after successful generation
+      const { error: usageError } = await supabase
+        .rpc('record_usage', {
+          p_user_id: userData.user.id,
+          p_action_type: 'visual_identity',
+          p_project_id: projectId
+        });
+
+      if (usageError) {
+        console.error('Error recording usage:', usageError);
       }
     }
 

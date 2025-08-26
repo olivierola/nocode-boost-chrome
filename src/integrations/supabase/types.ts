@@ -239,6 +239,107 @@ export type Database = {
         }
         Relationships: []
       }
+      subscribers: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          stripe_customer_id: string | null
+          subscribed: boolean
+          subscription_end: string | null
+          subscription_tier: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          stripe_customer_id?: string | null
+          subscribed?: boolean
+          subscription_end?: string | null
+          subscription_tier?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          stripe_customer_id?: string | null
+          subscribed?: boolean
+          subscription_end?: string | null
+          subscription_tier?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      subscription_plans: {
+        Row: {
+          collaboration_enabled: boolean | null
+          created_at: string
+          id: string
+          monthly_media_uploads: number | null
+          monthly_plan_generations: number | null
+          monthly_visual_identity: number | null
+          name: string
+        }
+        Insert: {
+          collaboration_enabled?: boolean | null
+          created_at?: string
+          id?: string
+          monthly_media_uploads?: number | null
+          monthly_plan_generations?: number | null
+          monthly_visual_identity?: number | null
+          name: string
+        }
+        Update: {
+          collaboration_enabled?: boolean | null
+          created_at?: string
+          id?: string
+          monthly_media_uploads?: number | null
+          monthly_plan_generations?: number | null
+          monthly_visual_identity?: number | null
+          name?: string
+        }
+        Relationships: []
+      }
+      usage_tracking: {
+        Row: {
+          action_type: string
+          created_at: string
+          id: string
+          month_year: string
+          project_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action_type: string
+          created_at?: string
+          id?: string
+          month_year?: string
+          project_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action_type?: string
+          created_at?: string
+          id?: string
+          month_year?: string
+          project_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "usage_tracking_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ux_audits: {
         Row: {
           created_at: string
@@ -320,6 +421,28 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_usage_limit: {
+        Args: { p_action_type: string; p_user_id: string }
+        Returns: boolean
+      }
+      get_user_plan_limits: {
+        Args: { user_email: string }
+        Returns: {
+          collaboration_enabled: boolean
+          monthly_media_uploads: number
+          monthly_plan_generations: number
+          monthly_visual_identity: number
+          plan_name: string
+        }[]
+      }
+      record_usage: {
+        Args: {
+          p_action_type: string
+          p_project_id?: string
+          p_user_id: string
+        }
+        Returns: boolean
+      }
       user_can_access_project: {
         Args: { _project_id: string }
         Returns: boolean
