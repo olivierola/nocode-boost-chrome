@@ -7,13 +7,13 @@ import { Badge } from '@/components/ui/badge';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { FolderOpen, Lock, Plus } from 'lucide-react';
-import CreateProjectDialog from '@/components/CreateProjectDialog';
+
 import ProjectAccessDialog from '@/components/ProjectAccessDialog';
 
 const ProjectSelector = () => {
   const { projects, loading, getUserRole } = useProjects();
   const { selectProject } = useProjectContext();
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  
   const [accessProject, setAccessProject] = useState<any>(null);
 
   const handleSelectProject = (project: any) => {
@@ -47,12 +47,6 @@ const ProjectSelector = () => {
           </p>
         </div>
 
-        <div className="flex justify-center">
-          <Button onClick={() => setShowCreateDialog(true)} className="gap-2">
-            <Plus className="h-4 w-4" />
-            Nouveau Projet
-          </Button>
-        </div>
 
         {projects.length === 0 ? (
           <Card className="text-center py-8">
@@ -118,7 +112,7 @@ const ProjectSelector = () => {
         )}
       </div>
 
-      <CreateProjectDialog />
+      
 
       {accessProject && (
         <ProjectAccessDialog
