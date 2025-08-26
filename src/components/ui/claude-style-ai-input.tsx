@@ -776,7 +776,7 @@ const ClaudeChatInput: React.FC<ChatInputProps> = ({
         </div>
       )}
 
-      <div className="bg-[#30302E] border border-zinc-700 rounded-xl shadow-lg items-end gap-2   min-h-[150px] flex flex-col">
+      <div className="bg-[#30302E] border border-zinc-700 rounded-xl shadow-lg items-end gap-2 min-h-[100px] flex flex-col">
         <textarea
           ref={textareaRef}
           value={message}
@@ -785,7 +785,7 @@ const ClaudeChatInput: React.FC<ChatInputProps> = ({
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           disabled={disabled}
-          className="flex-1 min-h-[100px] w-full p-4 focus-within:border-none focus:outline-none focus:border-none border-none outline-none focus-within:ring-0 focus-within:ring-offset-0 focus-within:outline-none max-h-[120px] resize-none border-0 bg-transparent text-zinc-100 shadow-none focus-visible:ring-0 placeholder:text-zinc-500 text-sm sm:text-base custom-scrollbar"
+          className="flex-1 min-h-[60px] w-full p-4 focus-within:border-none focus:outline-none focus:border-none border-none outline-none focus-within:ring-0 focus-within:ring-offset-0 focus-within:outline-none max-h-[80px] resize-none border-0 bg-transparent text-zinc-100 shadow-none focus-visible:ring-0 placeholder:text-zinc-500 text-sm sm:text-base custom-scrollbar"
           rows={1}
         />
         <div className="flex items-center gap-2 justify-between w-full px-3 pb-1.5">
@@ -840,7 +840,7 @@ const ClaudeChatInput: React.FC<ChatInputProps> = ({
           </div>
         </div>
         {(files.length > 0 || pastedContent.length > 0) && (
-          <div className="overflow-x-auto border-t-[1px] p-3 border-zinc-700 w-full bg-[#262624] hide-scroll-bar">
+          <div className="overflow-x-auto p-3 w-full bg-[#262624] hide-scroll-bar">
             <div className="flex gap-3">
               {pastedContent.map((content) => (
                 <PastedContentCard

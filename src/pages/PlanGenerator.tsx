@@ -236,8 +236,8 @@ const PlanGenerator = () => {
         /* Chat with messages and fixed input */
         <div className="flex-1 flex flex-col relative">
           {/* Messages */}
-          <ScrollArea className="flex-1 px-6 pb-32">
-            <div className="space-y-6 py-6 max-w-4xl mx-auto">
+          <ScrollArea className="flex-1 px-6 pb-24">
+            <div className="space-y-6 py-8 max-w-4xl mx-auto">
               {chatMessages.map((message) => (
                 <div
                   key={message.id}
