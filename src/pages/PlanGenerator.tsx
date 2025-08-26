@@ -1,75 +1,76 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Lightbulb, Loader2, CheckCircle, Edit3, Save, Trash2, Play, MessageCircle } from 'lucide-react';
+import { CheckCircle, Bot, User, Target, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { useProjects } from '@/hooks/useProjects';
-import PromptEnhancer from '@/components/PromptEnhancer';
-import AutoExecutionDialog from '@/components/AutoExecutionDialog';
-import StepExecutionNotification from '@/components/StepExecutionNotification';
-import PlanValidationChat from '@/components/PlanValidationChat';
+import { useProjectContext } from '@/hooks/useProjectContext';
+import { PromptInputBox } from '@/components/ui/ai-prompt-box';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface ProjectPlan {
   id: string;
   project_id: string;
+  title?: string;
+  description?: string;
   status?: 'draft' | 'validated' | 'executing' | 'completed';
-  etapes: Array<{
+  steps: Array<{
     id: string;
-    titre: string;
+    title: string;
     description: string;
-    prompt: string;
     status: 'pending' | 'in_progress' | 'completed' | 'error';
-    sousEtapes?: Array<{
-      id: string;
-      titre: string;
-      description: string;
-      prompt: string;
-      status: 'pending' | 'in_progress' | 'completed' | 'error';
-    }>;
   }>;
   created_at: string;
   updated_at: string;
 }
 
-interface StepResult {
-  status: 'success' | 'error' | 'ambiguous';
-  message: string;
-  suggestion?: string;
+interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: Date;
 }
 
 const PlanGenerator = () => {
-  const [projectIdea, setProjectIdea] = useState('');
-  const [selectedProject, setSelectedProject] = useState('');
   const [plans, setPlans] = useState<ProjectPlan[]>([]);
   const [currentPlan, setCurrentPlan] = useState<ProjectPlan | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [editingStep, setEditingStep] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   
-  // Auto-execution states
-  const [isExecuting, setIsExecuting] = useState(false);
-  const [executionMode, setExecutionMode] = useState<'manual' | 'auto' | 'full-auto'>('manual');
-  const [currentStepIndex, setCurrentStepIndex] = useState(0);
-  const [stepResult, setStepResult] = useState<StepResult | null>(null);
-  const [showStepNotification, setShowStepNotification] = useState(false);
   const { user } = useAuth();
-  const { projects } = useProjects();
+  const { selectedProject } = useProjectContext();
   const { toast } = useToast();
 
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [chatMessages]);
+
+  useEffect(() => {
+    if (selectedProject && chatMessages.length === 0) {
+      setChatMessages([{
+        id: '1',
+        role: 'assistant',
+        content: `Bonjour ! Je vais vous aider à créer un plan détaillé pour votre projet "${selectedProject.name}". Décrivez-moi votre idée ou ce que vous souhaitez développer.`,
+        timestamp: new Date()
+      }]);
+    }
+  }, [selectedProject, chatMessages.length]);
+
   const fetchPlans = async () => {
-    if (!user) return;
+    if (!user || !selectedProject) return;
 
     try {
       const { data, error } = await supabase
         .from('plans')
         .select('*')
+        .eq('project_id', selectedProject.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -80,78 +81,75 @@ const PlanGenerator = () => {
         description: "Impossible de charger les plans",
         variant: "destructive",
       });
-    } finally {
-      setLoading(false);
     }
   };
 
-  const generatePlan = async () => {
-    if (!projectIdea.trim() || !selectedProject) {
+  const generatePlan = async (prompt: string) => {
+    if (!selectedProject) {
       toast({
-        title: "Information manquante",
-        description: "Veuillez sélectionner un projet et décrire votre idée",
+        title: "Erreur",
+        description: "Veuillez sélectionner un projet",
         variant: "destructive",
       });
       return;
     }
 
-    setIsGenerating(true);
+    const userMessage: ChatMessage = {
+      id: Date.now().toString(),
+      role: 'user',
+      content: prompt,
+      timestamp: new Date()
+    };
+    setChatMessages(prev => [...prev, userMessage]);
 
+    setIsGenerating(true);
     try {
-      const project = projects.find(p => p.id === selectedProject);
-      
       const { data, error } = await supabase.functions.invoke('generate-plan', {
         body: {
-          projectIdea,
-          projectName: project?.name || 'Projet'
+          prompt,
+          projectId: selectedProject.id
         }
       });
 
       if (error) throw error;
 
-      if (data?.success && data?.plan) {
-        // Créer l'ID du plan
-        const planId = crypto.randomUUID();
-        const generatedPlan: ProjectPlan = {
-          id: planId,
-          project_id: selectedProject,
-          status: 'draft',
-          etapes: data.plan.etapes || [],
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        };
+      const aiMessage: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: `J'ai généré un plan détaillé pour votre projet ! Le plan comprend ${data.steps?.length || 0} étapes principales. Vous pouvez le consulter ci-dessous et continuer à discuter pour l'affiner.`,
+        timestamp: new Date()
+      };
+      setChatMessages(prev => [...prev, aiMessage]);
 
-        // Sauvegarder en base
-        const { error: saveError } = await supabase
-          .from('plans')
-          .insert({
-            id: planId,
-            project_id: selectedProject,
-            etapes: generatedPlan.etapes,
-            status: 'draft'
-          });
+      const { data: savedPlan, error: saveError } = await supabase
+        .from('plans')
+        .insert([{
+          project_id: selectedProject.id,
+          title: data.title || `Plan pour ${selectedProject.name}`,
+          description: data.description || prompt,
+          steps: data.steps || [],
+          status: 'draft'
+        }])
+        .select()
+        .single();
 
-        if (saveError) throw saveError;
+      if (saveError) throw saveError;
 
-        setCurrentPlan(generatedPlan);
-        
-        // Log activity
-        if ((window as any).logActivity) {
-          (window as any).logActivity('plan_generated', {
-            projectId: selectedProject,
-            stepsCount: generatedPlan.etapes.length
-          });
-        }
+      toast({
+        title: "Plan généré",
+        description: "Votre plan a été créé avec succès",
+      });
 
-        toast({
-          title: "Plan généré",
-          description: "Le plan de projet a été créé avec succès",
-        });
-
-        await fetchPlans();
-      }
-    } catch (error: any) {
-      console.error('Error generating plan:', error);
+      fetchPlans();
+    } catch (error) {
+      console.error('Erreur lors de la génération du plan:', error);
+      const errorMessage: ChatMessage = {
+        id: (Date.now() + 2).toString(),
+        role: 'assistant',
+        content: "Désolé, j'ai rencontré une erreur lors de la génération du plan. Pouvez-vous reformuler votre demande ?",
+        timestamp: new Date()
+      };
+      setChatMessages(prev => [...prev, errorMessage]);
       toast({
         title: "Erreur",
         description: "Impossible de générer le plan",
@@ -162,391 +160,206 @@ const PlanGenerator = () => {
     }
   };
 
-  const updateStepStatus = async (stepId: string, newStatus: 'pending' | 'in_progress' | 'completed' | 'error', subStepId?: string) => {
-    if (!currentPlan) return;
-
-    const updatedPlan = { ...currentPlan };
-    
-    if (subStepId) {
-      // Update sub-step
-      const step = updatedPlan.etapes.find(s => s.id === stepId);
-      if (step && step.sousEtapes) {
-        const subStep = step.sousEtapes.find(ss => ss.id === subStepId);
-        if (subStep) {
-          subStep.status = newStatus;
-        }
-      }
-    } else {
-      // Update main step
-      const step = updatedPlan.etapes.find(s => s.id === stepId);
-      if (step) {
-        step.status = newStatus;
-      }
-    }
-
-    setCurrentPlan(updatedPlan);
-
-    // Update in database
+  const deletePlan = async (planId: string) => {
     try {
       const { error } = await supabase
         .from('plans')
-        .update({ etapes: updatedPlan.etapes })
-        .eq('id', updatedPlan.id);
+        .delete()
+        .eq('id', planId);
 
       if (error) throw error;
-    } catch (error) {
-      console.error('Error updating plan:', error);
-    }
-  };
 
-  // Auto-execution functions
-  const startAutoExecution = async (mode: 'manual' | 'auto' | 'full-auto') => {
-    if (!currentPlan) return;
-    
-    setExecutionMode(mode);
-    setIsExecuting(true);
-    setCurrentStepIndex(0);
-    
-    // Log activity
-    if ((window as any).logActivity) {
-      (window as any).logActivity('plan_executed', {
-        planId: currentPlan.id,
-        mode,
-        totalSteps: currentPlan.etapes.length
-      });
-    }
-    
-    executeNextStep();
-  };
-
-  const executeNextStep = async () => {
-    if (!currentPlan || currentStepIndex >= currentPlan.etapes.length) {
-      setIsExecuting(false);
       toast({
-        title: "Plan terminé",
-        description: "Toutes les étapes ont été exécutées",
+        title: "Plan supprimé",
+        description: "Le plan a été supprimé avec succès",
       });
-      return;
-    }
 
-    const currentStep = currentPlan.etapes[currentStepIndex];
-    
-    // Mark step as in progress
-    await updateStepStatus(currentStep.id, 'in_progress');
-    
-    // Simulate step execution and AI analysis
-    setTimeout(() => {
-      analyzeStepResult(currentStep);
-    }, 2000);
-  };
-
-  const analyzeStepResult = async (step: any) => {
-    // Simulate AI analysis of the response
-    const responses = [
-      {
-        status: 'success' as const,
-        message: 'L\'étape a été exécutée avec succès. Le code généré correspond aux spécifications.',
-        suggestion: undefined
-      },
-      {
-        status: 'error' as const,
-        message: 'Une erreur a été détectée dans le code généré. Syntaxe incorrecte.',
-        suggestion: 'Corriger la syntaxe et réessayer avec des paramètres plus spécifiques.'
-      },
-      {
-        status: 'ambiguous' as const,
-        message: 'Le résultat est partiellement correct mais pourrait être amélioré.',
-        suggestion: 'Ajouter plus de détails dans le prompt pour obtenir un résultat plus précis.'
-      }
-    ];
-
-    const randomResult = responses[Math.floor(Math.random() * responses.length)];
-    setStepResult(randomResult);
-
-    // Update step status based on result
-    const newStatus = randomResult.status === 'success' ? 'completed' : 
-                     randomResult.status === 'error' ? 'error' : 'in_progress';
-    
-    await updateStepStatus(step.id, newStatus);
-    
-    // Show notification based on execution mode
-    if (executionMode === 'full-auto' && randomResult.status === 'success') {
-      // In full-auto mode, continue immediately if successful
-      setTimeout(() => {
-        setCurrentStepIndex(prev => prev + 1);
-        executeNextStep();
-      }, 1000);
-    } else {
-      // Show notification for manual, auto, or error cases
-      setShowStepNotification(true);
-    }
-  };
-
-  const handleStepContinue = () => {
-    setShowStepNotification(false);
-    setCurrentStepIndex(prev => prev + 1);
-    executeNextStep();
-  };
-
-  const handleStepRetry = () => {
-    setShowStepNotification(false);
-    analyzeStepResult(currentPlan!.etapes[currentStepIndex]);
-  };
-
-  const handleStepSkip = () => {
-    setShowStepNotification(false);
-    setCurrentStepIndex(prev => prev + 1);
-    executeNextStep();
-  };
-
-  const handlePlanValidation = () => {
-    if (currentPlan) {
-      setCurrentPlan(prev => prev ? { ...prev, status: 'validated' } : null);
-    }
-  };
-
-  const handlePlanRegeneration = () => {
-    generatePlan();
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed': return 'bg-green-500';
-      case 'in_progress': return 'bg-blue-500';
-      case 'error': return 'bg-red-500';
-      default: return 'bg-gray-300';
-    }
-  };
-
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'completed': return 'Terminé';
-      case 'in_progress': return 'En cours';
-      case 'error': return 'Erreur';
-      default: return 'À faire';
+      fetchPlans();
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Impossible de supprimer le plan",
+        variant: "destructive",
+      });
     }
   };
 
   useEffect(() => {
     fetchPlans();
-  }, [user]);
+  }, [user, selectedProject]);
+
+  if (!selectedProject) {
+    return (
+      <div className="container mx-auto py-8">
+        <Card>
+          <CardHeader>
+            <CardTitle>Aucun projet sélectionné</CardTitle>
+            <CardDescription>
+              Veuillez d'abord sélectionner un projet depuis le sélecteur de projet pour commencer
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    );
+  }
 
   return (
-    <div className="h-full flex flex-col">
-      {/* Header */}
-      <div className="border-b border-border bg-card flex-shrink-0 px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-base font-bold text-foreground">Plan Generator</h2>
-            <p className="text-xs text-muted-foreground">
-              Générez des roadmaps structurées pour vos projets
-            </p>
-          </div>
-        </div>
+    <div className="container mx-auto py-8 space-y-8">
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold text-primary">Générateur de Plans</h1>
       </div>
 
-      {/* Content */}
-      <div className="flex-1 px-6 py-4 overflow-y-auto">
-        {!currentPlan ? (
-          <div className="space-y-6">
-            {/* Generator Form */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Chat Interface */}
+        <Card className="lg:sticky lg:top-8">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Target className="h-5 w-5" />
+              Discussion avec l'IA - {selectedProject.name}
+            </CardTitle>
+            <CardDescription>
+              Discutez avec l'IA pour créer et affiner votre plan de projet
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="flex flex-col h-[500px]">
+              {/* Messages */}
+              <ScrollArea className="flex-1 p-4">
+                <div className="space-y-4">
+                  {chatMessages.map((message) => (
+                    <div
+                      key={message.id}
+                      className={`flex gap-3 ${
+                        message.role === 'user' ? 'justify-end' : 'justify-start'
+                      }`}
+                    >
+                      <div
+                        className={`max-w-[80%] rounded-lg p-3 ${
+                          message.role === 'user'
+                            ? 'bg-primary text-primary-foreground ml-auto'
+                            : 'bg-muted'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 mb-1">
+                          {message.role === 'assistant' ? (
+                            <Bot className="h-4 w-4" />
+                          ) : (
+                            <User className="h-4 w-4" />
+                          )}
+                          <span className="text-xs opacity-70">
+                            {message.timestamp.toLocaleTimeString()}
+                          </span>
+                        </div>
+                        <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                      </div>
+                    </div>
+                  ))}
+                  {isGenerating && (
+                    <div className="flex gap-3 justify-start">
+                      <div className="bg-muted rounded-lg p-3">
+                        <div className="flex items-center gap-2">
+                          <Bot className="h-4 w-4" />
+                          <div className="flex gap-1">
+                            <div className="w-2 h-2 bg-primary rounded-full animate-bounce"></div>
+                            <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                            <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  <div ref={messagesEndRef} />
+                </div>
+              </ScrollArea>
+              
+              {/* Input */}
+              <div className="p-4 border-t">
+                <PromptInputBox
+                  onSend={(message) => generatePlan(message)}
+                  isLoading={isGenerating}
+                  placeholder="Décrivez votre idée de projet ou posez des questions..."
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Plans existants */}
+        <div className="space-y-6">
+          {plans.length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Lightbulb className="h-4 w-4" />
-                  Générer un nouveau plan
-                </CardTitle>
-                <CardDescription className="text-xs">
-                  Décrivez votre idée de projet pour générer un plan structuré
+                <CardTitle>Plans existants</CardTitle>
+                <CardDescription>
+                  Vos plans générés pour ce projet
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="project-select">Projet</Label>
-                  <Select value={selectedProject} onValueChange={setSelectedProject}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Sélectionner un projet" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {projects.map((project) => (
-                        <SelectItem key={project.id} value={project.id}>
-                          {project.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+              <CardContent>
+                <div className="grid gap-4">
+                  {plans.map((plan) => (
+                    <div
+                      key={plan.id}
+                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
+                      onClick={() => setCurrentPlan(plan)}
+                    >
+                      <div className="flex-1">
+                        <h3 className="font-medium">{plan.title}</h3>
+                        <p className="text-sm text-muted-foreground">{plan.description}</p>
+                        <div className="flex items-center gap-2 mt-2">
+                          <Badge variant={plan.status === 'validated' ? 'default' : 'secondary'}>
+                            {plan.status === 'validated' ? 'Validé' : 'Brouillon'}
+                          </Badge>
+                          <span className="text-xs text-muted-foreground">
+                            {plan.steps?.length || 0} étapes
+                          </span>
+                        </div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deletePlan(plan.id);
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
                 </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="project-idea">Idée de projet</Label>
-                  <Textarea
-                    id="project-idea"
-                    placeholder="Décrivez votre idée de projet en détail..."
-                    value={projectIdea}
-                    onChange={(e) => setProjectIdea(e.target.value)}
-                    className="min-h-[100px]"
-                  />
-                </div>
-
-                <Button 
-                  onClick={generatePlan}
-                  disabled={isGenerating || !projectIdea.trim() || !selectedProject}
-                  className="w-full"
-                >
-                  {isGenerating ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Génération en cours...
-                    </>
-                  ) : (
-                    'Générer le plan'
-                  )}
-                </Button>
               </CardContent>
             </Card>
+          )}
 
-            {/* Existing Plans */}
-            {plans.length > 0 && (
-              <div className="space-y-3">
-                <h2 className="text-sm font-semibold">Plans existants</h2>
-                <div className="grid gap-3">
-                  {plans.map((plan) => {
-                    const project = projects.find(p => p.id === plan.project_id);
-                    const completedSteps = plan.etapes.filter(e => e.status === 'completed').length;
-                    const totalSteps = plan.etapes.length;
-                    
-                    return (
-                      <Card key={plan.id} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setCurrentPlan(plan)}>
-                        <CardContent className="p-4">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <h3 className="text-sm font-medium">{project?.name || 'Projet inconnu'}</h3>
-                              <p className="text-xs text-muted-foreground">
-                                {completedSteps}/{totalSteps} étapes terminées
-                              </p>
-                            </div>
-                            <Badge variant="outline" className="text-xs">
-                              {Math.round((completedSteps / totalSteps) * 100)}%
-                            </Badge>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 gap-4 h-full">
-            {/* Plan Details */}
-            <div className="space-y-4">
-              {/* Plan Header */}
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-base font-semibold">Plan du projet</h2>
-                  <p className="text-xs text-muted-foreground">
-                    {projects.find(p => p.id === currentPlan.project_id)?.name}
-                  </p>
-                  {currentPlan.status && (
-                    <Badge 
-                      variant={currentPlan.status === 'validated' ? 'default' : 'secondary'}
-                      className="text-xs mt-1"
-                    >
-                      {currentPlan.status === 'validated' ? 'Validé' : 
-                       currentPlan.status === 'draft' ? 'Brouillon' : currentPlan.status}
-                    </Badge>
-                  )}
-                </div>
-                <div className="flex gap-2">
-                  {currentPlan.status === 'validated' && (
-                    <AutoExecutionDialog
-                      steps={currentPlan.etapes}
-                      onExecute={startAutoExecution}
-                      isExecuting={isExecuting}
-                      currentStep={currentStepIndex}
-                    >
-                      <Button size="sm" disabled={isExecuting}>
-                        <Play className="h-3 w-3 mr-1" />
-                        Exécuter
-                      </Button>
-                    </AutoExecutionDialog>
-                  )}
-                  <Button variant="outline" size="sm" onClick={() => setCurrentPlan(null)}>
-                    Retour
-                  </Button>
-                </div>
-              </div>
-
-            {/* Steps */}
-            <div className="space-y-3">
-              {currentPlan.etapes.map((step, index) => (
-                <Card key={step.id}>
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start gap-3 flex-1">
-                        <div className="flex items-center gap-2">
-                          <div className={`w-6 h-6 rounded-full flex items-center justify-center text-white text-xs ${getStatusColor(step.status)}`}>
-                            {step.status === 'completed' ? <CheckCircle className="h-3 w-3" /> : index + 1}
-                          </div>
-                        </div>
-                        <div className="flex-1">
-                          <CardTitle className="text-sm">{step.titre}</CardTitle>
-                          <CardDescription className="text-xs mt-1">
-                            {step.description}
-                          </CardDescription>
-                        </div>
+          {/* Plan actuel */}
+          {currentPlan && (
+            <Card>
+              <CardHeader>
+                <CardTitle>{currentPlan.title}</CardTitle>
+                <CardDescription>{currentPlan.description}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {currentPlan.steps?.map((step, index) => (
+                    <div key={step.id} className="flex items-start gap-3 p-3 border rounded-lg">
+                      <div className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-sm">
+                        {step.status === 'completed' ? (
+                          <CheckCircle className="h-4 w-4" />
+                        ) : (
+                          index + 1
+                        )}
                       </div>
-                      <Badge variant="outline" className="text-xs">
-                        {getStatusLabel(step.status)}
-                      </Badge>
+                      <div className="flex-1">
+                        <h4 className="font-medium">{step.title}</h4>
+                        <p className="text-sm text-muted-foreground">{step.description}</p>
+                      </div>
                     </div>
-                  </CardHeader>
-                  
-                  {step.sousEtapes && step.sousEtapes.length > 0 && (
-                    <CardContent className="pt-0">
-                      <div className="space-y-2 ml-9">
-                        {step.sousEtapes.map((subStep) => (
-                          <div key={subStep.id} className="flex items-start gap-3 p-2 bg-muted rounded-md">
-                            <div className={`w-4 h-4 rounded-full ${getStatusColor(subStep.status)}`} />
-                            <div className="flex-1">
-                              <h4 className="text-xs font-medium">{subStep.titre}</h4>
-                              <p className="text-xs text-muted-foreground">{subStep.description}</p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  )}
-                </Card>
-              ))}
-            </div>
-          </div>
-
-          {/* Chat de validation */}
-          <div className="h-full">
-            <PlanValidationChat
-              planId={currentPlan.id}
-              plan={currentPlan}
-              onValidate={handlePlanValidation}
-              onRegenerate={handlePlanRegeneration}
-              isValidated={currentPlan.status === 'validated'}
-            />
-          </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
-        )}
-
-        {/* Step Execution Notification */}
-        <StepExecutionNotification
-          isOpen={showStepNotification}
-          step={currentPlan?.etapes[currentStepIndex] || null}
-          result={stepResult}
-          mode={executionMode}
-          onContinue={handleStepContinue}
-          onRetry={handleStepRetry}
-          onSkip={handleStepSkip}
-          onClose={() => setShowStepNotification(false)}
-        />
       </div>
     </div>
   );
