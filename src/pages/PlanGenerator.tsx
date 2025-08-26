@@ -309,14 +309,12 @@ const PlanGenerator = () => {
           </ScrollArea>
           
           {/* Fixed input at bottom */}
-          <div className="fixed bottom-4 left-4 right-4 z-50">
-            <div className="max-w-4xl mx-auto">
-              <ClaudeChatInput
-                onSendMessage={(message) => generatePlan(message)}
-                disabled={isGenerating}
-                placeholder="Continuez la discussion pour affiner votre plan..."
-              />
-            </div>
+          <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-4xl px-4">
+            <ClaudeChatInput
+              onSendMessage={(message) => generatePlan(message)}
+              disabled={isGenerating}
+              placeholder="Continuez la discussion pour affiner votre plan..."
+            />
           </div>
         </div>
       )}
