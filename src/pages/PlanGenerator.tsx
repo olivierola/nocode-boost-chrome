@@ -4,7 +4,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useProjectContext } from '@/hooks/useProjectContext';
-import { AnimatedAIChat } from '@/components/ui/animated-ai-chat';
+import { ClaudeChatInput } from '@/components/ui/claude-style-ai-input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface ProjectPlan {
@@ -210,13 +210,20 @@ const PlanGenerator = () => {
     <div className="w-full h-screen flex flex-col bg-[radial-gradient(125%_125%_at_50%_101%,rgba(245,87,2,1)_10.5%,rgba(245,120,2,1)_16%,rgba(245,140,2,1)_17.5%,rgba(245,170,100,1)_25%,rgba(238,174,202,1)_40%,rgba(202,179,214,1)_65%,rgba(148,201,233,1)_100%)]">
       {chatMessages.length === 0 ? (
         /* Empty state with centered chat */
-        <AnimatedAIChat
-          onSend={(message) => generatePlan(message)}
-          isLoading={isGenerating}
-          placeholder="Décrivez votre idée de projet..."
-          title={`Générateur de Plans - ${selectedProject.name}`}
-          subtitle="Décrivez votre idée et l'IA vous aidera à créer un plan détaillé étape par étape"
-        />
+        <div className="flex-1 flex flex-col items-center justify-center px-6">
+          <div className="text-center mb-8">
+            <Target className="h-16 w-16 text-white/80 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-white mb-2">Générateur de Plans - {selectedProject.name}</h2>
+            <p className="text-white/80 text-lg max-w-md">
+              Décrivez votre idée et l'IA vous aidera à créer un plan détaillé étape par étape
+            </p>
+          </div>
+          <ClaudeChatInput
+            onSendMessage={(message) => generatePlan(message)}
+            disabled={isGenerating}
+            placeholder="Décrivez votre idée de projet..."
+          />
+        </div>
       ) : (
         /* Chat with messages */
         <div className="flex-1 flex flex-col relative">
@@ -301,12 +308,10 @@ const PlanGenerator = () => {
           {/* Fixed input at bottom */}
           <div className="p-6">
             <div className="max-w-4xl mx-auto">
-              <AnimatedAIChat
-                onSend={(message) => generatePlan(message)}
-                isLoading={isGenerating}
+              <ClaudeChatInput
+                onSendMessage={(message) => generatePlan(message)}
+                disabled={isGenerating}
                 placeholder="Continuez la discussion pour affiner votre plan..."
-                title=""
-                subtitle=""
               />
             </div>
           </div>
