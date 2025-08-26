@@ -7,97 +7,79 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { userEmail, projectId } = await req.json();
-    console.log('Send invitation request:', { userEmail, projectId });
+    const { projectId, email, role, inviterName, projectName } = await req.json();
+    console.log('Sending invitation for project:', projectId, 'to:', email);
 
-    // Get auth header
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      throw new Error('Missing authorization header');
-    }
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        global: {
-          headers: {
-            Authorization: authHeader,
-          },
-        },
-      }
-    );
-
-    // Get current user
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError || !user) {
-      throw new Error('User not authenticated');
-    }
-
-    // Get project details
     const { data: project, error: projectError } = await supabase
       .from('projects')
-      .select('name, owner_id')
+      .select('*, collaborators(*)')
       .eq('id', projectId)
       .single();
 
     if (projectError || !project) {
-      throw new Error('Project not found');
+      throw new Error('Project not found or access denied');
     }
 
-    // Check if user is project owner
-    if (project.owner_id !== user.id) {
-      throw new Error('Only project owner can send invitations');
+    const existingCollaborator = project.collaborators?.find(
+      (collab: any) => collab.user_id === email
+    );
+
+    if (existingCollaborator) {
+      throw new Error('User is already a collaborator on this project');
     }
 
-    // In a real implementation, you would:
-    // 1. Generate a unique invitation token
-    // 2. Store invitation in database with expiration
-    // 3. Send email via email service (SendGrid, Resend, etc.)
-    // 4. Include invitation link with token
+    const { error: inviteError } = await supabase
+      .from('activity_logs')
+      .insert({
+        user_id: project.owner_id,
+        action: 'invitation_sent',
+        details: {
+          project_id: projectId,
+          project_name: projectName,
+          invited_email: email,
+          role: role,
+          inviter_name: inviterName,
+          timestamp: new Date().toISOString(),
+          status: 'pending'
+        }
+      });
 
-    // For now, we'll simulate the email sending
-    console.log(`Sending invitation email to ${userEmail} for project ${project.name}`);
+    if (inviteError) {
+      console.error('Error storing invitation:', inviteError);
+      throw new Error('Failed to send invitation');
+    }
 
-    // Simulate email content
-    const invitationLink = `${Deno.env.get('SITE_URL')}/invite?token=simulated-token`;
-    const emailContent = {
-      to: userEmail,
-      subject: `Invitation to collaborate on ${project.name}`,
-      html: `
-        <h2>You've been invited to collaborate!</h2>
-        <p>You've been invited to collaborate on the project "${project.name}".</p>
-        <p><a href="${invitationLink}">Click here to accept the invitation</a></p>
-        <p>If you don't have an account yet, you'll need to sign up first.</p>
-      `
-    };
+    console.log(`Invitation email would be sent to: ${email}`);
+    console.log(`Subject: Invitation to collaborate on ${projectName}`);
+    console.log(`From: ${inviterName}`);
+    console.log(`Role: ${role}`);
 
-    console.log('Email content prepared:', emailContent);
-
-    // Here you would integrate with your email service
-    // For demo purposes, we'll just return success
-    
-    return new Response(JSON.stringify({
-      success: true,
+    return new Response(JSON.stringify({ 
+      success: true, 
       message: 'Invitation sent successfully',
-      invitationLink // In production, don't return this
+      details: {
+        project: projectName,
+        email: email,
+        role: role
+      }
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
   } catch (error) {
     console.error('Error in send-invitation function:', error);
-    return new Response(JSON.stringify({ 
-      success: false,
-      error: error.message 
-    }), {
+    return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

@@ -7,46 +7,91 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { provider } = new URL(req.url).searchParams;
+    const url = new URL(req.url);
+    const code = url.searchParams.get('code');
+    const error = url.searchParams.get('error');
+    const errorDescription = url.searchParams.get('error_description');
 
-    if (provider === 'google') {
-      // Handle Google OAuth callback
-      const supabaseAdmin = createClient(
-        Deno.env.get('SUPABASE_URL') ?? '',
-        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-      );
+    console.log('OAuth callback received:', { code: !!code, error, errorDescription });
 
-      // Process Google OAuth and create/update user profile
-      // This is a simplified implementation
-      return new Response(JSON.stringify({ 
-        message: 'Google OAuth callback processed',
-        redirect: '/' 
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    if (error) {
+      console.error('OAuth error:', error, errorDescription);
+      
+      const redirectUrl = `${url.origin}/?error=${encodeURIComponent(error)}&error_description=${encodeURIComponent(errorDescription || '')}`;
+      
+      return new Response(null, {
+        status: 302,
+        headers: {
+          ...corsHeaders,
+          'Location': redirectUrl,
+        },
       });
     }
 
-    return new Response(JSON.stringify({ 
-      error: 'Unsupported provider' 
-    }), {
-      status: 400,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    if (!code) {
+      throw new Error('No authorization code received');
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+    const { data, error: authError } = await supabase.auth.exchangeCodeForSession(code);
+
+    if (authError) {
+      console.error('Auth error:', authError);
+      throw authError;
+    }
+
+    console.log('User authenticated successfully:', data.user?.email);
+
+    if (data.user) {
+      const { error: logError } = await supabase
+        .from('activity_logs')
+        .insert({
+          user_id: data.user.id,
+          action: 'oauth_login',
+          details: {
+            provider: 'oauth',
+            timestamp: new Date().toISOString()
+          }
+        });
+
+      if (logError) {
+        console.error('Error logging authentication:', logError);
+      }
+    }
+
+    const redirectUrl = `${url.origin}/?auth=success`;
+    
+    return new Response(null, {
+      status: 302,
+      headers: {
+        ...corsHeaders,
+        'Location': redirectUrl,
+        'Set-Cookie': `sb-access-token=${data.session?.access_token}; Path=/; HttpOnly; Secure; SameSite=Lax`,
+      },
     });
 
   } catch (error) {
     console.error('Error in oauth-callback function:', error);
-    return new Response(JSON.stringify({ 
-      error: error.message 
-    }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    
+    const url = new URL(req.url);
+    const redirectUrl = `${url.origin}/?error=auth_failed&error_description=${encodeURIComponent(error.message)}`;
+    
+    return new Response(null, {
+      status: 302,
+      headers: {
+        ...corsHeaders,
+        'Location': redirectUrl,
+      },
     });
   }
 });
