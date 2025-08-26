@@ -41,12 +41,18 @@ const MainLayout = () => {
     <div className="w-[800px] h-[600px] bg-background flex flex-col relative">
       <NotificationCenter />
       
-      {/* Header */}
-      <header className="border-b border-border bg-card flex-shrink-0">
+      {/* Animated Background */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-primary/5 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute bottom-1/3 right-1/4 w-48 h-48 bg-accent/10 rounded-full blur-2xl animate-pulse delay-1000" />
+        <div className="absolute top-2/3 left-1/2 w-32 h-32 bg-muted/20 rounded-full blur-xl animate-pulse delay-500" />
+      </div>
+      
+      {/* Fixed Header */}
+      <header className="border-b border-border bg-card flex-shrink-0 fixed top-0 left-0 right-0 z-50 w-[800px]">
         <div className="px-6 py-3 flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <h1 className="text-lg font-bold text-foreground">Super NoCode</h1>
-            <span className="text-xs text-muted-foreground px-2 py-1 bg-muted rounded-full">Extension</span>
             {selectedProject && (
               <div className="flex items-center gap-2">
                 <Badge variant="outline" className="gap-1">
@@ -60,6 +66,75 @@ const MainLayout = () => {
                   className="h-6 w-6 p-0"
                 >
                   <X className="h-3 w-3" />
+                </Button>
+              </div>
+            )}
+            
+            {/* Compact Tab Navigation */}
+            {isProjectSelected && (
+              <div className="flex items-center gap-1 ml-4">
+                <Button 
+                  variant={activeTab === 'dashboard' ? 'default' : 'ghost'} 
+                  size="sm" 
+                  onClick={() => setActiveTab('dashboard')}
+                  className="h-7 w-7 p-0"
+                  title="Dashboard"
+                >
+                  <Home className="h-3 w-3" />
+                </Button>
+                <Button 
+                  variant={activeTab === 'components' ? 'default' : 'ghost'} 
+                  size="sm" 
+                  onClick={() => setActiveTab('components')}
+                  className="h-7 w-7 p-0"
+                  title="Components"
+                >
+                  <Code className="h-3 w-3" />
+                </Button>
+                <Button 
+                  variant={activeTab === 'plans' ? 'default' : 'ghost'} 
+                  size="sm" 
+                  onClick={() => setActiveTab('plans')}
+                  className="h-7 w-7 p-0"
+                  title="Plans"
+                >
+                  <Map className="h-3 w-3" />
+                </Button>
+                <Button 
+                  variant={activeTab === 'audits' ? 'default' : 'ghost'} 
+                  size="sm" 
+                  onClick={() => setActiveTab('audits')}
+                  className="h-7 w-7 p-0"
+                  title="Audits"
+                >
+                  <Search className="h-3 w-3" />
+                </Button>
+                <Button 
+                  variant={activeTab === 'visual' ? 'default' : 'ghost'} 
+                  size="sm" 
+                  onClick={() => setActiveTab('visual')}
+                  className="h-7 w-7 p-0"
+                  title="Identité Visuelle"
+                >
+                  <Palette className="h-3 w-3" />
+                </Button>
+                <Button 
+                  variant={activeTab === 'media' ? 'default' : 'ghost'} 
+                  size="sm" 
+                  onClick={() => setActiveTab('media')}
+                  className="h-7 w-7 p-0"
+                  title="Médias"
+                >
+                  <Upload className="h-3 w-3" />
+                </Button>
+                <Button 
+                  variant={activeTab === 'collaboration' ? 'default' : 'ghost'} 
+                  size="sm" 
+                  onClick={() => setActiveTab('collaboration')}
+                  className="h-7 w-7 p-0"
+                  title="Équipe"
+                >
+                  <Users className="h-3 w-3" />
                 </Button>
               </div>
             )}
@@ -82,78 +157,47 @@ const MainLayout = () => {
         </div>
       </header>
 
-      {/* Navigation Tabs */}
-      {!isProjectSelected ? (
-        <ProjectSelector />
-      ) : (
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
-          <div className="px-6 mt-4 overflow-x-auto">
-            <TabsList className="grid w-full grid-cols-7 min-w-[700px]">
-              <TabsTrigger value="dashboard" className="flex items-center gap-1 text-xs px-2">
-                <Home className="h-3 w-3" />
-                Dashboard
-              </TabsTrigger>
-              <TabsTrigger value="components" className="flex items-center gap-1 text-xs px-2">
-                <Code className="h-3 w-3" />
-                Components
-              </TabsTrigger>
-              <TabsTrigger value="plans" className="flex items-center gap-1 text-xs px-2">
-                <Map className="h-3 w-3" />
-                Plans
-              </TabsTrigger>
-              <TabsTrigger value="audits" className="flex items-center gap-1 text-xs px-2">
-                <Search className="h-3 w-3" />
-                Audits
-              </TabsTrigger>
-              <TabsTrigger value="visual" className="flex items-center gap-1 text-xs px-2">
-                <Palette className="h-3 w-3" />
-                Identité
-              </TabsTrigger>
-              <TabsTrigger value="media" className="flex items-center gap-1 text-xs px-2">
-                <Upload className="h-3 w-3" />
-                Médias
-              </TabsTrigger>
-              <TabsTrigger value="collaboration" className="flex items-center gap-1 text-xs px-2">
-                <Users className="h-3 w-3" />
-                Équipe
-              </TabsTrigger>
-            </TabsList>
-          </div>
+      {/* Content Area with top margin for fixed header */}
+      <div className="flex-1 flex flex-col mt-[60px]">
+        {!isProjectSelected ? (
+          <ProjectSelector />
+        ) : (
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
+            {/* Tab Contents */}
+            <div className="flex-1 overflow-hidden">
+              <TabsContent value="dashboard" className="h-full m-0 data-[state=active]:flex data-[state=active]:flex-col">
+                <div className="flex-1 px-6 py-4 overflow-y-auto">
+                  <Dashboard />
+                </div>
+              </TabsContent>
 
-          {/* Tab Contents */}
-          <div className="flex-1 overflow-hidden">
-            <TabsContent value="dashboard" className="h-full m-0 data-[state=active]:flex data-[state=active]:flex-col">
-              <div className="flex-1 px-6 py-4 overflow-y-auto">
-                <Dashboard />
-              </div>
-            </TabsContent>
+              <TabsContent value="components" className="h-full m-0 data-[state=active]:flex data-[state=active]:flex-col">
+                <Components />
+              </TabsContent>
 
-            <TabsContent value="components" className="h-full m-0 data-[state=active]:flex data-[state=active]:flex-col">
-              <Components />
-            </TabsContent>
+              <TabsContent value="plans" className="h-full m-0 data-[state=active]:flex data-[state=active]:flex-col">
+                <PlanGenerator />
+              </TabsContent>
 
-            <TabsContent value="plans" className="h-full m-0 data-[state=active]:flex data-[state=active]:flex-col">
-              <PlanGenerator />
-            </TabsContent>
+              <TabsContent value="audits" className="h-full m-0 data-[state=active]:flex data-[state=active]:flex-col">
+                <UXAudit />
+              </TabsContent>
 
-            <TabsContent value="audits" className="h-full m-0 data-[state=active]:flex data-[state=active]:flex-col">
-              <UXAudit />
-            </TabsContent>
+              <TabsContent value="visual" className="h-full m-0 data-[state=active]:flex data-[state=active]:flex-col">
+                <VisualIdentity />
+              </TabsContent>
 
-            <TabsContent value="visual" className="h-full m-0 data-[state=active]:flex data-[state=active]:flex-col">
-              <VisualIdentity />
-            </TabsContent>
+              <TabsContent value="media" className="h-full m-0 data-[state=active]:flex data-[state=active]:flex-col">
+                <MediaUpload />
+              </TabsContent>
 
-            <TabsContent value="media" className="h-full m-0 data-[state=active]:flex data-[state=active]:flex-col">
-              <MediaUpload />
-            </TabsContent>
-
-            <TabsContent value="collaboration" className="h-full m-0 data-[state=active]:flex data-[state=active]:flex-col">
-              <Collaboration />
-            </TabsContent>
-          </div>
-        </Tabs>
-      )}
+              <TabsContent value="collaboration" className="h-full m-0 data-[state=active]:flex data-[state=active]:flex-col">
+                <Collaboration />
+              </TabsContent>
+            </div>
+          </Tabs>
+        )}
+      </div>
     </div>
   );
 };

@@ -194,11 +194,11 @@ const PlanGenerator = () => {
 
   if (!selectedProject) {
     return (
-      <div className="w-full h-screen flex items-center justify-center bg-[radial-gradient(125%_125%_at_50%_101%,rgba(245,87,2,1)_10.5%,rgba(245,120,2,1)_16%,rgba(245,140,2,1)_17.5%,rgba(245,170,100,1)_25%,rgba(238,174,202,1)_40%,rgba(202,179,214,1)_65%,rgba(148,201,233,1)_100%)]">
+      <div className="w-full h-full flex items-center justify-center bg-background">
         <div className="text-center space-y-4">
-          <Target className="h-16 w-16 text-white/80 mx-auto" />
-          <h2 className="text-2xl font-bold text-white">Aucun projet sélectionné</h2>
-          <p className="text-white/80 text-lg max-w-md">
+          <Target className="h-16 w-16 text-muted-foreground mx-auto" />
+          <h2 className="text-2xl font-bold text-foreground">Aucun projet sélectionné</h2>
+          <p className="text-muted-foreground text-lg max-w-md">
             Veuillez d'abord sélectionner un projet depuis le sélecteur de projet pour commencer
           </p>
         </div>
@@ -207,14 +207,14 @@ const PlanGenerator = () => {
   }
 
   return (
-    <div className="w-full h-screen flex flex-col bg-[radial-gradient(125%_125%_at_50%_101%,rgba(245,87,2,1)_10.5%,rgba(245,120,2,1)_16%,rgba(245,140,2,1)_17.5%,rgba(245,170,100,1)_25%,rgba(238,174,202,1)_40%,rgba(202,179,214,1)_65%,rgba(148,201,233,1)_100%)]">
+    <div className="w-full h-full flex flex-col bg-background relative overflow-hidden">
       {chatMessages.length === 0 ? (
         /* Empty state with centered chat */
         <div className="flex-1 flex flex-col items-center justify-center px-6">
           <div className="text-center mb-8">
-            <Target className="h-16 w-16 text-white/80 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-white mb-2">Générateur de Plans - {selectedProject.name}</h2>
-            <p className="text-white/80 text-lg max-w-md">
+            <Target className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-foreground mb-2">Générateur de Plans - {selectedProject.name}</h2>
+            <p className="text-muted-foreground text-lg max-w-md">
               Décrivez votre idée et l'IA vous aidera à créer un plan détaillé étape par étape
             </p>
           </div>
@@ -225,15 +225,10 @@ const PlanGenerator = () => {
           />
         </div>
       ) : (
-        /* Chat with messages */
+        /* Chat with messages and fixed input */
         <div className="flex-1 flex flex-col relative">
-          {/* Header */}
-          <div className="flex items-center justify-between p-6">
-            <h1 className="text-3xl font-bold text-white">Générateur de Plans - {selectedProject.name}</h1>
-          </div>
-
           {/* Messages */}
-          <ScrollArea className="flex-1 px-6">
+          <ScrollArea className="flex-1 px-6 pb-32">
             <div className="space-y-6 py-6 max-w-4xl mx-auto">
               {chatMessages.map((message) => (
                 <div
@@ -243,10 +238,10 @@ const PlanGenerator = () => {
                   }`}
                 >
                   <div
-                    className={`max-w-[80%] rounded-2xl p-4 ${
+                    className={`max-w-[80%] rounded-2xl p-4 backdrop-blur-sm ${
                       message.role === 'user'
-                        ? 'bg-white/20 text-white backdrop-blur-sm border border-white/20'
-                        : 'bg-white/90 text-gray-900 backdrop-blur-sm border border-white/30'
+                        ? 'bg-primary text-primary-foreground border border-primary/20'
+                        : 'bg-card text-card-foreground border border-border'
                     }`}
                   >
                     <div className="flex items-center gap-2 mb-2">
@@ -270,8 +265,8 @@ const PlanGenerator = () => {
                             📋 Plan généré: {message.plan.title}
                           </div>
                           {message.plan.steps?.map((step, index) => (
-                            <div key={step.id} className="flex items-start gap-3 p-3 rounded-lg bg-black/10">
-                              <div className="flex items-center justify-center w-7 h-7 rounded-full bg-current/20 text-sm font-bold">
+                            <div key={step.id} className="flex items-start gap-3 p-3 rounded-lg bg-background/50">
+                              <div className="flex items-center justify-center w-7 h-7 rounded-full bg-primary text-primary-foreground text-sm font-bold">
                                 {index + 1}
                               </div>
                               <div className="flex-1">
@@ -288,14 +283,14 @@ const PlanGenerator = () => {
               ))}
               {isGenerating && (
                 <div className="flex gap-4 justify-start">
-                  <div className="bg-white/90 text-gray-900 backdrop-blur-sm border border-white/30 rounded-2xl p-4">
+                  <div className="bg-card text-card-foreground backdrop-blur-sm border border-border rounded-2xl p-4">
                     <div className="flex items-center gap-3">
                       <Bot className="h-5 w-5" />
                       <span className="text-sm font-medium">IA Assistant génère votre plan...</span>
                       <div className="flex gap-1">
-                        <div className="w-2 h-2 bg-gray-600 rounded-full animate-bounce"></div>
-                        <div className="w-2 h-2 bg-gray-600 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                        <div className="w-2 h-2 bg-gray-600 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                        <div className="w-2 h-2 bg-primary rounded-full animate-bounce"></div>
+                        <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                        <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
                       </div>
                     </div>
                   </div>
@@ -306,7 +301,7 @@ const PlanGenerator = () => {
           </ScrollArea>
           
           {/* Fixed input at bottom */}
-          <div className="p-6">
+          <div className="absolute bottom-0 left-0 right-0 p-6 bg-background/80 backdrop-blur-sm border-t border-border">
             <div className="max-w-4xl mx-auto">
               <ClaudeChatInput
                 onSendMessage={(message) => generatePlan(message)}
