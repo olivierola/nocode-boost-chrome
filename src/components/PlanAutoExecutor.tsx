@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Play, Pause, SkipForward, CheckCircle, AlertCircle, Clock, RefreshCw, Bot, MessageSquare } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ClaudeChatInput } from '@/components/ui/claude-style-ai-input';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ExecutionStep {
   id: string;
@@ -58,46 +59,42 @@ const PlanAutoExecutor = ({ steps, isOpen, onClose, mode, onUpdateSteps }: PlanA
     setLogs(prev => [...prev, { timestamp, message, type }]);
   }, []);
 
-  const simulateToolInteraction = async (prompt: string, stepIndex: number): Promise<{
+  const sendPromptToAI = async (prompt: string, stepIndex: number): Promise<{
     success: boolean;
     response: string;
     needsUserAction?: boolean;
     userActionType?: string;
     userActionPrompt?: string;
   }> => {
-    // Simuler l'envoi du prompt à l'outil IA
     addLog(`Envoi du prompt à l'outil IA: "${prompt.substring(0, 50)}..."`);
     
-    // Simuler un délai de traitement
-    await new Promise(resolve => setTimeout(resolve, 2000 + Math.random() * 3000));
+    try {
+      // Envoyer le prompt via l'edge function
+      const { data, error } = await supabase.functions.invoke('analyze-response', {
+        body: {
+          prompt,
+          stepIndex,
+          context: 'plan_execution'
+        }
+      });
 
-    // Simuler différents types de réponses
-    const responses = [
-      {
-        success: true,
-        response: "Étape complétée avec succès. L'implémentation a été réalisée selon les spécifications.",
-      },
-      {
-        success: false,
-        response: "Erreur détectée: Configuration manquante. Veuillez vérifier les paramètres.",
-        needsUserAction: true,
-        userActionType: "confirmation",
-        userActionPrompt: "Une configuration est requise. Voulez-vous continuer avec les paramètres par défaut ?"
-      },
-      {
-        success: false,
-        response: "Clé API manquante pour continuer cette étape.",
-        needsUserAction: true,
-        userActionType: "api_key",
-        userActionPrompt: "Veuillez renseigner votre clé API OpenAI pour continuer"
-      },
-      {
-        success: true,
-        response: "Implémentation réussie mais nécessite une validation manuelle pour l'étape suivante.",
-      }
-    ];
+      if (error) throw error;
 
-    return responses[Math.floor(Math.random() * responses.length)];
+      return {
+        success: data.success || false,
+        response: data.response || 'Aucune réponse reçue',
+        needsUserAction: data.needsUserAction || false,
+        userActionType: data.userActionType,
+        userActionPrompt: data.userActionPrompt
+      };
+
+    } catch (error: any) {
+      addLog(`Erreur lors de l'interaction avec l'IA: ${error.message}`, 'error');
+      return {
+        success: false,
+        response: `Erreur technique: ${error.message}`
+      };
+    }
   };
 
   const analyzeAIResponse = async (response: string): Promise<{
@@ -110,10 +107,27 @@ const PlanAutoExecutor = ({ steps, isOpen, onClose, mode, onUpdateSteps }: PlanA
     setIsAnalyzingResponse(true);
 
     try {
-      // Simuler l'analyse de la réponse
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Analyser la réponse via une edge function
+      const { data, error } = await supabase.functions.invoke('analyze-response', {
+        body: {
+          response,
+          context: 'response_analysis'
+        }
+      });
 
-      // Logique d'analyse basée sur des mots-clés
+      if (error) throw error;
+
+      return {
+        shouldContinue: data.shouldContinue || false,
+        needsCorrection: data.needsCorrection || false,
+        correctionPrompt: data.correctionPrompt,
+        suggestion: data.suggestion || "Analyse terminée"
+      };
+
+    } catch (error: any) {
+      addLog(`Erreur lors de l'analyse: ${error.message}`, 'error');
+      
+      // Fallback : analyse basique par mots-clés
       const errorKeywords = ['erreur', 'error', 'échec', 'failed', 'impossible'];
       const successKeywords = ['succès', 'success', 'complété', 'terminé', 'réussi'];
 
@@ -125,25 +139,10 @@ const PlanAutoExecutor = ({ steps, isOpen, onClose, mode, onUpdateSteps }: PlanA
         response.toLowerCase().includes(keyword)
       );
 
-      if (hasError && !hasSuccess) {
-        const correctionPrompts = [
-          "Veuillez corriger l'erreur précédente en ajustant les paramètres de configuration.",
-          "Reprenez l'étape avec une approche alternative pour résoudre le problème.",
-          "Modifiez l'implémentation pour contourner l'erreur détectée."
-        ];
-
-        return {
-          shouldContinue: false,
-          needsCorrection: true,
-          correctionPrompt: correctionPrompts[Math.floor(Math.random() * correctionPrompts.length)],
-          suggestion: "Essayez une approche différente ou vérifiez les prérequis."
-        };
-      }
-
       return {
-        shouldContinue: hasSuccess,
-        needsCorrection: false,
-        suggestion: hasSuccess ? "Étape réussie, passage à la suivante." : "Réponse ambiguë, validation manuelle recommandée."
+        shouldContinue: hasSuccess && !hasError,
+        needsCorrection: hasError && !hasSuccess,
+        suggestion: hasSuccess ? "Étape réussie" : hasError ? "Erreur détectée" : "Réponse ambiguë"
       };
 
     } finally {
@@ -166,7 +165,7 @@ const PlanAutoExecutor = ({ steps, isOpen, onClose, mode, onUpdateSteps }: PlanA
 
     try {
       // Interaction avec l'outil IA
-      const toolResponse = await simulateToolInteraction(step.prompt, stepIndex);
+      const toolResponse = await sendPromptToAI(step.prompt, stepIndex);
       
       setChatMessages(prev => [...prev, `Prompt envoyé: ${step.prompt}`, `Réponse: ${toolResponse.response}`]);
 
@@ -253,7 +252,6 @@ const PlanAutoExecutor = ({ steps, isOpen, onClose, mode, onUpdateSteps }: PlanA
 
       // Continuer automatiquement
       if (stepIndex + 1 < steps.length) {
-        await new Promise(resolve => setTimeout(resolve, 1000)); // Pause entre les étapes
         return await executeStep(stepIndex + 1);
       }
 
