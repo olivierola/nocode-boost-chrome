@@ -309,7 +309,7 @@ const PlanGenerator = () => {
           </ScrollArea>
           
           {/* Fixed input at bottom */}
-          <div className="absolute bottom-0 left-0 right-0 p-6 bg-background/80 backdrop-blur-sm border-t border-border">
+          <div className="fixed bottom-4 left-4 right-4 z-50">
             <div className="max-w-4xl mx-auto">
               <ClaudeChatInput
                 onSendMessage={(message) => generatePlan(message)}
