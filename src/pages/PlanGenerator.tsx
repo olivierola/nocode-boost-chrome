@@ -1,11 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
-import { Bot, User, Target } from 'lucide-react';
+import { Bot, User, Target, Play } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useProjectContext } from '@/hooks/useProjectContext';
 import { ClaudeChatInput } from '@/components/ui/claude-style-ai-input';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Button } from '@/components/ui/button';
+import AutoExecutionDialog from '@/components/AutoExecutionDialog';
+import PlanAutoExecutor from '@/components/PlanAutoExecutor';
 
 interface ProjectPlan {
   id: string;
@@ -36,6 +39,9 @@ const PlanGenerator = () => {
   const [currentPlan, setCurrentPlan] = useState<ProjectPlan | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [showExecutionDialog, setShowExecutionDialog] = useState(false);
+  const [executionMode, setExecutionMode] = useState<'manual' | 'auto' | 'full-auto'>('manual');
+  const [isExecuting, setIsExecuting] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   const { user } = useAuth();
@@ -188,6 +194,24 @@ const PlanGenerator = () => {
     }
   };
 
+  const startExecution = (mode: 'manual' | 'auto' | 'full-auto') => {
+    setExecutionMode(mode);
+    setIsExecuting(true);
+    setShowExecutionDialog(true);
+    
+    toast({
+      title: "Exécution démarrée",
+      description: `Mode ${mode === 'manual' ? 'manuel' : mode === 'auto' ? 'automatique' : 'automatique complet'} activé`,
+    });
+  };
+
+  const updatePlanSteps = (steps: any[]) => {
+    if (currentPlan) {
+      const updatedPlan = { ...currentPlan, steps };
+      setCurrentPlan(updatedPlan);
+    }
+  };
+
   useEffect(() => {
     fetchPlans();
   }, [user, selectedProject]);
@@ -267,24 +291,41 @@ const PlanGenerator = () => {
                     </div>
                     <div className="whitespace-pre-wrap">
                       {message.content}
-                      {message.plan && (
-                        <div className="mt-4 space-y-3">
-                          <div className="font-semibold text-lg border-b border-current/20 pb-2">
-                            📋 Plan généré: {message.plan.title}
-                          </div>
-                          {message.plan.steps?.map((step, index) => (
-                            <div key={step.id} className="flex items-start gap-3 p-3 rounded-lg bg-background/50">
-                              <div className="flex items-center justify-center w-7 h-7 rounded-full bg-primary text-primary-foreground text-sm font-bold">
-                                {index + 1}
+                          {message.plan && (
+                            <div className="mt-4 space-y-3">
+                              <div className="font-semibold text-lg border-b border-current/20 pb-2 flex items-center justify-between">
+                                <span>📋 Plan généré: {message.plan.title}</span>
+                                <AutoExecutionDialog
+                                  steps={message.plan.steps.map(step => ({
+                                    id: step.id,
+                                    titre: step.title,
+                                    description: step.description,
+                                    prompt: `Implémentez l'étape: ${step.title}. ${step.description}`,
+                                    status: step.status
+                                  }))}
+                                  onExecute={startExecution}
+                                  isExecuting={isExecuting}
+                                  currentStep={0}
+                                >
+                                  <Button size="sm" variant="outline" onClick={() => setCurrentPlan(message.plan)}>
+                                    <Play className="h-3 w-3 mr-1" />
+                                    Exécuter
+                                  </Button>
+                                </AutoExecutionDialog>
                               </div>
-                              <div className="flex-1">
-                                <h4 className="font-semibold">{step.title}</h4>
-                                <p className="text-sm opacity-80 mt-1">{step.description}</p>
-                              </div>
+                              {message.plan.steps?.map((step, index) => (
+                                <div key={step.id} className="flex items-start gap-3 p-3 rounded-lg bg-background/50">
+                                  <div className="flex items-center justify-center w-7 h-7 rounded-full bg-primary text-primary-foreground text-sm font-bold">
+                                    {index + 1}
+                                  </div>
+                                  <div className="flex-1">
+                                    <h4 className="font-semibold">{step.title}</h4>
+                                    <p className="text-sm opacity-80 mt-1">{step.description}</p>
+                                  </div>
+                                </div>
+                              ))}
                             </div>
-                          ))}
-                        </div>
-                      )}
+                          )}
                     </div>
                   </div>
                 </div>
@@ -320,6 +361,26 @@ const PlanGenerator = () => {
             />
           </div>
         </div>
+      )}
+
+      {/* Auto Executor Dialog */}
+      {currentPlan && (
+        <PlanAutoExecutor
+          steps={currentPlan.steps.map(step => ({
+            id: step.id,
+            titre: step.title,
+            description: step.description,
+            prompt: `Implémentez l'étape: ${step.title}. ${step.description}`,
+            status: step.status
+          }))}
+          isOpen={showExecutionDialog}
+          onClose={() => {
+            setShowExecutionDialog(false);
+            setIsExecuting(false);
+          }}
+          mode={executionMode}
+          onUpdateSteps={updatePlanSteps}
+        />
       )}
     </div>
   );
