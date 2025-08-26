@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { FolderOpen, Lock, Plus } from 'lucide-react';
-
+import CreateProjectDialog from '@/components/CreateProjectDialog';
 import ProjectAccessDialog from '@/components/ProjectAccessDialog';
 
 const ProjectSelector = () => {
@@ -45,6 +45,15 @@ const ProjectSelector = () => {
           <p className="text-muted-foreground">
             Choisissez un projet pour accéder aux outils et fonctionnalités
           </p>
+        </div>
+
+        <div className="flex justify-center">
+          <CreateProjectDialog>
+            <Button className="gap-2">
+              <Plus className="h-4 w-4" />
+              Nouveau Projet
+            </Button>
+          </CreateProjectDialog>
         </div>
 
 
