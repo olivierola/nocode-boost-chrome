@@ -312,7 +312,7 @@ const PlanGenerator = () => {
           <div className="fixed bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background via-background/80 to-transparent pointer-events-none z-40" />
           
           {/* Fixed input at bottom */}
-          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-4xl px-6">
+          <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-4xl px-6">
             <ClaudeChatInput
               onSendMessage={(message) => generatePlan(message)}
               disabled={isGenerating}
