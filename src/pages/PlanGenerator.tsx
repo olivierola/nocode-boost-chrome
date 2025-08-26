@@ -31,6 +31,7 @@ interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
+  plan?: ProjectPlan;
 }
 
 const PlanGenerator = () => {
@@ -113,14 +114,6 @@ const PlanGenerator = () => {
 
       if (error) throw error;
 
-      const aiMessage: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: `J'ai généré un plan détaillé pour votre projet ! Le plan comprend ${data.steps?.length || 0} étapes principales. Vous pouvez le consulter ci-dessous et continuer à discuter pour l'affiner.`,
-        timestamp: new Date()
-      };
-      setChatMessages(prev => [...prev, aiMessage]);
-
       const { data: savedPlan, error: saveError } = await supabase
         .from('plans')
         .insert([{
@@ -134,6 +127,20 @@ const PlanGenerator = () => {
         .single();
 
       if (saveError) throw saveError;
+
+      const planForMessage: ProjectPlan = {
+        ...savedPlan,
+        steps: data.steps || []
+      } as ProjectPlan;
+
+      const aiMessage: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: `J'ai généré un plan détaillé pour votre projet ! Le plan comprend ${data.steps?.length || 0} étapes principales. Vous pouvez continuer à discuter pour l'affiner.`,
+        timestamp: new Date(),
+        plan: planForMessage
+      };
+      setChatMessages(prev => [...prev, aiMessage]);
 
       toast({
         title: "Plan généré",
@@ -204,162 +211,120 @@ const PlanGenerator = () => {
   }
 
   return (
-    <div className="container mx-auto py-8 space-y-8">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-primary">Générateur de Plans</h1>
+    <div className="w-full h-screen flex flex-col bg-[radial-gradient(125%_125%_at_50%_101%,rgba(245,87,2,1)_10.5%,rgba(245,120,2,1)_16%,rgba(245,140,2,1)_17.5%,rgba(245,170,100,1)_25%,rgba(238,174,202,1)_40%,rgba(202,179,214,1)_65%,rgba(148,201,233,1)_100%)]">
+      {/* Header */}
+      <div className="flex items-center justify-between p-6">
+        <h1 className="text-3xl font-bold text-white">Générateur de Plans - {selectedProject.name}</h1>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Chat Interface */}
-        <Card className="lg:sticky lg:top-8">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Target className="h-5 w-5" />
-              Discussion avec l'IA - {selectedProject.name}
-            </CardTitle>
-            <CardDescription>
-              Discutez avec l'IA pour créer et affiner votre plan de projet
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="flex flex-col h-[500px]">
-              {/* Messages */}
-              <ScrollArea className="flex-1 p-4">
-                <div className="space-y-4">
-                  {chatMessages.map((message) => (
+      {/* Chat Interface */}
+      <div className="flex-1 flex flex-col relative">
+        {chatMessages.length === 0 ? (
+          /* Empty state with centered input */
+          <div className="flex-1 flex flex-col items-center justify-center px-6">
+            <div className="text-center mb-8">
+              <Target className="h-16 w-16 text-white/80 mx-auto mb-4" />
+              <h2 className="text-2xl font-bold text-white mb-2">Créez votre plan de projet</h2>
+              <p className="text-white/80 text-lg max-w-md">
+                Décrivez votre idée et l'IA vous aidera à créer un plan détaillé étape par étape
+              </p>
+            </div>
+            <div className="w-full max-w-2xl">
+              <PromptInputBox
+                onSend={(message) => generatePlan(message)}
+                isLoading={isGenerating}
+                placeholder="Décrivez votre idée de projet..."
+              />
+            </div>
+          </div>
+        ) : (
+          /* Chat with messages */
+          <div className="flex-1 flex flex-col">
+            {/* Messages */}
+            <ScrollArea className="flex-1 px-6">
+              <div className="space-y-6 py-6 max-w-4xl mx-auto">
+                {chatMessages.map((message) => (
+                  <div
+                    key={message.id}
+                    className={`flex gap-4 ${
+                      message.role === 'user' ? 'justify-end' : 'justify-start'
+                    }`}
+                  >
                     <div
-                      key={message.id}
-                      className={`flex gap-3 ${
-                        message.role === 'user' ? 'justify-end' : 'justify-start'
+                      className={`max-w-[80%] rounded-2xl p-4 ${
+                        message.role === 'user'
+                          ? 'bg-white/20 text-white backdrop-blur-sm border border-white/20'
+                          : 'bg-white/90 text-gray-900 backdrop-blur-sm border border-white/30'
                       }`}
                     >
-                      <div
-                        className={`max-w-[80%] rounded-lg p-3 ${
-                          message.role === 'user'
-                            ? 'bg-primary text-primary-foreground ml-auto'
-                            : 'bg-muted'
-                        }`}
-                      >
-                        <div className="flex items-center gap-2 mb-1">
-                          {message.role === 'assistant' ? (
-                            <Bot className="h-4 w-4" />
-                          ) : (
-                            <User className="h-4 w-4" />
-                          )}
-                          <span className="text-xs opacity-70">
-                            {message.timestamp.toLocaleTimeString()}
-                          </span>
-                        </div>
-                        <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                      <div className="flex items-center gap-2 mb-2">
+                        {message.role === 'assistant' ? (
+                          <Bot className="h-5 w-5" />
+                        ) : (
+                          <User className="h-5 w-5" />
+                        )}
+                        <span className="text-sm opacity-70 font-medium">
+                          {message.role === 'assistant' ? 'IA Assistant' : 'Vous'}
+                        </span>
+                        <span className="text-xs opacity-50">
+                          {message.timestamp.toLocaleTimeString()}
+                        </span>
                       </div>
-                    </div>
-                  ))}
-                  {isGenerating && (
-                    <div className="flex gap-3 justify-start">
-                      <div className="bg-muted rounded-lg p-3">
-                        <div className="flex items-center gap-2">
-                          <Bot className="h-4 w-4" />
-                          <div className="flex gap-1">
-                            <div className="w-2 h-2 bg-primary rounded-full animate-bounce"></div>
-                            <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                            <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                      <div className="whitespace-pre-wrap">
+                        {message.content}
+                        {message.plan && (
+                          <div className="mt-4 space-y-3">
+                            <div className="font-semibold text-lg border-b border-current/20 pb-2">
+                              📋 Plan généré: {message.plan.title}
+                            </div>
+                            {message.plan.steps?.map((step, index) => (
+                              <div key={step.id} className="flex items-start gap-3 p-3 rounded-lg bg-black/10">
+                                <div className="flex items-center justify-center w-7 h-7 rounded-full bg-current/20 text-sm font-bold">
+                                  {index + 1}
+                                </div>
+                                <div className="flex-1">
+                                  <h4 className="font-semibold">{step.title}</h4>
+                                  <p className="text-sm opacity-80 mt-1">{step.description}</p>
+                                </div>
+                              </div>
+                            ))}
                           </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {isGenerating && (
+                  <div className="flex gap-4 justify-start">
+                    <div className="bg-white/90 text-gray-900 backdrop-blur-sm border border-white/30 rounded-2xl p-4">
+                      <div className="flex items-center gap-3">
+                        <Bot className="h-5 w-5" />
+                        <span className="text-sm font-medium">IA Assistant génère votre plan...</span>
+                        <div className="flex gap-1">
+                          <div className="w-2 h-2 bg-gray-600 rounded-full animate-bounce"></div>
+                          <div className="w-2 h-2 bg-gray-600 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                          <div className="w-2 h-2 bg-gray-600 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
                         </div>
                       </div>
                     </div>
-                  )}
-                  <div ref={messagesEndRef} />
-                </div>
-              </ScrollArea>
-              
-              {/* Input */}
-              <div className="p-4 border-t">
+                  </div>
+                )}
+                <div ref={messagesEndRef} />
+              </div>
+            </ScrollArea>
+            
+            {/* Fixed input at bottom */}
+            <div className="p-6">
+              <div className="max-w-4xl mx-auto">
                 <PromptInputBox
                   onSend={(message) => generatePlan(message)}
                   isLoading={isGenerating}
-                  placeholder="Décrivez votre idée de projet ou posez des questions..."
+                  placeholder="Continuez la discussion pour affiner votre plan..."
                 />
               </div>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Plans existants */}
-        <div className="space-y-6">
-          {plans.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Plans existants</CardTitle>
-                <CardDescription>
-                  Vos plans générés pour ce projet
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid gap-4">
-                  {plans.map((plan) => (
-                    <div
-                      key={plan.id}
-                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
-                      onClick={() => setCurrentPlan(plan)}
-                    >
-                      <div className="flex-1">
-                        <h3 className="font-medium">{plan.title}</h3>
-                        <p className="text-sm text-muted-foreground">{plan.description}</p>
-                        <div className="flex items-center gap-2 mt-2">
-                          <Badge variant={plan.status === 'validated' ? 'default' : 'secondary'}>
-                            {plan.status === 'validated' ? 'Validé' : 'Brouillon'}
-                          </Badge>
-                          <span className="text-xs text-muted-foreground">
-                            {plan.steps?.length || 0} étapes
-                          </span>
-                        </div>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          deletePlan(plan.id);
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Plan actuel */}
-          {currentPlan && (
-            <Card>
-              <CardHeader>
-                <CardTitle>{currentPlan.title}</CardTitle>
-                <CardDescription>{currentPlan.description}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {currentPlan.steps?.map((step, index) => (
-                    <div key={step.id} className="flex items-start gap-3 p-3 border rounded-lg">
-                      <div className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-sm">
-                        {step.status === 'completed' ? (
-                          <CheckCircle className="h-4 w-4" />
-                        ) : (
-                          index + 1
-                        )}
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="font-medium">{step.title}</h4>
-                        <p className="text-sm text-muted-foreground">{step.description}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );
