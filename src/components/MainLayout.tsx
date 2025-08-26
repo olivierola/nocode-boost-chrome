@@ -72,12 +72,12 @@ const MainLayout = () => {
             
             {/* Compact Tab Navigation */}
             {isProjectSelected && (
-              <div className="flex items-center gap-1 ml-4">
+              <div className="flex items-center gap-1 ml-4 bg-muted/50 p-1 rounded-lg backdrop-blur-sm">
                 <Button 
                   variant={activeTab === 'dashboard' ? 'default' : 'ghost'} 
                   size="sm" 
                   onClick={() => setActiveTab('dashboard')}
-                  className="h-7 w-7 p-0"
+                  className={`h-7 w-7 p-0 rounded-md ${activeTab === 'dashboard' ? 'bg-background shadow-sm' : 'hover:bg-background/50'}`}
                   title="Dashboard"
                 >
                   <Home className="h-3 w-3" />
@@ -86,7 +86,7 @@ const MainLayout = () => {
                   variant={activeTab === 'components' ? 'default' : 'ghost'} 
                   size="sm" 
                   onClick={() => setActiveTab('components')}
-                  className="h-7 w-7 p-0"
+                  className={`h-7 w-7 p-0 rounded-md ${activeTab === 'components' ? 'bg-background shadow-sm' : 'hover:bg-background/50'}`}
                   title="Components"
                 >
                   <Code className="h-3 w-3" />
@@ -95,7 +95,7 @@ const MainLayout = () => {
                   variant={activeTab === 'plans' ? 'default' : 'ghost'} 
                   size="sm" 
                   onClick={() => setActiveTab('plans')}
-                  className="h-7 w-7 p-0"
+                  className={`h-7 w-7 p-0 rounded-md ${activeTab === 'plans' ? 'bg-background shadow-sm' : 'hover:bg-background/50'}`}
                   title="Plans"
                 >
                   <Map className="h-3 w-3" />
@@ -104,7 +104,7 @@ const MainLayout = () => {
                   variant={activeTab === 'audits' ? 'default' : 'ghost'} 
                   size="sm" 
                   onClick={() => setActiveTab('audits')}
-                  className="h-7 w-7 p-0"
+                  className={`h-7 w-7 p-0 rounded-md ${activeTab === 'audits' ? 'bg-background shadow-sm' : 'hover:bg-background/50'}`}
                   title="Audits"
                 >
                   <Search className="h-3 w-3" />
@@ -113,7 +113,7 @@ const MainLayout = () => {
                   variant={activeTab === 'visual' ? 'default' : 'ghost'} 
                   size="sm" 
                   onClick={() => setActiveTab('visual')}
-                  className="h-7 w-7 p-0"
+                  className={`h-7 w-7 p-0 rounded-md ${activeTab === 'visual' ? 'bg-background shadow-sm' : 'hover:bg-background/50'}`}
                   title="Identité Visuelle"
                 >
                   <Palette className="h-3 w-3" />
@@ -122,7 +122,7 @@ const MainLayout = () => {
                   variant={activeTab === 'media' ? 'default' : 'ghost'} 
                   size="sm" 
                   onClick={() => setActiveTab('media')}
-                  className="h-7 w-7 p-0"
+                  className={`h-7 w-7 p-0 rounded-md ${activeTab === 'media' ? 'bg-background shadow-sm' : 'hover:bg-background/50'}`}
                   title="Médias"
                 >
                   <Upload className="h-3 w-3" />
@@ -131,7 +131,7 @@ const MainLayout = () => {
                   variant={activeTab === 'collaboration' ? 'default' : 'ghost'} 
                   size="sm" 
                   onClick={() => setActiveTab('collaboration')}
-                  className="h-7 w-7 p-0"
+                  className={`h-7 w-7 p-0 rounded-md ${activeTab === 'collaboration' ? 'bg-background shadow-sm' : 'hover:bg-background/50'}`}
                   title="Équipe"
                 >
                   <Users className="h-3 w-3" />
