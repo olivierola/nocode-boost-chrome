@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Bot, User, Target, Play } from 'lucide-react';
+import { Bot, User, Target, Play, HelpCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -9,6 +9,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import AutoExecutionDialog from '@/components/AutoExecutionDialog';
 import PlanAutoExecutor from '@/components/PlanAutoExecutor';
+import { MindmapModal } from '@/components/MindmapModal';
+import { PlanSummaryCard } from '@/components/PlanSummaryCard';
 
 interface ProjectPlan {
   id: string;
@@ -16,6 +18,8 @@ interface ProjectPlan {
   title?: string;
   description?: string;
   status?: 'draft' | 'validated' | 'executing' | 'completed';
+  plan_type?: 'standard' | 'mindmap';
+  mindmap_data?: any;
   steps: Array<{
     id: string;
     title: string;
@@ -32,6 +36,8 @@ interface ChatMessage {
   content: string;
   timestamp: Date;
   plan?: ProjectPlan;
+  type?: 'clarification_needed' | 'mindmap_plan' | 'standard';
+  questions?: string[];
 }
 
 const PlanGenerator = () => {
@@ -42,6 +48,8 @@ const PlanGenerator = () => {
   const [showExecutionDialog, setShowExecutionDialog] = useState(false);
   const [executionMode, setExecutionMode] = useState<'manual' | 'auto' | 'full-auto'>('manual');
   const [isExecuting, setIsExecuting] = useState(false);
+  const [showMindmapModal, setShowMindmapModal] = useState(false);
+  const [selectedMindmapData, setSelectedMindmapData] = useState<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   const { user } = useAuth();
@@ -117,24 +125,60 @@ const PlanGenerator = () => {
 
       if (error) throw error;
 
-      const { data: savedPlan, error: saveError } = await supabase
-        .from('plans')
-        .insert([{
+      // Gérer les différents types de réponse
+      if (data.type === 'clarification_needed') {
+        const aiMessage: ChatMessage = {
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          content: data.message,
+          timestamp: new Date(),
+          type: 'clarification_needed',
+          questions: data.questions
+        };
+        setChatMessages(prev => [...prev, aiMessage]);
+        return;
+      }
+
+      if (data.type === 'mindmap_plan') {
+        // Plan mindmap généré et sauvegardé
+        const planForMessage: ProjectPlan = {
+          id: data.id,
           project_id: selectedProject.id,
-          title: data.title || `Plan pour ${selectedProject.name}`,
-          description: data.description || prompt,
-          steps: data.steps || [],
-          status: 'draft'
-        }])
-        .select()
-        .single();
+          title: data.title,
+          description: data.description,
+          plan_type: 'mindmap',
+          mindmap_data: data,
+          steps: data.branches?.features || [],
+          status: 'draft',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
 
-      if (saveError) throw saveError;
+        const aiMessage: ChatMessage = {
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          content: `J'ai créé un plan mindmap complet pour votre projet ! Il comprend ${data.branches?.features?.length || 0} fonctionnalités principales, ${data.branches?.pages?.length || 0} pages, une étude de marché et une identité visuelle. Vous pouvez ouvrir la mindmap interactive pour explorer tous les détails.`,
+          timestamp: new Date(),
+          plan: planForMessage,
+          type: 'mindmap_plan'
+        };
+        setChatMessages(prev => [...prev, aiMessage]);
+        fetchPlans(); // Rafraîchir la liste des plans
+        return;
+      }
 
+      // Plan standard (fallback)
       const planForMessage: ProjectPlan = {
-        ...savedPlan,
-        steps: data.steps || []
-      } as ProjectPlan;
+        id: data.id || Date.now().toString(),
+        project_id: selectedProject.id,
+        title: data.title || `Plan pour ${selectedProject.name}`,
+        description: data.description || prompt,
+        steps: data.steps || [],
+        status: 'draft',
+        plan_type: 'standard',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
 
       const aiMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
@@ -210,6 +254,36 @@ const PlanGenerator = () => {
       const updatedPlan = { ...currentPlan, steps };
       setCurrentPlan(updatedPlan);
     }
+  };
+
+  const openMindmap = (plan: ProjectPlan) => {
+    if (plan.mindmap_data) {
+      setSelectedMindmapData(plan.mindmap_data);
+      setShowMindmapModal(true);
+    }
+  };
+
+  const executeFeatureFromMindmap = (feature: any) => {
+    // Créer un plan temporaire avec cette feature
+    const tempPlan: ProjectPlan = {
+      id: 'temp-' + Date.now(),
+      project_id: selectedProject?.id || '',
+      title: `Exécution: ${feature.title}`,
+      description: feature.description,
+      steps: [{
+        id: feature.id,
+        title: feature.title,
+        description: feature.description,
+        status: 'pending' as const
+      }],
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    
+    setCurrentPlan(tempPlan);
+    setShowMindmapModal(false);
+    setShowExecutionDialog(true);
+    setIsExecuting(true);
   };
 
   useEffect(() => {
@@ -291,41 +365,77 @@ const PlanGenerator = () => {
                     </div>
                     <div className="whitespace-pre-wrap">
                       {message.content}
-                          {message.plan && (
-                            <div className="mt-4 space-y-3">
-                              <div className="font-semibold text-lg border-b border-current/20 pb-2 flex items-center justify-between">
-                                <span>📋 Plan généré: {message.plan.title}</span>
-                                <AutoExecutionDialog
-                                  steps={message.plan.steps.map(step => ({
-                                    id: step.id,
-                                    titre: step.title,
-                                    description: step.description,
-                                    prompt: `Implémentez l'étape: ${step.title}. ${step.description}`,
-                                    status: step.status
-                                  }))}
-                                  onExecute={startExecution}
-                                  isExecuting={isExecuting}
-                                  currentStep={0}
-                                >
-                                  <Button size="sm" variant="outline" onClick={() => setCurrentPlan(message.plan)}>
-                                    <Play className="h-3 w-3 mr-1" />
-                                    Exécuter
-                                  </Button>
-                                </AutoExecutionDialog>
+                      
+                      {/* Questions de clarification */}
+                      {message.type === 'clarification_needed' && message.questions && (
+                        <div className="mt-4 space-y-3">
+                          <div className="flex items-center gap-2 text-orange-600">
+                            <HelpCircle className="h-5 w-5" />
+                            <span className="font-semibold">Questions pour préciser votre demande :</span>
+                          </div>
+                          <div className="space-y-2">
+                            {message.questions.map((question, index) => (
+                              <div key={index} className="flex items-start gap-2 p-2 bg-orange-50 rounded-lg">
+                                <span className="text-orange-600 font-bold">{index + 1}.</span>
+                                <span className="text-orange-800">{question}</span>
                               </div>
-                              {message.plan.steps?.map((step, index) => (
-                                <div key={step.id} className="flex items-start gap-3 p-3 rounded-lg bg-background/50">
-                                  <div className="flex items-center justify-center w-7 h-7 rounded-full bg-primary text-primary-foreground text-sm font-bold">
-                                    {index + 1}
-                                  </div>
-                                  <div className="flex-1">
-                                    <h4 className="font-semibold">{step.title}</h4>
-                                    <p className="text-sm opacity-80 mt-1">{step.description}</p>
-                                  </div>
-                                </div>
-                              ))}
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Plan mindmap */}
+                      {message.type === 'mindmap_plan' && message.plan && (
+                        <PlanSummaryCard
+                          title={message.plan.title || 'Plan sans titre'}
+                          description={message.plan.description || 'Description non disponible'}
+                          featuresCount={message.plan.mindmap_data?.branches?.features?.length || 0}
+                          pagesCount={message.plan.mindmap_data?.branches?.pages?.length || 0}
+                          onOpenMindmap={() => openMindmap(message.plan!)}
+                          onExecutePlan={() => {
+                            setCurrentPlan(message.plan!);
+                            setShowExecutionDialog(true);
+                            setIsExecuting(true);
+                          }}
+                        />
+                      )}
+
+                      {/* Plan standard (ancien format) */}
+                      {(!message.type || message.type === 'standard') && message.plan && (
+                        <div className="mt-4 space-y-3">
+                          <div className="font-semibold text-lg border-b border-current/20 pb-2 flex items-center justify-between">
+                            <span>📋 Plan généré: {message.plan.title}</span>
+                            <AutoExecutionDialog
+                              steps={message.plan.steps.map(step => ({
+                                id: step.id,
+                                titre: step.title,
+                                description: step.description,
+                                prompt: `Implémentez l'étape: ${step.title}. ${step.description}`,
+                                status: step.status
+                              }))}
+                              onExecute={startExecution}
+                              isExecuting={isExecuting}
+                              currentStep={0}
+                            >
+                              <Button size="sm" variant="outline" onClick={() => setCurrentPlan(message.plan)}>
+                                <Play className="h-3 w-3 mr-1" />
+                                Exécuter
+                              </Button>
+                            </AutoExecutionDialog>
+                          </div>
+                          {message.plan.steps?.map((step, index) => (
+                            <div key={step.id} className="flex items-start gap-3 p-3 rounded-lg bg-background/50">
+                              <div className="flex items-center justify-center w-7 h-7 rounded-full bg-primary text-primary-foreground text-sm font-bold">
+                                {index + 1}
+                              </div>
+                              <div className="flex-1">
+                                <h4 className="font-semibold">{step.title}</h4>
+                                <p className="text-sm opacity-80 mt-1">{step.description}</p>
+                              </div>
                             </div>
-                          )}
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -370,7 +480,9 @@ const PlanGenerator = () => {
             id: step.id,
             titre: step.title,
             description: step.description,
-            prompt: `Implémentez l'étape: ${step.title}. ${step.description}`,
+            prompt: currentPlan.plan_type === 'mindmap' && currentPlan.mindmap_data?.branches?.features
+              ? currentPlan.mindmap_data.branches.features.find((f: any) => f.id === step.id)?.prompt || `Implémentez l'étape: ${step.title}. ${step.description}`
+              : `Implémentez l'étape: ${step.title}. ${step.description}`,
             status: step.status
           }))}
           isOpen={showExecutionDialog}
@@ -380,6 +492,19 @@ const PlanGenerator = () => {
           }}
           mode={executionMode}
           onUpdateSteps={updatePlanSteps}
+        />
+      )}
+
+      {/* Mindmap Modal */}
+      {selectedMindmapData && (
+        <MindmapModal
+          isOpen={showMindmapModal}
+          onClose={() => {
+            setShowMindmapModal(false);
+            setSelectedMindmapData(null);
+          }}
+          data={selectedMindmapData}
+          onExecuteFeature={executeFeatureFromMindmap}
         />
       )}
     </div>

@@ -146,6 +146,8 @@ export type Database = {
           created_at: string
           etapes: Json
           id: string
+          mindmap_data: Json | null
+          plan_type: string | null
           project_id: string
           status: string | null
           updated_at: string
@@ -154,6 +156,8 @@ export type Database = {
           created_at?: string
           etapes?: Json
           id?: string
+          mindmap_data?: Json | null
+          plan_type?: string | null
           project_id: string
           status?: string | null
           updated_at?: string
@@ -162,6 +166,8 @@ export type Database = {
           created_at?: string
           etapes?: Json
           id?: string
+          mindmap_data?: Json | null
+          plan_type?: string | null
           project_id?: string
           status?: string | null
           updated_at?: string
