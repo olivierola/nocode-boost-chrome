@@ -2,7 +2,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useProjects } from '@/hooks/useProjects';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, Loader2 } from 'lucide-react';
+import { Plus, Loader2, CreditCard } from 'lucide-react';
 import CreateProjectDialog from '@/components/CreateProjectDialog';
 import ProjectCard from '@/components/ProjectCard';
 import ActivityLogger from '@/components/ActivityLogger';
@@ -21,10 +21,23 @@ const Dashboard = () => {
       {/* Welcome Section */}
       <Card className="bg-muted/30">
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Bienvenue, {getUserName()}!</CardTitle>
-          <CardDescription className="text-xs">
-            Extension Chrome pour workflows nocode
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-base">Bienvenue, {getUserName()}!</CardTitle>
+              <CardDescription className="text-xs">
+                Extension Chrome pour workflows nocode
+              </CardDescription>
+            </div>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => window.open('/payment', '_blank')}
+              className="gap-2"
+            >
+              <CreditCard className="h-4 w-4" />
+              Abonnements
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="pt-0">
           <p className="text-xs text-muted-foreground">

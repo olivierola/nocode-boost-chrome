@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { LogOut, Home, Code, Map, Search, Palette, Upload, Users, FolderOpen, X } from 'lucide-react';
+import { LogOut, Home, Code, Map, Search, Palette, Upload, Users, FolderOpen, X, CreditCard } from 'lucide-react';
 
 // Import all components
 import Dashboard from '@/pages/Dashboard';
@@ -15,6 +15,7 @@ import UXAudit from '@/pages/UXAudit';
 import VisualIdentity from '@/pages/VisualIdentity';
 import MediaUpload from '@/pages/MediaUpload';
 import Collaboration from '@/pages/Collaboration';
+import Payment from '@/pages/Payment';
 import NotificationCenter from '@/components/NotificationCenter';
 import ProjectSelector from '@/components/ProjectSelector';
 
@@ -136,6 +137,15 @@ const MainLayout = () => {
                 >
                   <Users className="h-3 w-3" />
                 </Button>
+                <Button 
+                  variant={activeTab === 'payment' ? 'default' : 'ghost'} 
+                  size="sm" 
+                  onClick={() => setActiveTab('payment')}
+                  className={`h-7 w-7 p-0 rounded-md ${activeTab === 'payment' ? 'bg-background shadow-sm' : 'hover:bg-background/50'}`}
+                  title="Abonnements"
+                >
+                  <CreditCard className="h-3 w-3" />
+                </Button>
               </div>
             )}
           </div>
@@ -193,6 +203,12 @@ const MainLayout = () => {
 
               <TabsContent value="collaboration" className="h-full m-0 data-[state=active]:flex data-[state=active]:flex-col">
                 <Collaboration />
+              </TabsContent>
+
+              <TabsContent value="payment" className="h-full m-0 data-[state=active]:flex data-[state=active]:flex-col">
+                <div className="flex-1 px-6 py-4 overflow-y-auto">
+                  <Payment />
+                </div>
               </TabsContent>
             </div>
           </Tabs>
