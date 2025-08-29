@@ -20,7 +20,8 @@ serve(async (req) => {
     logStep("Function started");
 
     const { action_type } = await req.json();
-    
+    logStep("Action type received", { action_type });
+
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
@@ -29,33 +30,29 @@ serve(async (req) => {
 
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) throw new Error("No authorization header provided");
-    logStep("Authorization header found");
 
     const token = authHeader.replace("Bearer ", "");
     const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
     if (userError) throw new Error(`Authentication error: ${userError.message}`);
     const user = userData.user;
-    if (!user?.id) throw new Error("User not authenticated");
+    if (!user) throw new Error("User not authenticated");
     logStep("User authenticated", { userId: user.id });
 
-    // Check usage limit using database function
-    const { data: canProceed, error: limitError } = await supabaseClient
+    // Check if user can proceed with this action
+    const { data: canProceed, error: checkError } = await supabaseClient
       .rpc('check_usage_limit', {
         p_user_id: user.id,
         p_action_type: action_type
       });
 
-    if (limitError) {
-      logStep("Error checking usage limit", { error: limitError });
-      throw new Error("Failed to check usage limit");
+    if (checkError) {
+      logStep("Error checking usage limit", { error: checkError });
+      throw checkError;
     }
 
-    logStep("Usage limit check completed", { canProceed, action_type });
-
-    // Get current usage and plan info for response
+    // Get current usage count
     const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM format
-    
-    const { data: usage, error: usageError } = await supabaseClient
+    const { data: usageData, error: usageError } = await supabaseClient
       .from('usage_tracking')
       .select('*')
       .eq('user_id', user.id)
@@ -64,46 +61,57 @@ serve(async (req) => {
 
     if (usageError) {
       logStep("Error fetching usage data", { error: usageError });
+      throw usageError;
     }
 
-    const { data: subscriber, error: subError } = await supabaseClient
-      .from('subscribers')
-      .select('subscription_tier')
-      .eq('user_id', user.id)
-      .single();
+    const currentUsage = usageData?.length || 0;
 
-    const planTier = subscriber?.subscription_tier || 'free';
+    // Get user's plan limits
+    const { data: planData, error: planError } = await supabaseClient
+      .rpc('get_user_plan_limits', { user_email: user.email });
 
-    const { data: planLimits, error: planError } = await supabaseClient
-      .from('subscription_plans')
-      .select('*')
-      .eq('name', planTier)
-      .single();
-
-    let currentLimit = 0;
-    if (planLimits) {
-      switch (action_type) {
-        case 'plan_generation':
-          currentLimit = planLimits.monthly_plan_generations;
-          break;
-        case 'visual_identity':
-          currentLimit = planLimits.monthly_visual_identity;
-          break;
-        case 'media_upload':
-          currentLimit = planLimits.monthly_media_uploads;
-          break;
-      }
+    if (planError) {
+      logStep("Error fetching plan limits", { error: planError });
+      throw planError;
     }
+
+    const planLimits = planData?.[0];
+    if (!planLimits) {
+      throw new Error("No plan found for user");
+    }
+
+    let limit;
+    switch (action_type) {
+      case 'plan_generation':
+        limit = planLimits.monthly_plan_generations;
+        break;
+      case 'visual_identity':
+        limit = planLimits.monthly_visual_identity;
+        break;
+      case 'media_upload':
+        limit = planLimits.monthly_media_uploads;
+        break;
+      default:
+        throw new Error("Invalid action type");
+    }
+
+    logStep("Usage check completed", { 
+      can_proceed: canProceed,
+      current_usage: currentUsage,
+      limit: limit,
+      plan_tier: planLimits.plan_name
+    });
 
     return new Response(JSON.stringify({
       can_proceed: canProceed,
-      current_usage: usage?.length || 0,
-      limit: currentLimit === -1 ? 'unlimited' : currentLimit,
-      plan_tier: planTier
+      current_usage: currentUsage,
+      limit: limit === -1 ? "unlimited" : limit,
+      plan_tier: planLimits.plan_name
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
+
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     logStep("ERROR in check-usage-limit", { message: errorMessage });

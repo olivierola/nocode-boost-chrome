@@ -60,7 +60,7 @@ serve(async (req) => {
         priceData = {
           currency: "eur",
           product_data: { name: "Plan Starter" },
-          unit_amount: 1999, // 19.99€
+          unit_amount: 799, // 7.99€
           recurring: { interval: "month" },
         };
         break;
@@ -68,7 +68,7 @@ serve(async (req) => {
         priceData = {
           currency: "eur",
           product_data: { name: "Plan Pro" },
-          unit_amount: 4999, // 49.99€
+          unit_amount: 1999, // 19.99€
           recurring: { interval: "month" },
         };
         break;

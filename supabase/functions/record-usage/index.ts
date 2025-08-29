@@ -20,7 +20,8 @@ serve(async (req) => {
     logStep("Function started");
 
     const { action_type, project_id } = await req.json();
-    
+    logStep("Request data received", { action_type, project_id });
+
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
@@ -29,37 +30,39 @@ serve(async (req) => {
 
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) throw new Error("No authorization header provided");
-    logStep("Authorization header found");
 
     const token = authHeader.replace("Bearer ", "");
     const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
     if (userError) throw new Error(`Authentication error: ${userError.message}`);
     const user = userData.user;
-    if (!user?.id) throw new Error("User not authenticated");
+    if (!user) throw new Error("User not authenticated");
     logStep("User authenticated", { userId: user.id });
 
-    // Record usage using database function
-    const { data: recorded, error: recordError } = await supabaseClient
+    // Record the usage
+    const { data, error } = await supabaseClient
       .rpc('record_usage', {
         p_user_id: user.id,
         p_action_type: action_type,
         p_project_id: project_id || null
       });
 
-    if (recordError) {
-      logStep("Error recording usage", { error: recordError });
-      throw new Error("Failed to record usage");
+    if (error) {
+      logStep("Error recording usage", { error });
+      throw error;
     }
 
-    logStep("Usage recorded successfully", { action_type, project_id, recorded });
+    logStep("Usage recorded successfully", { 
+      user_id: user.id, 
+      action_type, 
+      project_id,
+      success: data
+    });
 
-    return new Response(JSON.stringify({
-      success: recorded,
-      message: "Usage recorded successfully"
-    }), {
+    return new Response(JSON.stringify({ success: data }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
+
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     logStep("ERROR in record-usage", { message: errorMessage });
