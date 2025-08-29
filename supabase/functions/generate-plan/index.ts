@@ -226,7 +226,7 @@ Structure attendue (TOUS LES CHAMPS OBLIGATOIRES):
       "apis": [
         {
           "name": "API Authentification",
-          "description": "## API de gestion des utilisateurs\n\n### Endpoints\n- `POST /auth/login`\n- `POST /auth/register`",
+          "description": "## API de gestion des utilisateurs\n\n### Endpoints\n- \\`POST /auth/login\\`\n- \\`POST /auth/register\\`",
           "purpose": "Gestion des utilisateurs et sessions",
           "endpoints": [
             {
