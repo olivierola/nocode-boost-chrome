@@ -371,7 +371,7 @@ Structure attendue (TOUS LES CHAMPS OBLIGATOIRES):
           "NewsletterSignup",
           "Footer avec liens"
         ],
-        "wireframe": "## Structure de la page\n\n```\n[Header] Navbar + Logo + Menu\n[Hero] Titre + CTA + Visual\n[Features] Grid 2x2 avec icônes\n[Social Proof] Testimonials + Metrics\n[Pricing] 3 cartes side by side\n[FAQ] Accordéon 2 colonnes\n[Footer] Links + Newsletter\n```",
+        "wireframe": "## Structure de la page\n\n**Layout:**\n[Header] Navbar + Logo + Menu\n[Hero] Titre + CTA + Visual\n[Features] Grid 2x2 avec icones\n[Social Proof] Testimonials + Metrics\n[Pricing] 3 cartes side by side\n[FAQ] Accordeon 2 colonnes\n[Footer] Links + Newsletter",
         "seo": {
           "title": "AppName - Révolutionnez votre [domaine] | Solution N°1",
           "description": "Découvrez AppName, la solution qui transforme votre façon de [action]. Plus de 10 000 utilisateurs nous font confiance. Essai gratuit.",
