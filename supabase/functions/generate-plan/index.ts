@@ -462,7 +462,7 @@ Structure attendue (TOUS LES CHAMPS OBLIGATOIRES):
         "## A11y Tools\n\n- **axe-core**: Automated testing\n- **Pa11y**: CI integration\n- **Manual testing**: Real users"
       ],
       "coverage": "## Couverture de tests\n\n### Targets\n- **Statements**: > 80%\n- **Branches**: > 75%\n- **Functions**: > 85%\n- **Lines**: > 80%\n\n### Exclusions\n- Configuration files\n- Type definitions\n- Dev utilities",
-      "ci": "## CI/CD Testing\n\n### GitHub Actions\n```yaml\n- name: Run tests\n  run: |\n    npm run test:unit\n    npm run test:integration\n    npm run test:e2e\n```\n\n### Quality gates\n- **Tests pass**: Required\n- **Coverage**: > threshold\n- **Linting**: No errors"
+      "ci": "## CI/CD Testing\n\n### GitHub Actions\n**Example workflow:**\n- name: Run tests\n  run: npm run test:unit && npm run test:integration && npm run test:e2e\n\n### Quality gates\n- **Tests pass**: Required\n- **Coverage**: > threshold\n- **Linting**: No errors"
     },
     "deployment": {
       "title": "🚀 Déploiement & Infrastructure",
