@@ -194,7 +194,16 @@ Structure attendue (TOUS LES CHAMPS OBLIGATOIRES):
     },
     "technicalDocumentation": {
       "title": "🔧 Documentation technique & Architecture",
-      "architecture": "## Architecture système\n\n### Vue d'ensemble\n```\n[Frontend] -> [API Gateway] -> [Services] -> [Database]\n```\n\n### Microservices\n- **Service Auth**: ...\n- **Service Core**: ...",
+      "architecture": `## Architecture système
+
+### Vue d'ensemble
+\`\`\`
+[Frontend] -> [API Gateway] -> [Services] -> [Database]
+\`\`\`
+
+### Microservices
+- **Service Auth**: ...
+- **Service Core**: ...`,
       "modules": [
         {
           "name": "Module Authentication",
