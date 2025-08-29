@@ -347,7 +347,7 @@ Structure attendue (TOUS LES CHAMPS OBLIGATOIRES):
             "id": "subfeature-login",
             "title": "Page de connexion",
             "description": "## Interface de connexion\n\n- **Formulaire** email/password\n- **Validation** en temps réel\n- **OAuth** buttons",
-            "specifications": "### Composants\n- `LoginForm` avec validation\n- `OAuthButtons` pour Google/GitHub\n- `LoadingSpinner` pour les états de chargement\n\n### Validation\n- Email format valide\n- Password minimum 8 caractères",
+            "specifications": "### Composants\n- **LoginForm** avec validation\n- **OAuthButtons** pour Google/GitHub\n- **LoadingSpinner** pour les états de chargement\n\n### Validation\n- Email format valide\n- Password minimum 8 caractères",
             "prompt": "Créez une page de connexion avec React Hook Form et Zod. Incluez validation temps réel, boutons OAuth, et gestion d'erreurs.",
             "estimatedTime": "8 heures",
             "parentId": "feature-auth"
