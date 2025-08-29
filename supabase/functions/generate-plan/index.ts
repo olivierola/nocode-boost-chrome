@@ -439,7 +439,7 @@ Structure attendue (TOUS LES CHAMPS OBLIGATOIRES):
       "strategy": "## Stratégie de tests\n\n### Pyramide de tests\n1. **Unit tests** (70%): Fonctions, hooks\n2. **Integration tests** (20%): Composants + API\n3. **E2E tests** (10%): User journeys critiques\n\n### Outils\n- **Jest + Testing Library**: Unit tests\n- **MSW**: API mocking\n- **Playwright**: E2E tests\n- **Storybook**: Component testing",
       "unitTests": [
         "## Tests unitaires - Authentification\n\n### useAuth hook\n**Test example:**\ndescribe('useAuth', () => {\n  test('should login user', () => {\n    // Test login logic\n  });\n});",
-        "## Tests unitaires - Utils\n\n### Validation functions\n- `validateEmail()`\n- `formatDate()`\n- `calculatePrice()`"
+        "## Tests unitaires - Utils\n\n### Validation functions\n- **validateEmail()**\n- **formatDate()**\n- **calculatePrice()**"
       ],
       "integrationTests": [
         "## Tests d'intégration - Auth Flow\n\n### Scénarios\n1. **Signup** -> Verification -> Login\n2. **Password reset** -> New password\n3. **OAuth** -> Account creation",
