@@ -5,14 +5,14 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { LogOut, Home, Code, Map, Search, Palette, Upload, Users, FolderOpen, X, CreditCard } from 'lucide-react';
+import { LogOut, Home, Code, Map, Search, Upload, Users, FolderOpen, X, CreditCard, Plus } from 'lucide-react';
 
 // Import all components
 import Dashboard from '@/pages/Dashboard';
 import Components from '@/pages/Components';
+import ComponentsSaved from '@/pages/ComponentsSaved';
 import PlanGenerator from '@/pages/PlanGenerator';
 import UXAudit from '@/pages/UXAudit';
-import VisualIdentity from '@/pages/VisualIdentity';
 import MediaUpload from '@/pages/MediaUpload';
 import Collaboration from '@/pages/Collaboration';
 import Payment from '@/pages/Payment';
@@ -84,15 +84,6 @@ const MainLayout = () => {
                   <Home className="h-3 w-3" />
                 </Button>
                 <Button 
-                  variant={activeTab === 'components' ? 'default' : 'ghost'} 
-                  size="sm" 
-                  onClick={() => setActiveTab('components')}
-                  className={`h-7 w-7 p-0 rounded-md ${activeTab === 'components' ? 'bg-background shadow-sm' : 'hover:bg-background/50'}`}
-                  title="Components"
-                >
-                  <Code className="h-3 w-3" />
-                </Button>
-                <Button 
                   variant={activeTab === 'plans' ? 'default' : 'ghost'} 
                   size="sm" 
                   onClick={() => setActiveTab('plans')}
@@ -111,13 +102,22 @@ const MainLayout = () => {
                   <Search className="h-3 w-3" />
                 </Button>
                 <Button 
-                  variant={activeTab === 'visual' ? 'default' : 'ghost'} 
+                  variant={activeTab === 'components' ? 'default' : 'ghost'} 
                   size="sm" 
-                  onClick={() => setActiveTab('visual')}
-                  className={`h-7 w-7 p-0 rounded-md ${activeTab === 'visual' ? 'bg-background shadow-sm' : 'hover:bg-background/50'}`}
-                  title="Identité Visuelle"
+                  onClick={() => setActiveTab('components')}
+                  className={`h-7 w-7 p-0 rounded-md ${activeTab === 'components' ? 'bg-background shadow-sm' : 'hover:bg-background/50'}`}
+                  title="21st.dev"
                 >
-                  <Palette className="h-3 w-3" />
+                  <Code className="h-3 w-3" />
+                </Button>
+                <Button 
+                  variant={activeTab === 'saved-components' ? 'default' : 'ghost'} 
+                  size="sm" 
+                  onClick={() => setActiveTab('saved-components')}
+                  className={`h-7 w-7 p-0 rounded-md ${activeTab === 'saved-components' ? 'bg-background shadow-sm' : 'hover:bg-background/50'}`}
+                  title="Composants sauvés"
+                >
+                  <Plus className="h-3 w-3" />
                 </Button>
                 <Button 
                   variant={activeTab === 'media' ? 'default' : 'ghost'} 
@@ -181,10 +181,6 @@ const MainLayout = () => {
                 </div>
               </TabsContent>
 
-              <TabsContent value="components" className="h-full m-0 data-[state=active]:flex data-[state=active]:flex-col">
-                <Components />
-              </TabsContent>
-
               <TabsContent value="plans" className="h-full m-0 data-[state=active]:flex data-[state=active]:flex-col">
                 <PlanGenerator />
               </TabsContent>
@@ -193,8 +189,12 @@ const MainLayout = () => {
                 <UXAudit />
               </TabsContent>
 
-              <TabsContent value="visual" className="h-full m-0 data-[state=active]:flex data-[state=active]:flex-col">
-                <VisualIdentity />
+              <TabsContent value="components" className="h-full m-0 data-[state=active]:flex data-[state=active]:flex-col">
+                <Components />
+              </TabsContent>
+
+              <TabsContent value="saved-components" className="h-full m-0 data-[state=active]:flex data-[state=active]:flex-col">
+                <ComponentsSaved />
               </TabsContent>
 
               <TabsContent value="media" className="h-full m-0 data-[state=active]:flex data-[state=active]:flex-col">

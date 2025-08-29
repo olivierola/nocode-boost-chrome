@@ -1,8 +1,10 @@
 import { useAuth } from '@/hooks/useAuth';
 import { useProjects } from '@/hooks/useProjects';
+import { useSubscription } from '@/hooks/useSubscription';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, Loader2, CreditCard } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Plus, Loader2, CreditCard, Crown } from 'lucide-react';
 import CreateProjectDialog from '@/components/CreateProjectDialog';
 import ProjectCard from '@/components/ProjectCard';
 import ActivityLogger from '@/components/ActivityLogger';
@@ -11,6 +13,7 @@ import ProjectStatistics from '@/components/ProjectStatistics';
 const Dashboard = () => {
   const { user } = useAuth();
   const { projects, loading } = useProjects();
+  const { subscription } = useSubscription();
 
   const getUserName = () => {
     return user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Utilisateur';
@@ -22,11 +25,19 @@ const Dashboard = () => {
       <Card className="bg-muted/30">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-base">Bienvenue, {getUserName()}!</CardTitle>
-              <CardDescription className="text-xs">
-                Extension Chrome pour workflows nocode
-              </CardDescription>
+            <div className="flex items-center gap-3">
+              <div>
+                <CardTitle className="text-base">Bienvenue, {getUserName()}!</CardTitle>
+                <CardDescription className="text-xs">
+                  Extension Chrome pour workflows nocode
+                </CardDescription>
+              </div>
+              {subscription?.subscribed && (
+                <Badge variant="secondary" className="gap-1 bg-primary/10 text-primary border-primary/20">
+                  <Crown className="h-3 w-3" />
+                  {subscription.subscription_tier}
+                </Badge>
+              )}
             </div>
             <Button 
               variant="outline" 

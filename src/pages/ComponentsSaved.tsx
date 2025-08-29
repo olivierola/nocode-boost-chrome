@@ -3,8 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Copy, Plus, Search, ExternalLink, Check } from 'lucide-react';
+import { Copy, Plus, Search, Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -16,117 +15,6 @@ interface Component {
   prompt: string | null;
   created_at: string;
 }
-
-const Components = () => {
-  const [components, setComponents] = useState<Component[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [copiedId, setCopiedId] = useState<string | null>(null);
-  const { user } = useAuth();
-  const { toast } = useToast();
-
-  const fetchComponents = async () => {
-    if (!user) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('components')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setComponents(data || []);
-    } catch (error: any) {
-      toast({
-        title: "Erreur",
-        description: "Impossible de charger les composants",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const copyPrompt = async (component: Component) => {
-    if (!component.prompt) return;
-
-    try {
-      await navigator.clipboard.writeText(component.prompt);
-      setCopiedId(component.id);
-      
-      toast({
-        title: "Prompt copié",
-        description: `Le prompt pour "${component.nom}" a été copié`,
-      });
-
-      setTimeout(() => setCopiedId(null), 2000);
-    } catch (error) {
-      toast({
-        title: "Erreur",
-        description: "Impossible de copier le prompt",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const addToPrompt = (component: Component) => {
-    // Fonction pour ajouter le composant au prompt enhancer
-    const tag = `{component:${component.nom}}`;
-    
-    // Émettre un événement pour le prompt enhancer
-    window.dispatchEvent(new CustomEvent('addComponentTag', { 
-      detail: { tag, component } 
-    }));
-    
-    toast({
-      title: "Composant ajouté",
-      description: `Tag "${tag}" ajouté au prompt`,
-    });
-  };
-
-  const filteredComponents = components.filter(component =>
-    component.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    component.description?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  useEffect(() => {
-    fetchComponents();
-  }, [user]);
-
-  return (
-    <div className="h-full flex flex-col">
-      {/* Header */}
-      <div className="border-b border-border bg-card flex-shrink-0 px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-base font-bold text-foreground">21st.dev Components</h2>
-            <p className="text-xs text-muted-foreground">
-              Explorez et importez des composants
-            </p>
-          </div>
-          <Button variant="outline" size="sm" asChild>
-            <a href="https://21st.dev" target="_blank" rel="noopener noreferrer">
-              <ExternalLink className="h-3 w-3 mr-1" />
-              Ouvrir
-            </a>
-          </Button>
-        </div>
-      </div>
-
-      {/* Content - iframe directement */}
-      <div className="flex-1 px-6 py-4">
-        <div className="h-full border border-border rounded-md overflow-hidden">
-          <iframe 
-            src="https://21st.dev" 
-            className="w-full h-full"
-            title="21st.dev Components"
-          />
-        </div>
-      </div>
-    </div>
-  );
-};
 
 const ComponentsSaved = () => {
   const [components, setComponents] = useState<Component[]>([]);
@@ -306,4 +194,4 @@ const ComponentsSaved = () => {
   );
 };
 
-export default Components;
+export default ComponentsSaved;

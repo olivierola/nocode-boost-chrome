@@ -138,6 +138,17 @@ const ActivityLogger = () => {
 
   useEffect(() => {
     fetchActivities();
+    
+    // Écouter les événements de mise à jour des activités
+    const handleActivityUpdate = () => {
+      fetchActivities();
+    };
+    
+    window.addEventListener('activityUpdate', handleActivityUpdate);
+    
+    return () => {
+      window.removeEventListener('activityUpdate', handleActivityUpdate);
+    };
   }, [user]);
 
   // Expose logActivity function globally for other components to use

@@ -116,27 +116,6 @@ const Payment = () => {
         </Card>
       )}
 
-      {/* Usage Warnings */}
-      <div className="space-y-2">
-        <UsageLimitWarning
-          actionType="plan_generation"
-          currentUsage={5}
-          limit={5}
-          onUpgrade={handleUpgrade}
-        />
-        <UsageLimitWarning
-          actionType="visual_identity"
-          currentUsage={2}
-          limit={3}
-          onUpgrade={handleUpgrade}
-        />
-        <UsageLimitWarning
-          actionType="media_upload"
-          currentUsage={8}
-          limit={10}
-          onUpgrade={handleUpgrade}
-        />
-      </div>
 
       {/* Pricing Plans */}
       <div className="grid gap-6 md:grid-cols-3">
