@@ -476,6 +476,21 @@ export type Database = {
         Args: { p_action_type: string; p_user_id: string }
         Returns: boolean
       }
+      get_conversation_history: {
+        Args: {
+          p_conversation_type: string
+          p_project_id: string
+          p_user_id: string
+        }
+        Returns: {
+          content: string
+          created_at: string
+          id: string
+          plan_data: Json
+          role: string
+          visual_identity_data: Json
+        }[]
+      }
       get_user_plan_limits: {
         Args: { user_email: string }
         Returns: {
@@ -493,6 +508,18 @@ export type Database = {
           p_user_id: string
         }
         Returns: boolean
+      }
+      save_conversation_message: {
+        Args: {
+          p_content: string
+          p_conversation_type: string
+          p_plan_data?: string
+          p_project_id: string
+          p_role: string
+          p_user_id: string
+          p_visual_identity_data?: string
+        }
+        Returns: string
       }
       user_can_access_project: {
         Args: { _project_id: string }

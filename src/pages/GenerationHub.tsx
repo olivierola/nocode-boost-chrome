@@ -110,15 +110,23 @@ const GenerationHub = () => {
       if (!selectedProject || !user) return;
       
       try {
-        // Utiliser une requête SQL raw temporairement en attendant la mise à jour des types
-        const { data: history, error } = await supabase.rpc('get_conversation_history', {
-          p_project_id: selectedProject.id,
-          p_user_id: user.id,
-          p_conversation_type: activeType
-        });
+        // Utiliser une simple requête SQL pour récupérer l'historique temporairement
+        const { data: history, error } = await supabase
+          .from('conversation_history')
+          .select('*')
+          .eq('project_id', selectedProject.id)
+          .eq('user_id', user.id)
+          .eq('conversation_type', activeType)
+          .order('created_at', { ascending: true });
 
         if (error) {
-          console.error('Erreur lors du chargement de l\'historique:', error);
+          console.log('Pas d\'historique trouvé, création d\'un nouveau chat');
+          setChatMessages([{
+            id: '1',
+            role: 'assistant',
+            content: `Bonjour ! Je vais vous aider avec votre projet "${selectedProject.name}". Choisissez le type de génération que vous souhaitez effectuer et décrivez-moi votre besoin.`,
+            timestamp: new Date()
+          }]);
           return;
         }
 
@@ -160,15 +168,17 @@ const GenerationHub = () => {
     if (!selectedProject || !user) return;
 
     try {
-      await supabase.rpc('save_conversation_message', {
-        p_project_id: selectedProject.id,
-        p_user_id: user.id,
-        p_conversation_type: activeType,
-        p_role: message.role,
-        p_content: message.content,
-        p_plan_data: message.plan ? JSON.stringify(message.plan) : null,
-        p_visual_identity_data: message.visualIdentity ? JSON.stringify(message.visualIdentity) : null
-      });
+      await supabase
+        .from('conversation_history')
+        .insert({
+          project_id: selectedProject.id,
+          user_id: user.id,
+          conversation_type: activeType,
+          role: message.role,
+          content: message.content,
+          plan_data: message.plan ? JSON.stringify(message.plan) : null,
+          visual_identity_data: message.visualIdentity ? JSON.stringify(message.visualIdentity) : null
+        });
     } catch (error) {
       console.error('Erreur lors de la sauvegarde de l\'historique:', error);
     }
