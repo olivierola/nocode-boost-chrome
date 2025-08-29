@@ -95,35 +95,12 @@ const Components = () => {
   }, [user]);
 
   return (
-    <div className="h-full flex flex-col">
-      {/* Header */}
-      <div className="border-b border-border bg-card flex-shrink-0 px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-base font-bold text-foreground">21st.dev Components</h2>
-            <p className="text-xs text-muted-foreground">
-              Explorez et importez des composants
-            </p>
-          </div>
-          <Button variant="outline" size="sm" asChild>
-            <a href="https://21st.dev" target="_blank" rel="noopener noreferrer">
-              <ExternalLink className="h-3 w-3 mr-1" />
-              Ouvrir
-            </a>
-          </Button>
-        </div>
-      </div>
-
-      {/* Content - iframe directement */}
-      <div className="flex-1 px-6 py-4">
-        <div className="h-full border border-border rounded-md overflow-hidden">
-          <iframe 
-            src="https://21st.dev" 
-            className="w-full h-full"
-            title="21st.dev Components"
-          />
-        </div>
-      </div>
+    <div className="h-full w-full">
+      <iframe 
+        src="https://21st.dev" 
+        className="w-full h-full border-0"
+        title="21st.dev Components"
+      />
     </div>
   );
 };
