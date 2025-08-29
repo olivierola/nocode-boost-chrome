@@ -386,7 +386,7 @@ Structure attendue (TOUS LES CHAMPS OBLIGATOIRES):
           "structuredData": "## Schema.org\n\n**JSON-LD Structure:**\n- @type: SoftwareApplication\n- name: AppName\n- description: Description de l'application"
         },
         "performance": "## Optimisations\n\n- **Images** : WebP + lazy loading\n- **CSS** : Critical path inline\n- **JS** : Code splitting par route\n- **Fonts** : Preload + font-display swap\n\n### Métriques cibles\n- **LCP** < 2.5s\n- **FID** < 100ms\n- **CLS** < 0.1",
-        "analytics": "## Tracking\n\n### Events\n- `hero_cta_click`\n- `pricing_plan_select`\n- `newsletter_signup`\n- `faq_open`\n\n### Goals\n- **Conversion** : 2% visiteurs -> inscrits\n- **Engagement** : 3 min temps moyen\n- **Bounce** : < 60%"
+        "analytics": "## Tracking\n\n### Events\n- **hero_cta_click**\n- **pricing_plan_select**\n- **newsletter_signup**\n- **faq_open**\n\n### Goals\n- **Conversion** : 2% visiteurs -> inscrits\n- **Engagement** : 3 min temps moyen\n- **Bounce** : < 60%"
       }
     ],
     "visualIdentity": {
