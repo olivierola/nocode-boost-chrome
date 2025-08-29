@@ -180,6 +180,42 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          metadata: Json | null
+          read: boolean | null
+          title: string
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          metadata?: Json | null
+          read?: boolean | null
+          title: string
+          type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          metadata?: Json | null
+          read?: boolean | null
+          title?: string
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       plans: {
         Row: {
           created_at: string
@@ -500,6 +536,20 @@ export type Database = {
           monthly_visual_identity: number
           plan_name: string
         }[]
+      }
+      notify_plan_completion: {
+        Args: { p_plan_id: string; p_plan_title: string; p_user_id: string }
+        Returns: string
+      }
+      notify_plan_step_completion: {
+        Args: {
+          p_plan_id: string
+          p_step_index: number
+          p_step_name: string
+          p_total_steps: number
+          p_user_id: string
+        }
+        Returns: string
       }
       record_usage: {
         Args: {

@@ -1,80 +1,59 @@
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { Bell, CheckCircle, AlertCircle, Info, X } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-
-interface Notification {
-  id: string;
-  type: 'success' | 'error' | 'info' | 'warning';
-  title: string;
-  message: string;
-  timestamp: Date;
-  autoHide?: boolean;
-  action?: {
-    label: string;
-    onClick: () => void;
-  };
-}
+import { Bell, CheckCircle, AlertCircle, Info, X, Trash2 } from 'lucide-react';
+import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
+import ExtensionPopupNotification from './ExtensionPopupNotification';
 
 const NotificationCenter = () => {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const { toast } = useToast();
+  const {
+    notifications,
+    unreadCount,
+    markAsRead,
+    markAllAsRead,
+    deleteNotification
+  } = useRealtimeNotifications();
+  
+  const [popupNotification, setPopupNotification] = useState<any>(null);
 
-  const addNotification = (notification: Omit<Notification, 'id' | 'timestamp'>) => {
-    const newNotification: Notification = {
-      ...notification,
-      id: crypto.randomUUID(),
-      timestamp: new Date()
-    };
-
-    setNotifications(prev => [newNotification, ...prev.slice(0, 9)]); // Keep max 10 notifications
-
-    // Auto-hide after 5 seconds if specified
-    if (notification.autoHide !== false) {
-      setTimeout(() => {
-        removeNotification(newNotification.id);
-      }, 5000);
+  // Show popup for new notifications
+  useEffect(() => {
+    const latestNotification = notifications[0];
+    if (latestNotification && !latestNotification.read) {
+      setPopupNotification(latestNotification);
     }
-  };
-
-  const removeNotification = (id: string) => {
-    setNotifications(prev => prev.filter(n => n.id !== id));
-  };
-
-  const clearAllNotifications = () => {
-    setNotifications([]);
-  };
+  }, [notifications]);
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
       case 'success':
         return <CheckCircle className="h-4 w-4 text-green-500" />;
       case 'error':
-        return <AlertCircle className="h-4 w-4 text-red-500" />;
+        return <AlertCircle className="h-4 w-4 text-destructive" />;
       case 'warning':
         return <AlertCircle className="h-4 w-4 text-yellow-500" />;
       default:
-        return <Info className="h-4 w-4 text-blue-500" />;
+        return <Info className="h-4 w-4 text-primary" />;
     }
   };
 
-  const getNotificationColor = (type: string) => {
+  const getNotificationColor = (type: string, isRead: boolean) => {
+    const baseClasses = isRead ? 'opacity-60' : '';
     switch (type) {
       case 'success':
-        return 'border-green-200 bg-green-50';
+        return `border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950 ${baseClasses}`;
       case 'error':
-        return 'border-red-200 bg-red-50';
+        return `border-destructive/20 bg-destructive/5 dark:border-destructive dark:bg-destructive/10 ${baseClasses}`;
       case 'warning':
-        return 'border-yellow-200 bg-yellow-50';
+        return `border-yellow-200 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-950 ${baseClasses}`;
       default:
-        return 'border-blue-200 bg-blue-50';
+        return `border-border bg-card ${baseClasses}`;
     }
   };
 
-  const formatTime = (date: Date) => {
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString);
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
     const diffMins = Math.floor(diffMs / 60000);
@@ -86,118 +65,120 @@ const NotificationCenter = () => {
     return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
   };
 
-  // Expose addNotification globally for other components
-  useEffect(() => {
-    (window as any).addNotification = addNotification;
-    return () => {
-      delete (window as any).addNotification;
-    };
-  }, []);
-
-  // Demo notifications for testing
-  useEffect(() => {
-    // Add demo notifications
-    setTimeout(() => {
-      addNotification({
-        type: 'success',
-        title: 'Plan généré',
-        message: 'Votre plan de projet a été créé avec succès',
-        autoHide: true
-      });
-    }, 1000);
-
-    setTimeout(() => {
-      addNotification({
-        type: 'info',
-        title: 'Nouvelle version',
-        message: 'Une mise à jour de l\'extension est disponible',
-        autoHide: false,
-        action: {
-          label: 'Mettre à jour',
-          onClick: () => {
-            toast({
-              title: "Mise à jour",
-              description: "Redirection vers la mise à jour...",
-            });
-          }
-        }
-      });
-    }, 3000);
-  }, []);
 
   if (notifications.length === 0) {
     return null;
   }
 
   return (
-    <Card className="absolute top-4 right-4 w-80 z-50 shadow-lg">
-      <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Bell className="h-4 w-4" />
-            <CardTitle className="text-sm">Notifications</CardTitle>
-            <Badge variant="outline" className="text-xs">
-              {notifications.length}
-            </Badge>
-          </div>
-          {notifications.length > 0 && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={clearAllNotifications}
-              className="text-xs"
-            >
-              Tout effacer
-            </Button>
-          )}
-        </div>
-      </CardHeader>
-      <CardContent className="pt-0">
-        <div className="space-y-2 max-h-80 overflow-y-auto">
-          {notifications.map((notification) => (
-            <div
-              key={notification.id}
-              className={`p-3 rounded-md border ${getNotificationColor(notification.type)}`}
-            >
-              <div className="flex items-start justify-between">
-                <div className="flex items-start gap-2 flex-1">
-                  {getNotificationIcon(notification.type)}
-                  <div className="flex-1 min-w-0">
-                    <h4 className="text-xs font-medium">{notification.title}</h4>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {notification.message}
-                    </p>
-                    <div className="flex items-center justify-between mt-2">
-                      <span className="text-xs text-muted-foreground">
-                        {formatTime(notification.timestamp)}
-                      </span>
-                      {notification.action && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={notification.action.onClick}
-                          className="text-xs h-6"
-                        >
-                          {notification.action.label}
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </div>
+    <>
+      <Card className="absolute top-4 right-4 w-80 z-50 shadow-lg">
+        <CardHeader className="pb-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Bell className="h-4 w-4" />
+              <CardTitle className="text-sm">Notifications</CardTitle>
+              {unreadCount > 0 && (
+                <Badge variant="default" className="text-xs">
+                  {unreadCount}
+                </Badge>
+              )}
+            </div>
+            <div className="flex gap-2">
+              {unreadCount > 0 && (
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => removeNotification(notification.id)}
-                  className="h-4 w-4 p-0"
+                  onClick={markAllAsRead}
+                  className="text-xs"
                 >
-                  <X className="h-3 w-3" />
+                  Tout marquer lu
                 </Button>
-              </div>
+              )}
             </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-0">
+          <div className="space-y-2 max-h-80 overflow-y-auto">
+            {notifications.map((notification) => (
+              <div
+                key={notification.id}
+                className={`p-3 rounded-md border cursor-pointer ${getNotificationColor(notification.type, notification.read)}`}
+                onClick={() => !notification.read && markAsRead(notification.id)}
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex items-start gap-2 flex-1">
+                    {getNotificationIcon(notification.type)}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <h4 className={`text-xs font-medium ${!notification.read ? 'font-semibold' : ''}`}>
+                          {notification.title}
+                        </h4>
+                        {!notification.read && (
+                          <div className="w-2 h-2 bg-primary rounded-full" />
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {notification.message}
+                      </p>
+                      {notification.metadata?.step_index && notification.metadata?.total_steps && (
+                        <div className="mt-2">
+                          <div className="w-full bg-muted rounded-full h-1.5">
+                            <div 
+                              className="bg-primary h-1.5 rounded-full transition-all duration-300"
+                              style={{ 
+                                width: `${(notification.metadata.step_index / notification.metadata.total_steps) * 100}%` 
+                              }}
+                            />
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Étape {notification.metadata.step_index} sur {notification.metadata.total_steps}
+                          </p>
+                        </div>
+                      )}
+                      <div className="flex items-center justify-between mt-2">
+                        <span className="text-xs text-muted-foreground">
+                          {formatTime(notification.created_at)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      deleteNotification(notification.id);
+                    }}
+                    className="h-6 w-6 p-0 hover:bg-destructive/10 hover:text-destructive"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+            {notifications.length === 0 && (
+              <div className="text-center py-8 text-muted-foreground">
+                <Bell className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">Aucune notification</p>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Popup notification for extension */}
+      {popupNotification && (
+        <ExtensionPopupNotification
+          notification={popupNotification}
+          onClose={() => setPopupNotification(null)}
+          onMarkAsRead={() => {
+            markAsRead(popupNotification.id);
+            setPopupNotification(null);
+          }}
+        />
+      )}
+    </>
   );
 };
 

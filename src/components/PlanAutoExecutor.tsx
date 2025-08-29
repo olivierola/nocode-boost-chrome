@@ -8,8 +8,10 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Play, Pause, SkipForward, CheckCircle, AlertCircle, Clock, RefreshCw, Bot, MessageSquare } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 import { ClaudeChatInput } from '@/components/ui/claude-style-ai-input';
 import { supabase } from '@/integrations/supabase/client';
+import { createNotification } from '@/utils/notificationHelper';
 
 interface ExecutionStep {
   id: string;
@@ -52,6 +54,7 @@ const PlanAutoExecutor = ({ steps, isOpen, onClose, mode, onUpdateSteps }: PlanA
   const [isAnalyzingResponse, setIsAnalyzingResponse] = useState(false);
   
   const { toast } = useToast();
+  const { user } = useAuth();
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const addLog = useCallback((message: string, type: 'info' | 'success' | 'error' | 'warning' = 'info') => {
@@ -237,6 +240,22 @@ const PlanAutoExecutor = ({ steps, isOpen, onClose, mode, onUpdateSteps }: PlanA
         }
       };
       onUpdateSteps(updatedSteps);
+
+      // Create notification for step completion
+      if (user) {
+        await createNotification(
+          user.id,
+          'success',
+          'Étape terminée',
+          `Étape "${step.titre}" complétée avec succès`,
+          { 
+            step_index: stepIndex + 1,
+            total_steps: steps.length,
+            step_title: step.titre,
+            action: 'step_completion'
+          }
+        );
+      }
       addLog(`Étape ${stepIndex + 1} complétée avec succès`, 'success');
 
       // Validation selon le mode
@@ -253,6 +272,20 @@ const PlanAutoExecutor = ({ steps, isOpen, onClose, mode, onUpdateSteps }: PlanA
       // Continuer automatiquement
       if (stepIndex + 1 < steps.length) {
         return await executeStep(stepIndex + 1);
+      }
+
+      // Plan completed - send notification
+      if (user) {
+        await createNotification(
+          user.id,
+          'success',
+          'Plan terminé',
+          'Toutes les étapes du plan ont été exécutées avec succès',
+          { 
+            total_steps: steps.length,
+            action: 'plan_completion'
+          }
+        );
       }
 
       return true;
@@ -305,10 +338,11 @@ const PlanAutoExecutor = ({ steps, isOpen, onClose, mode, onUpdateSteps }: PlanA
     }
   };
 
-  const skipCurrentStep = () => {
+  const skipCurrentStep = async () => {
     const updatedSteps = [...steps];
+    const step = steps[currentStepIndex];
     updatedSteps[currentStepIndex] = {
-      ...steps[currentStepIndex],
+      ...step,
       status: 'completed',
       result: {
         status: 'success',
@@ -317,6 +351,22 @@ const PlanAutoExecutor = ({ steps, isOpen, onClose, mode, onUpdateSteps }: PlanA
     };
     onUpdateSteps(updatedSteps);
     addLog(`Étape ${currentStepIndex + 1} ignorée`, 'warning');
+
+    // Create notification for skipped step
+    if (user) {
+      await createNotification(
+        user.id,
+        'warning',
+        'Étape ignorée',
+        `Étape "${step.titre}" ignorée`,
+        { 
+          step_index: currentStepIndex + 1,
+          total_steps: steps.length,
+          step_title: step.titre,
+          action: 'step_skipped'
+        }
+      );
+    }
     
     if (currentStepIndex + 1 < steps.length) {
       setCurrentStepIndex(currentStepIndex + 1);

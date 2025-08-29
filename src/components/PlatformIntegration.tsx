@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { PlatformDetector, NoCodePlatform } from '@/services/platformDetector';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Zap, Eye, Send } from 'lucide-react';
+import { createNotification } from '@/utils/notificationHelper';
 
 interface PlatformIntegrationProps {
   onPromptEnhancement?: (originalPrompt: string, enhancedPrompt: string) => void;
@@ -20,6 +22,7 @@ const PlatformIntegration: React.FC<PlatformIntegrationProps> = ({
   const [isScanning, setIsScanning] = useState(false);
   const [foundIssues, setFoundIssues] = useState<any[]>([]);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   useEffect(() => {
     const detectCurrentPlatform = async () => {
@@ -33,11 +36,33 @@ const PlatformIntegration: React.FC<PlatformIntegrationProps> = ({
             description: `${platform.name} détectée! Fonctionnalités d'amélioration activées.`,
           });
 
+          // Create notification
+          if (user) {
+            await createNotification(
+              user.id,
+              'info',
+              'Plateforme détectée',
+              `${platform.name} détectée! Extension activée.`,
+              { platform: platform.name, action: 'platform_detected' }
+            );
+          }
+
           // Configurer l'interception des prompts
-          detector.interceptPrompts((prompt, element) => {
+          detector.interceptPrompts(async (prompt, element) => {
             if (onPromptEnhancement) {
               const enhancedPrompt = enhancePromptForPlatform(prompt, platform);
               onPromptEnhancement(prompt, enhancedPrompt);
+              
+              // Create notification for prompt enhancement
+              if (user && enhancedPrompt !== prompt) {
+                await createNotification(
+                  user.id,
+                  'success',
+                  'Prompt amélioré',
+                  `Prompt optimisé automatiquement sur ${platform.name}`,
+                  { platform: platform.name, action: 'prompt_enhancement' }
+                );
+              }
             }
           });
         }
@@ -80,6 +105,21 @@ const PlatformIntegration: React.FC<PlatformIntegrationProps> = ({
         title: "Analyse terminée",
         description: `${issues.length} problèmes détectés`,
       });
+
+      // Create notification
+      if (user) {
+        await createNotification(
+          user.id,
+          issues.length > 0 ? 'warning' : 'success',
+          'Analyse terminée',
+          `${issues.length} problème(s) détecté(s) sur ${detectedPlatform.name}`,
+          { 
+            platform: detectedPlatform.name, 
+            action: 'page_scan',
+            issues_count: issues.length
+          }
+        );
+      }
     } catch (error) {
       console.error('Erreur lors du scan:', error);
       toast({
@@ -101,6 +141,22 @@ const PlatformIntegration: React.FC<PlatformIntegrationProps> = ({
       title: "Correction en cours",
       description: "Génération de la solution...",
     });
+
+    // Create notification for issue fix attempt
+    if (user) {
+      await createNotification(
+        user.id,
+        'info',
+        'Correction en cours',
+        `Tentative de correction: ${issue.title}`,
+        { 
+          platform: detectedPlatform.name, 
+          action: 'issue_fix_attempt',
+          issue_title: issue.title,
+          issue_severity: issue.severity
+        }
+      );
+    }
 
     // Ici vous pourriez intégrer avec votre système de génération de prompts
     console.log('Fix prompt:', fixPrompt);
