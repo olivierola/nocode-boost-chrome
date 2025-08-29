@@ -111,6 +111,45 @@ export type Database = {
           },
         ]
       }
+      conversation_history: {
+        Row: {
+          content: string
+          conversation_type: string
+          created_at: string
+          id: string
+          plan_data: Json | null
+          project_id: string
+          role: string
+          updated_at: string
+          user_id: string
+          visual_identity_data: Json | null
+        }
+        Insert: {
+          content: string
+          conversation_type: string
+          created_at?: string
+          id?: string
+          plan_data?: Json | null
+          project_id: string
+          role: string
+          updated_at?: string
+          user_id: string
+          visual_identity_data?: Json | null
+        }
+        Update: {
+          content?: string
+          conversation_type?: string
+          created_at?: string
+          id?: string
+          plan_data?: Json | null
+          project_id?: string
+          role?: string
+          updated_at?: string
+          user_id?: string
+          visual_identity_data?: Json | null
+        }
+        Relationships: []
+      }
       files: {
         Row: {
           created_at: string
@@ -144,32 +183,38 @@ export type Database = {
       plans: {
         Row: {
           created_at: string
+          description: string | null
           etapes: Json
           id: string
           mindmap_data: Json | null
           plan_type: string | null
           project_id: string
           status: string | null
+          title: string | null
           updated_at: string
         }
         Insert: {
           created_at?: string
+          description?: string | null
           etapes?: Json
           id?: string
           mindmap_data?: Json | null
           plan_type?: string | null
           project_id: string
           status?: string | null
+          title?: string | null
           updated_at?: string
         }
         Update: {
           created_at?: string
+          description?: string | null
           etapes?: Json
           id?: string
           mindmap_data?: Json | null
           plan_type?: string | null
           project_id?: string
           status?: string | null
+          title?: string | null
           updated_at?: string
         }
         Relationships: [

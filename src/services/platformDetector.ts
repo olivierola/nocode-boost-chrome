@@ -216,7 +216,7 @@ export class PlatformDetector {
 
     // Intercepter les touches Enter
     textFields.forEach(field => {
-      field.addEventListener('keydown', (e) => {
+      field.addEventListener('keydown', (e: KeyboardEvent) => {
         if (e.key === 'Enter' && !e.shiftKey) {
           e.preventDefault();
           const value = (field as HTMLInputElement).value || (field as HTMLElement).textContent;
