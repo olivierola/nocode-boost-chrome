@@ -154,6 +154,112 @@ export class PlatformDetector {
     return null;
   }
 
+  // Nouvelles méthodes pour l'intégration frontend
+  detectAITextFields(): NodeListOf<Element> {
+    const selectors = [
+      'textarea[placeholder*="prompt"]',
+      'textarea[placeholder*="message"]', 
+      'input[placeholder*="ask"]',
+      'div[contenteditable="true"]',
+      '[role="textbox"]',
+      '.chat-input',
+      '.prompt-input',
+      '.ai-input'
+    ];
+    
+    return document.querySelectorAll(selectors.join(', '));
+  }
+
+  detectSendButtons(): NodeListOf<Element> {
+    const selectors = [
+      'button[type="submit"]',
+      'button:has(svg[data-icon="send"])',
+      'button:has(svg[data-icon="arrow-right"])',
+      '.send-button',
+      '.submit-button',
+      '[aria-label*="send"]',
+      '[aria-label*="submit"]'
+    ];
+    
+    return document.querySelectorAll(selectors.join(', '));
+  }
+
+  detectResponseElements(): NodeListOf<Element> {
+    const selectors = [
+      '.message',
+      '.response',
+      '.ai-message',
+      '.chat-message',
+      '[role="log"]',
+      '[data-message-id]'
+    ];
+    
+    return document.querySelectorAll(selectors.join(', '));
+  }
+
+  interceptPrompts(onInterceptCallback: (prompt: string, element: Element) => void): void {
+    const textFields = this.detectAITextFields();
+    const sendButtons = this.detectSendButtons();
+
+    // Intercepter les soumissions de formulaires
+    sendButtons.forEach(button => {
+      button.addEventListener('click', (e) => {
+        e.preventDefault();
+        const form = button.closest('form');
+        const textField = form?.querySelector('textarea, input[type="text"]') as HTMLInputElement;
+        
+        if (textField && textField.value.trim()) {
+          onInterceptCallback(textField.value, textField);
+        }
+      });
+    });
+
+    // Intercepter les touches Enter
+    textFields.forEach(field => {
+      field.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          const value = (field as HTMLInputElement).value || (field as HTMLElement).textContent;
+          if (value?.trim()) {
+            onInterceptCallback(value, field);
+          }
+        }
+      });
+    });
+  }
+
+  detectErrorMessages(): boolean {
+    const errorSelectors = [
+      '.error',
+      '.error-message',
+      '[role="alert"]',
+      '.alert-error',
+      '.text-red',
+      '.text-danger',
+      '.notification-error'
+    ];
+
+    const errorKeywords = [
+      'error',
+      'erreur',
+      'failed',
+      'échoué',
+      'invalid',
+      'invalide',
+      'timeout',
+      'limit',
+      'limite'
+    ];
+
+    // Vérifier les éléments avec classes d'erreur
+    const errorElements = document.querySelectorAll(errorSelectors.join(', '));
+    if (errorElements.length > 0) return true;
+
+    // Vérifier le contenu pour des mots-clés d'erreur
+    const allText = document.body.textContent?.toLowerCase() || '';
+    return errorKeywords.some(keyword => allText.includes(keyword));
+  }
+
   async scanForIssues(platform: NoCodePlatform): Promise<any[]> {
     const issues: any[] = [];
 

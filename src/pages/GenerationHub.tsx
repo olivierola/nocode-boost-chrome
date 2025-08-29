@@ -104,6 +104,72 @@ const GenerationHub = () => {
     checkUsage();
   }, [activeType, user, selectedProject, checkUsageLimit]);
 
+  // Charger l'historique de conversation au démarrage
+  useEffect(() => {
+    const loadConversationHistory = async () => {
+      if (!selectedProject || !user) return;
+      
+      try {
+        const { data: history, error } = await supabase
+          .from('conversation_history')
+          .select('*')
+          .eq('project_id', selectedProject.id)
+          .eq('user_id', user.id)
+          .eq('conversation_type', activeType)
+          .order('created_at', { ascending: true });
+
+        if (error) {
+          console.error('Erreur lors du chargement de l\'historique:', error);
+          return;
+        }
+
+        if (history && history.length > 0) {
+          const formattedMessages = history.map(msg => ({
+            id: msg.id,
+            role: msg.role as 'user' | 'assistant',
+            content: msg.content,
+            timestamp: new Date(msg.created_at),
+            plan: msg.plan_data ? JSON.parse(msg.plan_data) : undefined,
+            visualIdentity: msg.visual_identity_data ? JSON.parse(msg.visual_identity_data) : undefined
+          }));
+          setChatMessages(formattedMessages);
+        } else {
+          // Message de bienvenue si pas d'historique
+          setChatMessages([{
+            id: '1',
+            role: 'assistant',
+            content: `Bonjour ! Je vais vous aider avec votre projet "${selectedProject.name}". Choisissez le type de génération que vous souhaitez effectuer et décrivez-moi votre besoin.`,
+            timestamp: new Date()
+          }]);
+        }
+      } catch (error) {
+        console.error('Erreur lors du chargement de l\'historique:', error);
+      }
+    };
+
+    loadConversationHistory();
+  }, [selectedProject, user, activeType]);
+
+  const saveToConversationHistory = async (message: ChatMessage) => {
+    if (!selectedProject || !user) return;
+
+    try {
+      await supabase
+        .from('conversation_history')
+        .insert({
+          project_id: selectedProject.id,
+          user_id: user.id,
+          conversation_type: activeType,
+          role: message.role,
+          content: message.content,
+          plan_data: message.plan ? JSON.stringify(message.plan) : null,
+          visual_identity_data: message.visualIdentity ? JSON.stringify(message.visualIdentity) : null
+        });
+    } catch (error) {
+      console.error('Erreur lors de la sauvegarde de l\'historique:', error);
+    }
+  };
+
   const generateContent = async (prompt: string) => {
     if (!selectedProject) {
       toast({
@@ -133,18 +199,41 @@ const GenerationHub = () => {
       timestamp: new Date()
     };
     setChatMessages(prev => [...prev, userMessage]);
+    await saveToConversationHistory(userMessage);
 
     setIsGenerating(true);
     try {
       const functionName = activeType === 'plan' ? 'generate-plan' : 'generate-visual-identity';
+      
+      // Préparer l'historique de conversation pour le contexte
+      const conversationHistory = chatMessages.slice(-10).map(msg => ({
+        role: msg.role,
+        content: msg.content
+      }));
+
       const { data, error } = await supabase.functions.invoke(functionName, {
         body: {
           prompt,
-          projectId: selectedProject.id
+          projectId: selectedProject.id,
+          conversationHistory
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        // Gérer les demandes de clarification
+        if (error.message && typeof error.message === 'object' && error.message.type === 'clarification_needed') {
+          const clarificationMessage: ChatMessage = {
+            id: (Date.now() + 1).toString(),
+            role: 'assistant',
+            content: `${error.message.message}\n\n${error.message.questions.map((q: string, i: number) => `${i + 1}. ${q}`).join('\n')}`,
+            timestamp: new Date()
+          };
+          setChatMessages(prev => [...prev, clarificationMessage]);
+          await saveToConversationHistory(clarificationMessage);
+          return;
+        }
+        throw error;
+      }
 
       if (activeType === 'plan') {
         const { data: savedPlan, error: saveError } = await supabase
@@ -153,7 +242,9 @@ const GenerationHub = () => {
             project_id: selectedProject.id,
             title: data.title || `Plan pour ${selectedProject.name}`,
             description: data.description || prompt,
-            steps: data.steps || [],
+            etapes: data.branches?.features || [],
+            mindmap_data: data,
+            plan_type: 'mindmap',
             status: 'draft'
           }])
           .select()
@@ -164,28 +255,30 @@ const GenerationHub = () => {
         const aiMessage: ChatMessage = {
           id: (Date.now() + 1).toString(),
           role: 'assistant',
-          content: `J'ai généré un plan détaillé pour votre projet ! Le plan comprend ${data.etapes?.length || 0} étapes principales.`,
+          content: `J'ai généré un plan mindmap ultra-détaillé pour votre projet ! Le plan comprend ${data.branches?.features?.length || 0} fonctionnalités principales et une structure complète avec étude de marché, documentation technique, planning, équipe, et identité visuelle.`,
           timestamp: new Date(),
           plan: {
             ...savedPlan,
-            steps: data.steps || []
+            steps: data.branches?.features || []
           } as ProjectPlan
         };
         setChatMessages(prev => [...prev, aiMessage]);
+        await saveToConversationHistory(aiMessage);
       } else {
         const aiMessage: ChatMessage = {
           id: (Date.now() + 1).toString(),
           role: 'assistant',
-          content: `J'ai créé une identité visuelle complète pour votre projet ! Elle comprend une palette de couleurs, des polices et un style cohérent.`,
+          content: `J'ai créé une identité visuelle complète et détaillée pour votre projet ! Elle comprend une palette de couleurs professionnelle, des polices sélectionnées, un design system complet avec spécifications techniques.`,
           timestamp: new Date(),
           visualIdentity: data as VisualIdentity
         };
         setChatMessages(prev => [...prev, aiMessage]);
+        await saveToConversationHistory(aiMessage);
       }
 
       toast({
         title: "Génération réussie",
-        description: `Votre ${activeType === 'plan' ? 'plan' : 'identité visuelle'} a été créé avec succès`,
+        description: `Votre ${activeType === 'plan' ? 'plan mindmap' : 'identité visuelle'} a été créé avec succès`,
       });
 
       // Refresh usage data
@@ -201,6 +294,7 @@ const GenerationHub = () => {
         timestamp: new Date()
       };
       setChatMessages(prev => [...prev, errorMessage]);
+      await saveToConversationHistory(errorMessage);
       
       toast({
         title: "Erreur",

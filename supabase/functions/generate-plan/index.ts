@@ -17,7 +17,7 @@ serve(async (req) => {
   }
 
   try {
-    const { prompt, projectId } = await req.json();
+    const { prompt, projectId, conversationHistory = [] } = await req.json();
     console.log('Generating plan for project:', projectId);
 
     if (!openAIApiKey) {
@@ -54,10 +54,20 @@ serve(async (req) => {
       });
     }
 
-    // Étape 1: Vérifier la clarté de la demande
-    const clarityCheckPrompt = `Analysez cette demande de projet et déterminez si elle est suffisamment claire pour créer un plan détaillé.
+    // Construire le contexte avec l'historique de conversation
+    let contextualPrompt = prompt;
+    if (conversationHistory.length > 0) {
+      const historyContext = conversationHistory
+        .slice(-10) // Garder les 10 derniers messages
+        .map((msg: any) => `${msg.role}: ${msg.content}`)
+        .join('\n');
+      contextualPrompt = `Contexte de la conversation précédente:\n${historyContext}\n\nNouvelle demande: ${prompt}`;
+    }
 
-Demande: "${prompt}"
+    // Étape 1: Vérifier la clarté de la demande avec le contexte
+    const clarityCheckPrompt = `Analysez cette demande de projet en tenant compte du contexte de conversation existant et déterminez si elle est suffisamment claire pour créer un plan détaillé.
+
+${contextualPrompt}
 
 Répondez uniquement par JSON dans ce format :
 {
@@ -67,10 +77,10 @@ Répondez uniquement par JSON dans ce format :
 
 Une demande est claire si elle contient :
 - Le type d'application/projet
-- L'objectif principal
+- L'objectif principal  
 - Le contexte d'utilisation
 
-Sinon, posez 2-3 questions précises pour clarifier.`;
+IMPORTANT: Si le contexte de conversation précédente contient déjà ces informations, considérez la demande comme claire même si la nouvelle demande seule semble incomplète.`;
 
     const clarityResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -116,10 +126,12 @@ Sinon, posez 2-3 questions précises pour clarifier.`;
       });
     }
 
-    // Étape 2: Générer le plan complet au format mindmap
-    const systemPrompt = `Vous êtes un expert en planification de projets, analyse de marché et développement de produits. Créez un plan ULTRA-DÉTAILLÉ sous forme de mindmap structurée avec maximum de détails et spécifications.
+    // Étape 2: Générer le plan complet au format mindmap avec plus de détails
+    const systemPrompt = `Vous êtes un expert senior en planification de projets, analyse de marché, développement de produits et architecture logicielle. Créez un plan ULTRA-DÉTAILLÉ sous forme de mindmap structurée avec un maximum de spécifications techniques et business.
 
-IMPORTANT: Répondez uniquement avec un JSON valide, sans texte supplémentaire. Tous les contenus textuels doivent être en MARKDOWN.
+IMPORTANT: Répondez uniquement avec un JSON valide, sans texte supplémentaire. Tous les contenus textuels doivent être en MARKDOWN avec syntaxe complète.
+
+NOUVELLE INSTRUCTION: Incluez des sous-étapes détaillées, des spécifications techniques avancées, des prompts prêts à l'emploi, et une structure plus approfondie.
 
 Structure attendue (TOUS LES CHAMPS OBLIGATOIRES):
 {
