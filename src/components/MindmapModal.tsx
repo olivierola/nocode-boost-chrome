@@ -19,6 +19,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { X, Eye, Code, Palette, Target, Users, Lightbulb, FileText, Play } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 import '@xyflow/react/dist/style.css';
 
 interface MindmapData {
@@ -30,29 +31,11 @@ interface MindmapData {
     description: string;
   };
   branches: {
-    marketStudy: {
-      title: string;
-      content: string;
-      competitors: string[];
-      opportunities: string[];
-      risks: string[];
-    };
-    projectDescription: {
-      title: string;
-      summary: string;
-      objectives: string[];
-      targetAudience: string;
-    };
-    technicalDocumentation: {
-      title: string;
-      modules: Array<{
-        name: string;
-        description: string;
-        technologies: string[];
-      }>;
-      architecture: string;
-      recommendedTools: string[];
-    };
+    marketStudy: any;
+    projectDescription: any;
+    technicalDocumentation: any;
+    timeline?: any;
+    team?: any;
     features: Array<{
       id: string;
       title: string;
@@ -60,12 +43,19 @@ interface MindmapData {
       specifications: string;
       prompt: string;
       order: number;
+      priority?: string;
+      complexity?: string;
+      estimatedTime?: string;
+      dependencies?: string[];
+      acceptanceCriteria?: string[];
       subFeatures?: Array<{
         id: string;
         title: string;
         description: string;
         specifications: string;
         prompt: string;
+        estimatedTime?: string;
+        parentId?: string;
       }>;
     }>;
     pages: Array<{
@@ -73,25 +63,14 @@ interface MindmapData {
       title: string;
       content: string;
       interactions: string;
+      components?: string[];
+      wireframe?: string;
+      seo?: any;
     }>;
-    visualIdentity: {
-      colors: {
-        primary: string[];
-        secondary: string[];
-        backgrounds: string[];
-        texts: string[];
-      };
-      icons: string[];
-      typography: {
-        fonts: string[];
-        sizes: string[];
-      };
-      styles: {
-        borderRadius: string;
-        shadows: string;
-        spacing: string;
-      };
-    };
+    visualIdentity: any;
+    testing?: any;
+    deployment?: any;
+    noCodePlatforms?: any;
   };
 }
 
@@ -112,9 +91,15 @@ const CustomNode = ({ data }: { data: any }) => {
       case 'market': return <Users className="h-5 w-5" />;
       case 'project': return <FileText className="h-5 w-5" />;
       case 'technical': return <Code className="h-5 w-5" />;
+      case 'timeline': return '📅';
+      case 'team': return '👥';
       case 'feature': return <Lightbulb className="h-5 w-5" />;
+      case 'subfeature': return '💡';
       case 'page': return <Eye className="h-5 w-5" />;
       case 'visual': return <Palette className="h-5 w-5" />;
+      case 'testing': return '🧪';
+      case 'deployment': return '🚀';
+      case 'platforms': return '🔧';
       default: return <Target className="h-5 w-5" />;
     }
   };
@@ -125,9 +110,15 @@ const CustomNode = ({ data }: { data: any }) => {
       case 'market': return 'bg-blue-100 text-blue-900 border-blue-300';
       case 'project': return 'bg-green-100 text-green-900 border-green-300';
       case 'technical': return 'bg-purple-100 text-purple-900 border-purple-300';
+      case 'timeline': return 'bg-cyan-100 text-cyan-900 border-cyan-300';
+      case 'team': return 'bg-amber-100 text-amber-900 border-amber-300';
       case 'feature': return 'bg-orange-100 text-orange-900 border-orange-300';
+      case 'subfeature': return 'bg-yellow-100 text-yellow-900 border-yellow-300';
       case 'page': return 'bg-pink-100 text-pink-900 border-pink-300';
       case 'visual': return 'bg-indigo-100 text-indigo-900 border-indigo-300';
+      case 'testing': return 'bg-emerald-100 text-emerald-900 border-emerald-300';
+      case 'deployment': return 'bg-red-100 text-red-900 border-red-300';
+      case 'platforms': return 'bg-slate-100 text-slate-900 border-slate-300';
       default: return 'bg-gray-100 text-gray-900 border-gray-300';
     }
   };
@@ -147,8 +138,23 @@ const CustomNode = ({ data }: { data: any }) => {
       )}
       
       {data.type === 'feature' && data.order && (
-        <Badge variant="outline" className="text-xs mb-2">
-          Ordre: {data.order}
+        <Badge variant="outline" className="text-xs mb-1">
+          #{data.order}
+        </Badge>
+      )}
+      
+      {data.priority && (
+        <Badge 
+          variant={data.priority === 'haute' ? 'destructive' : data.priority === 'moyenne' ? 'default' : 'secondary'} 
+          className="text-xs mb-1 mr-1"
+        >
+          {data.priority}
+        </Badge>
+      )}
+      
+      {data.estimatedTime && (
+        <Badge variant="outline" className="text-xs mb-1">
+          {data.estimatedTime}
         </Badge>
       )}
       
@@ -207,14 +213,19 @@ export const MindmapModal = ({ isOpen, onClose, data, onExecuteFeature }: Mindma
       { id: 'market', title: 'Étude de marché', type: 'market', data: data.branches.marketStudy },
       { id: 'project', title: 'Description projet', type: 'project', data: data.branches.projectDescription },
       { id: 'technical', title: 'Documentation technique', type: 'technical', data: data.branches.technicalDocumentation },
+      { id: 'timeline', title: 'Planning', type: 'timeline', data: data.branches.timeline },
+      { id: 'team', title: 'Équipe & Ressources', type: 'team', data: data.branches.team },
       { id: 'features', title: 'Fonctionnalités', type: 'feature', data: { title: 'Fonctionnalités' } },
       { id: 'pages', title: 'Pages', type: 'page', data: { title: 'Pages' } },
-      { id: 'visual', title: 'Identité visuelle', type: 'visual', data: data.branches.visualIdentity }
+      { id: 'visual', title: 'Identité visuelle', type: 'visual', data: data.branches.visualIdentity },
+      { id: 'testing', title: 'Tests & QA', type: 'testing', data: data.branches.testing },
+      { id: 'deployment', title: 'Déploiement', type: 'deployment', data: data.branches.deployment },
+      { id: 'platforms', title: 'Plateformes No-Code', type: 'platforms', data: data.branches.noCodePlatforms }
     ];
 
     branches.forEach((branch, index) => {
-      const angle = (index * 60) * (Math.PI / 180); // 6 branches à 60° d'intervalle
-      const radius = 300;
+      const angle = (index * (360 / branches.length)) * (Math.PI / 180); // Répartition égale
+      const radius = 350;
       const x = Math.cos(angle) * radius;
       const y = Math.sin(angle) * radius;
 
@@ -238,12 +249,14 @@ export const MindmapModal = ({ isOpen, onClose, data, onExecuteFeature }: Mindma
       });
     });
 
-    // Ajout des features individuelles
+    // Ajout des features individuelles avec sous-features
     data.branches.features.forEach((feature, index) => {
-      const angle = ((index * 30) - 45) * (Math.PI / 180); // Répartition autour de la branche features
-      const radius = 200;
-      const baseX = Math.cos(60 * (Math.PI / 180)) * 300; // Position de la branche features
-      const baseY = Math.sin(60 * (Math.PI / 180)) * 300;
+      const angle = ((index * (360 / data.branches.features.length)) - 90) * (Math.PI / 180);
+      const radius = 250;
+      const featuresIndex = branches.findIndex(b => b.id === 'features');
+      const branchAngle = (featuresIndex * (360 / branches.length)) * (Math.PI / 180);
+      const baseX = Math.cos(branchAngle) * 350;
+      const baseY = Math.sin(branchAngle) * 350;
       const x = baseX + Math.cos(angle) * radius;
       const y = baseY + Math.sin(angle) * radius;
 
@@ -256,6 +269,9 @@ export const MindmapModal = ({ isOpen, onClose, data, onExecuteFeature }: Mindma
           description: feature.description,
           type: 'feature',
           order: feature.order,
+          priority: feature.priority,
+          complexity: feature.complexity,
+          estimatedTime: feature.estimatedTime,
           onExecute: () => onExecuteFeature?.(feature),
           details: feature
         }
@@ -266,16 +282,51 @@ export const MindmapModal = ({ isOpen, onClose, data, onExecuteFeature }: Mindma
         source: 'features',
         target: `feature-${feature.id}`,
         type: 'smoothstep',
-        style: { stroke: '#f59e0b', strokeWidth: 1 }
+        style: { stroke: '#f59e0b', strokeWidth: 2 }
       });
+
+      // Ajout des sous-features connectées à leur feature parente
+      if (feature.subFeatures && feature.subFeatures.length > 0) {
+        feature.subFeatures.forEach((subFeature, subIndex) => {
+          const subAngle = ((subIndex * 60) - 30) * (Math.PI / 180);
+          const subRadius = 120;
+          const subX = x + Math.cos(subAngle) * subRadius;
+          const subY = y + Math.sin(subAngle) * subRadius;
+
+          nodes.push({
+            id: `subfeature-${subFeature.id}`,
+            type: 'custom',
+            position: { x: subX, y: subY },
+            data: {
+              title: subFeature.title,
+              description: subFeature.description,
+              type: 'subfeature',
+              parentId: feature.id,
+              estimatedTime: subFeature.estimatedTime,
+              onExecute: () => onExecuteFeature?.(subFeature),
+              details: subFeature
+            }
+          });
+
+          edges.push({
+            id: `feature-${feature.id}-subfeature-${subFeature.id}`,
+            source: `feature-${feature.id}`,
+            target: `subfeature-${subFeature.id}`,
+            type: 'smoothstep',
+            style: { stroke: '#fbbf24', strokeWidth: 1 }
+          });
+        });
+      }
     });
 
     // Ajout des pages
     data.branches.pages.forEach((page, index) => {
-      const angle = ((index * 45) - 45) * (Math.PI / 180);
-      const radius = 180;
-      const baseX = Math.cos(120 * (Math.PI / 180)) * 300;
-      const baseY = Math.sin(120 * (Math.PI / 180)) * 300;
+      const angle = ((index * (360 / data.branches.pages.length)) - 90) * (Math.PI / 180);
+      const radius = 220;
+      const pagesIndex = branches.findIndex(b => b.id === 'pages');
+      const branchAngle = (pagesIndex * (360 / branches.length)) * (Math.PI / 180);
+      const baseX = Math.cos(branchAngle) * 350;
+      const baseY = Math.sin(branchAngle) * 350;
       const x = baseX + Math.cos(angle) * radius;
       const y = baseY + Math.sin(angle) * radius;
 
@@ -287,6 +338,9 @@ export const MindmapModal = ({ isOpen, onClose, data, onExecuteFeature }: Mindma
           title: page.title,
           description: page.content,
           type: 'page',
+          components: page.components,
+          wireframe: page.wireframe,
+          seo: page.seo,
           details: page
         }
       });
@@ -372,19 +426,48 @@ export const MindmapModal = ({ isOpen, onClose, data, onExecuteFeature }: Mindma
                   {selectedNode.description && (
                     <div>
                       <h4 className="font-medium mb-2">Description</h4>
-                      <p className="text-sm text-muted-foreground">{selectedNode.description}</p>
+                      <div className="text-sm text-muted-foreground prose prose-sm max-w-none">
+                        <ReactMarkdown>{selectedNode.description}</ReactMarkdown>
+                      </div>
                     </div>
                   )}
                   
                   {selectedNode.details && (
                     <Card>
                       <CardHeader className="pb-2">
-                        <CardTitle className="text-sm">Détails</CardTitle>
+                        <CardTitle className="text-sm">Détails complets</CardTitle>
                       </CardHeader>
-                      <CardContent className="text-xs space-y-2">
-                        <pre className="whitespace-pre-wrap text-xs bg-gray-50 p-2 rounded">
-                          {JSON.stringify(selectedNode.details, null, 2)}
-                        </pre>
+                      <CardContent className="text-xs space-y-4">
+                        {typeof selectedNode.details === 'string' ? (
+                          <div className="prose prose-sm max-w-none">
+                            <ReactMarkdown>{selectedNode.details}</ReactMarkdown>
+                          </div>
+                        ) : (
+                          Object.entries(selectedNode.details).map(([key, value]) => (
+                            <div key={key}>
+                              <h5 className="font-medium text-sm mb-1 capitalize">{key.replace(/([A-Z])/g, ' $1')}</h5>
+                              {typeof value === 'string' ? (
+                                <div className="prose prose-xs max-w-none">
+                                  <ReactMarkdown>{value}</ReactMarkdown>
+                                </div>
+                              ) : Array.isArray(value) ? (
+                                <ul className="list-disc list-inside text-xs text-muted-foreground">
+                                  {value.map((item, i) => (
+                                    <li key={i}>{typeof item === 'string' ? item : JSON.stringify(item)}</li>
+                                  ))}
+                                </ul>
+                              ) : value && typeof value === 'object' ? (
+                                <div className="text-xs bg-gray-50 p-2 rounded">
+                                  <pre className="whitespace-pre-wrap">
+                                    {JSON.stringify(value, null, 2)}
+                                  </pre>
+                                </div>
+                              ) : (
+                                <p className="text-xs text-muted-foreground">{String(value)}</p>
+                              )}
+                            </div>
+                          ))
+                        )}
                       </CardContent>
                     </Card>
                   )}
