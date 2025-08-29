@@ -446,7 +446,7 @@ Structure attendue (TOUS LES CHAMPS OBLIGATOIRES):
         "## Tests d'intégration - API\n\n### Endpoints\n- **CRUD** operations\n- **Error handling**\n- **Rate limiting**"
       ],
       "e2eTests": [
-        "## E2E - User Journey\n\n### Critical paths\n1. **Onboarding** complet\n2. **Feature** principale usage\n3. **Payment** flow\n\n### Playwright tests\n```javascript\ntest('user can complete onboarding', async ({ page }) => {\n  // Test complete flow\n});\n```",
+        "## E2E - User Journey\n\n### Critical paths\n1. **Onboarding** complet\n2. **Feature** principale usage\n3. **Payment** flow\n\n### Playwright tests\n**Test example:**\ntest('user can complete onboarding', async ({ page }) => {\n  // Test complete flow\n});",
         "## E2E - Cross-browser\n\n### Browsers\n- **Chrome** (primary)\n- **Firefox**\n- **Safari**\n- **Mobile** browsers"
       ],
       "performanceTests": [
