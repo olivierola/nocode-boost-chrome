@@ -5,10 +5,13 @@
   "description": "Une extension Chrome pour générer et exécuter des plans de projets avec l'IA",
   "permissions": [
     "activeTab",
-    "storage"
+    "storage",
+    "clipboardRead",
+    "clipboardWrite"
   ],
   "host_permissions": [
-    "https://*/*"
+    "https://*/*",
+    "https://21st.dev/*"
   ],
   "action": {
     "default_popup": "index.html",

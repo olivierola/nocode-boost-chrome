@@ -38,6 +38,28 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       sendResponse({ success: true });
       break;
       
+    case 'saveComponent':
+      // Sauvegarder un composant détecté
+      chrome.storage.local.get(['savedComponents'], (result) => {
+        const savedComponents = result.savedComponents || [];
+        const newComponent = {
+          id: Date.now().toString(),
+          content: request.data.content,
+          source: request.data.source,
+          url: request.data.url,
+          timestamp: request.data.timestamp,
+          nom: `Composant ${savedComponents.length + 1}`,
+          description: 'Composant détecté automatiquement depuis ' + request.data.source
+        };
+        
+        savedComponents.push(newComponent);
+        chrome.storage.local.set({ savedComponents }, () => {
+          console.log('Composant sauvegardé:', newComponent);
+          sendResponse({ success: true, component: newComponent });
+        });
+      });
+      return true;
+      
     default:
       sendResponse({ success: false, error: 'Action non reconnue' });
   }

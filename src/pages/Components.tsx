@@ -100,6 +100,8 @@ const Components = () => {
         src="https://21st.dev" 
         className="w-full h-full border-0"
         title="21st.dev Components"
+        sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-modals"
+        allow="clipboard-read; clipboard-write"
       />
     </div>
   );

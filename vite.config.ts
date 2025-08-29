@@ -12,10 +12,13 @@ const manifest = {
   description: "Une extension Chrome pour générer et exécuter des plans de projets avec l'IA",
   permissions: [
     "activeTab",
-    "storage"
+    "storage",
+    "clipboardRead",
+    "clipboardWrite"
   ],
   host_permissions: [
-    "https://*/*"
+    "https://*/*",
+    "https://21st.dev/*"
   ],
   action: {
     default_popup: "index.html",
@@ -73,10 +76,16 @@ export default defineConfig(({ mode }) => ({
     target: 'esnext',
     rollupOptions: {
       input: {
-        popup: "index.html"
+        popup: "index.html",
+        background: "src/background.ts",
+        content: "src/content.ts"
       },
       output: {
-        entryFileNames: 'assets/[name].js',
+        entryFileNames: (chunkInfo) => {
+          if (chunkInfo.name === 'background') return 'background.js';
+          if (chunkInfo.name === 'content') return 'content.js';
+          return 'assets/[name].js';
+        },
         chunkFileNames: 'assets/[name].js',
         assetFileNames: 'assets/[name].[ext]'
       }

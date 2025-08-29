@@ -5,6 +5,48 @@ import { platformDetector, SUPPORTED_PLATFORMS } from './services/platformDetect
 
 console.log('Content script chargé');
 
+// Surveiller les événements de copie pour détecter les composants
+function setupClipboardMonitoring() {
+  document.addEventListener('copy', async (event) => {
+    try {
+      // Attendre un peu pour que le clipboard soit mis à jour
+      setTimeout(async () => {
+        try {
+          const clipboardText = await navigator.clipboard.readText();
+          
+          // Vérifier si c'est un composant depuis 21st.dev
+          if (window.location.hostname === '21st.dev' || 
+              window.location.href.includes('21st.dev')) {
+            
+            // Détecter si le texte copié ressemble à un composant
+            if (clipboardText && (
+              clipboardText.includes('import') || 
+              clipboardText.includes('export') || 
+              clipboardText.includes('function') ||
+              clipboardText.includes('const') ||
+              (clipboardText.includes('<') && clipboardText.includes('>'))
+            )) {
+              // Envoyer le composant au background script
+              await sendMessageToBackground('saveComponent', {
+                content: clipboardText,
+                source: '21st.dev',
+                url: window.location.href,
+                timestamp: new Date().toISOString()
+              });
+              
+              console.log('Composant détecté et sauvegardé:', clipboardText.substring(0, 100) + '...');
+            }
+          }
+        } catch (error) {
+          console.log('Erreur lors de la lecture du clipboard:', error);
+        }
+      }, 100);
+    } catch (error) {
+      console.log('Erreur lors de la surveillance du clipboard:', error);
+    }
+  });
+}
+
 // Fonction pour communiquer avec le background script
 function sendMessageToBackground(action: string, data?: any): Promise<any> {
   return new Promise((resolve) => {
@@ -75,6 +117,9 @@ async function initContentScript() {
   
   // Injecter les styles personnalisés
   injectCustomStyles();
+  
+  // Activer la surveillance du clipboard
+  setupClipboardMonitoring();
   
   // Créer le bouton flottant adapté à la plateforme
   createFloatingButton(pageData.platform);
