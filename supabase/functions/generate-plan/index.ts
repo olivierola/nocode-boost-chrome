@@ -212,7 +212,7 @@ Structure attendue (TOUS LES CHAMPS OBLIGATOIRES):
       ],
       "database": {
         "type": "PostgreSQL (Supabase)",
-        "schema": "## Schéma de base de données\n\n### Tables principales\n\n#### users\n```sql\nCREATE TABLE users (\n  id UUID PRIMARY KEY,\n  email VARCHAR UNIQUE,\n  created_at TIMESTAMP\n);\n```",
+        "schema": "## Schéma de base de données\n\n### Tables principales\n\n#### users\n\`\`\`sql\nCREATE TABLE users (\n  id UUID PRIMARY KEY,\n  email VARCHAR UNIQUE,\n  created_at TIMESTAMP\n);\n\`\`\`",
         "tables": [
           {
             "name": "users",
