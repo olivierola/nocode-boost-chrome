@@ -80,7 +80,7 @@ const Collaboration = () => {
           .from('collaborators')
           .select(`
             *,
-            profiles!collaborators_user_id_fkey (
+            profiles!inner (
               full_name,
               email,
               avatar_url
