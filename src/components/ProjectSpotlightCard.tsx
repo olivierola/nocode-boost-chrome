@@ -7,6 +7,7 @@ import { MoreHorizontal, Edit, Trash2, Users, Lock, Calendar, ExternalLink } fro
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Project, useProjects } from '@/hooks/useProjects';
+import { useProjectContext } from '@/hooks/useProjectContext';
 import { CardSpotlight } from '@/components/ui/card-spotlight';
 import EditProjectDialog from './EditProjectDialog';
 import ProjectAccessDialog from './ProjectAccessDialog';
@@ -20,6 +21,7 @@ const ProjectSpotlightCard = ({ project }: ProjectSpotlightCardProps) => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [accessDialogOpen, setAccessDialogOpen] = useState(false);
   const { deleteProject, getUserRole } = useProjects();
+  const { selectProject } = useProjectContext();
 
   const userRole = getUserRole(project);
   const isOwner = userRole === 'owner';
@@ -35,7 +37,7 @@ const ProjectSpotlightCard = ({ project }: ProjectSpotlightCardProps) => {
   const handleProjectAccess = () => {
     if (isOwner || !hasPassword) {
       // Accès direct pour le propriétaire ou projets sans mot de passe
-      console.log('Accès direct au projet:', project.name);
+      selectProject(project);
     } else {
       // Demander le mot de passe pour les collaborateurs invités
       setAccessDialogOpen(true);
@@ -43,8 +45,8 @@ const ProjectSpotlightCard = ({ project }: ProjectSpotlightCardProps) => {
   };
 
   const handleAccessSuccess = () => {
-    console.log('Accès autorisé au projet:', project.name);
-    // Ici vous pouvez rediriger vers la page du projet
+    selectProject(project);
+    setAccessDialogOpen(false);
   };
 
   const formatDate = (dateString: string) => {
@@ -53,7 +55,10 @@ const ProjectSpotlightCard = ({ project }: ProjectSpotlightCardProps) => {
 
   return (
     <>
-      <CardSpotlight className="h-auto min-h-[200px] group cursor-pointer">
+      <CardSpotlight 
+        className="h-auto min-h-[200px] group cursor-pointer bg-background/50 border-border/50 backdrop-blur-sm" 
+        color="hsl(var(--primary) / 0.05)"
+      >
         <div className="relative z-20 h-full flex flex-col">
           {/* Header */}
           <div className="flex items-start justify-between mb-4">
