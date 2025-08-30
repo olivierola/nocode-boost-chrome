@@ -1,5 +1,5 @@
 import React from 'react';
-import { Check, Crown, Zap } from 'lucide-react';
+import { Check, Crown, Users, XCircle } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -8,8 +8,9 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import * as PricingCard from '@/components/ui/pricing-card';
 import { useSubscription } from '@/hooks/useSubscription';
+import { cn } from '@/lib/utils';
 
 interface SubscriptionDialogProps {
   open: boolean;
@@ -90,54 +91,71 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
         
         <div className="grid md:grid-cols-3 gap-6 py-6">
           {plans.map((plan) => (
-            <Card
+            <PricingCard.Card
               key={plan.name}
-              className={`relative ${
-                plan.popular ? 'border-primary shadow-lg scale-105' : ''
-              } ${plan.current ? 'border-green-500 bg-green-50/50' : ''}`}
+              className={cn(
+                plan.popular && 'scale-105',
+                plan.current && 'border-green-500/50'
+              )}
             >
               {plan.popular && (
-                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                  <span className="bg-primary text-primary-foreground px-3 py-1 rounded-full text-sm font-medium">
+                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 z-10">
+                  <PricingCard.Badge className="bg-primary text-primary-foreground">
                     Populaire
-                  </span>
+                  </PricingCard.Badge>
                 </div>
               )}
               
-              <CardHeader className="text-center">
-                <CardTitle className="flex items-center justify-center gap-2">
-                  {plan.icon}
-                  {plan.name}
-                </CardTitle>
-                <div className="text-3xl font-bold">
-                  {plan.price}
-                  <span className="text-sm text-muted-foreground font-normal">
-                    {plan.period}
-                  </span>
-                </div>
-                <CardDescription>{plan.description}</CardDescription>
-              </CardHeader>
-              
-              <CardContent>
-                <ul className="space-y-3 mb-6">
-                  {plan.features.map((feature, index) => (
-                    <li key={index} className="flex items-center gap-2">
-                      <Check className="h-4 w-4 text-green-500 flex-shrink-0" />
-                      <span className="text-sm">{feature}</span>
-                    </li>
-                  ))}
-                </ul>
+              <PricingCard.Header>
+                <PricingCard.Plan>
+                  <PricingCard.PlanName>
+                    {plan.icon || <Users aria-hidden="true" />}
+                    <span>{plan.name}</span>
+                  </PricingCard.PlanName>
+                  <PricingCard.Badge>
+                    {plan.name === 'Gratuit' ? 'Découverte' : 
+                     plan.name === 'Starter' ? 'Personnel' : 'Professionnel'}
+                  </PricingCard.Badge>
+                </PricingCard.Plan>
+                
+                <PricingCard.Price>
+                  <PricingCard.MainPrice>{plan.price}</PricingCard.MainPrice>
+                  <PricingCard.Period>{plan.period}</PricingCard.Period>
+                </PricingCard.Price>
+                
+                <PricingCard.Description>
+                  {plan.description}
+                </PricingCard.Description>
                 
                 <Button
-                  className="w-full"
+                  className={cn(
+                    'w-full font-semibold',
+                    plan.popular && 'bg-gradient-to-b from-primary to-primary/90 shadow-lg'
+                  )}
                   variant={plan.current ? 'outline' : plan.variant}
                   onClick={plan.action}
                   disabled={plan.disabled || plan.current}
                 >
                   {plan.current ? 'Plan actuel' : plan.button}
                 </Button>
-              </CardContent>
-            </Card>
+              </PricingCard.Header>
+              
+              <PricingCard.Body>
+                <PricingCard.List>
+                  {plan.features.map((feature, index) => (
+                    <PricingCard.ListItem key={index}>
+                      <span className="mt-0.5">
+                        <Check
+                          className="h-4 w-4 text-green-500"
+                          aria-hidden="true"
+                        />
+                      </span>
+                      <span>{feature}</span>
+                    </PricingCard.ListItem>
+                  ))}
+                </PricingCard.List>
+              </PricingCard.Body>
+            </PricingCard.Card>
           ))}
         </div>
       </DialogContent>
