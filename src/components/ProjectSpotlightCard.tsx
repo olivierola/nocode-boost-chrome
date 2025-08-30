@@ -56,8 +56,8 @@ const ProjectSpotlightCard = ({ project }: ProjectSpotlightCardProps) => {
   return (
     <>
       <CardSpotlight 
-        className="h-auto min-h-[200px] group cursor-pointer bg-background/50 border-border/50 backdrop-blur-sm" 
-        color="hsl(var(--primary) / 0.05)"
+        className="h-auto min-h-[200px] group cursor-pointer bg-slate-900/90 border-slate-800/50 backdrop-blur-sm text-slate-100" 
+        color="hsl(var(--primary) / 0.1)"
       >
         <div className="relative z-20 h-full flex flex-col">
           {/* Header */}
