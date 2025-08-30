@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Plus, Loader2, CreditCard, Crown } from 'lucide-react';
 import CreateProjectDialog from '@/components/CreateProjectDialog';
-import ProjectCard from '@/components/ProjectCard';
+import ProjectSpotlightCard from '@/components/ProjectSpotlightCard';
 import ActivityLogger from '@/components/ActivityLogger';
 import ProjectStatistics from '@/components/ProjectStatistics';
 
@@ -89,7 +89,7 @@ const Dashboard = () => {
         ) : (
           <div className="grid gap-3 grid-cols-2">
             {projects.map((project) => (
-              <ProjectCard key={project.id} project={project} />
+              <ProjectSpotlightCard key={project.id} project={project} />
             ))}
           </div>
         )}
