@@ -512,6 +512,10 @@ export type Database = {
         Args: { p_action_type: string; p_user_id: string }
         Returns: boolean
       }
+      delete_post: {
+        Args: { p_post_id: string }
+        Returns: boolean
+      }
       get_conversation_history: {
         Args: {
           p_conversation_type: string
@@ -525,6 +529,21 @@ export type Database = {
           plan_data: Json
           role: string
           visual_identity_data: Json
+        }[]
+      }
+      get_posts_for_project: {
+        Args: { p_project_id: string }
+        Returns: {
+          content: string
+          created_at: string
+          id: string
+          metadata: Json
+          post_type: string
+          project_id: string
+          subject: string
+          tone: string
+          updated_at: string
+          user_id: string
         }[]
       }
       get_user_plan_limits: {

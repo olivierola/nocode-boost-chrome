@@ -36,14 +36,13 @@ const Posts = () => {
     if (!selectedProject || !user) return;
 
     try {
-      // Utilisation d'une requête raw pour contourner les types
       const { data, error } = await supabase
         .rpc('get_posts_for_project', { 
-          project_id: selectedProject.id 
+          p_project_id: selectedProject.id 
         });
 
       if (error) throw error;
-      setPosts(data || []);
+      setPosts((data as Post[]) || []);
     } catch (error) {
       console.error('Error fetching posts:', error);
       toast.error('Erreur lors du chargement des posts');
@@ -63,9 +62,8 @@ const Posts = () => {
 
   const handleDeletePost = async (postId: string) => {
     try {
-      // Utilisation d'une requête RPC pour la suppression
       const { error } = await supabase
-        .rpc('delete_post', { post_id: postId });
+        .rpc('delete_post', { p_post_id: postId });
 
       if (error) throw error;
       
