@@ -5,7 +5,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Copy, Trash2, MessageSquare } from 'lucide-react';
+import { BentoGrid, type BentoItem } from '@/components/ui/bento-grid';
+import { Plus, Copy, Trash2, MessageSquare, Hash, Calendar, Type } from 'lucide-react';
 import { toast } from 'sonner';
 import { PostGenerationModal } from '@/components/PostGenerationModal';
 import { format } from 'date-fns';
@@ -100,6 +101,23 @@ const Posts = () => {
     return postDate.toDateString() !== today.toDateString();
   });
 
+  // Convert posts to BentoGrid items
+  const convertPostsToBentoItems = (posts: Post[]): BentoItem[] => {
+    return posts.map((post, index) => ({
+      title: post.subject || "Post sans titre",
+      description: post.content.slice(0, 120) + (post.content.length > 120 ? "..." : ""),
+      icon: post.post_type === "linkedin" ? <MessageSquare className="w-4 h-4 text-blue-500" /> : 
+            post.post_type === "twitter" ? <Hash className="w-4 h-4 text-sky-500" /> :
+            <Type className="w-4 h-4 text-purple-500" />,
+      status: post.tone,
+      tags: post.metadata?.hashtags ? post.metadata.hashtags.slice(0, 3) : [post.post_type],
+      meta: new Date(post.created_at).toLocaleDateString(),
+      cta: "Voir →",
+      colSpan: index === 0 ? 2 : 1,
+      hasPersistentHover: index === 0,
+    }));
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -115,60 +133,42 @@ const Posts = () => {
         </Button>
       </div>
 
-      {/* Posts du jour */}
-      <div className="space-y-4">
-        <div className="flex items-center gap-2">
-          <MessageSquare className="h-5 w-5" />
-          <h2 className="text-xl font-semibold">Posts du jour</h2>
-          <Badge variant="secondary">{todayPosts.length}</Badge>
-        </div>
-        
-        {todayPosts.length === 0 ? (
-          <Card className="p-6 text-center">
-            <p className="text-muted-foreground">Aucun post généré aujourd'hui</p>
-            <Button 
-              onClick={() => setIsModalOpen(true)} 
-              className="mt-4 gap-2"
-              variant="outline"
-            >
-              <Plus className="h-4 w-4" />
-              Générer vos premiers posts
-            </Button>
-          </Card>
-        ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {todayPosts.map((post) => (
-              <PostCard 
-                key={post.id} 
-                post={post} 
-                onCopy={handleCopyPost}
-                onDelete={handleDeletePost}
-              />
-            ))}
-          </div>
-        )}
-      </div>
+      {posts.length === 0 ? (
+        <Card className="p-6 text-center">
+          <p className="text-muted-foreground">Aucun post généré pour ce projet.</p>
+          <Button 
+            onClick={() => setIsModalOpen(true)} 
+            className="mt-4 gap-2"
+            variant="outline"
+          >
+            <Plus className="h-4 w-4" />
+            Générer vos premiers posts
+          </Button>
+        </Card>
+      ) : (
+        <>
+          {todayPosts.length > 0 && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <Calendar className="h-5 w-5" />
+                <h2 className="text-xl font-semibold">Posts du jour</h2>
+                <Badge variant="secondary">{todayPosts.length}</Badge>
+              </div>
+              <BentoGrid items={convertPostsToBentoItems(todayPosts)} />
+            </div>
+          )}
 
-      {/* Posts récents */}
-      {recentPosts.length > 0 && (
-        <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <MessageSquare className="h-5 w-5" />
-            <h2 className="text-xl font-semibold">Posts récents</h2>
-            <Badge variant="outline">{recentPosts.length}</Badge>
-          </div>
-          
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {recentPosts.map((post) => (
-              <PostCard 
-                key={post.id} 
-                post={post} 
-                onCopy={handleCopyPost}
-                onDelete={handleDeletePost}
-              />
-            ))}
-          </div>
-        </div>
+          {recentPosts.length > 0 && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <MessageSquare className="h-5 w-5" />
+                <h2 className="text-xl font-semibold">Posts récents</h2>
+                <Badge variant="outline">{recentPosts.length}</Badge>
+              </div>
+              <BentoGrid items={convertPostsToBentoItems(recentPosts)} />
+            </div>
+          )}
+        </>
       )}
 
       <PostGenerationModal 

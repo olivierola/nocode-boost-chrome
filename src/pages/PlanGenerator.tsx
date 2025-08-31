@@ -27,6 +27,36 @@ interface ProjectPlan {
     description: string;
     status: 'pending' | 'in_progress' | 'completed' | 'error';
   }>;
+  // New properties for plan data
+  startupPrompt?: {
+    initialSetup?: string;
+  };
+  features?: Array<{
+    name: string;
+    description: string;
+    priority?: string;
+    prompt?: string;
+    sub_features?: Array<{
+      name: string;
+      description: string;
+      priority?: string;
+      prompt?: string;
+    }>;
+  }>;
+  visualIdentity?: {
+    detailedSteps?: Array<{
+      step: string;
+      description: string;
+      prompt?: string;
+      deliverables?: string[];
+    }>;
+  };
+  pages?: Array<{
+    name: string;
+    description: string;
+    priority?: string;
+    prompt?: string;
+  }>;
   created_at: string;
   updated_at: string;
 }
@@ -304,6 +334,97 @@ const PlanGenerator = () => {
       </div>
     );
   }
+
+  // Convert plan to tasks format for AgentPlan component
+  const convertPlanToTasks = (plan: ProjectPlan) => {
+    const tasks: any[] = [];
+    let taskId = 1;
+
+    // Add startup prompt as first task
+    if (plan.startupPrompt) {
+      tasks.push({
+        id: taskId.toString(),
+        title: "Prompt de démarrage",
+        description: plan.startupPrompt.initialSetup || "Configuration initiale du projet",
+        status: "pending",
+        priority: "high",
+        level: 0,
+        dependencies: [],
+        subtasks: [],
+        prompt: plan.startupPrompt.initialSetup
+      });
+      taskId++;
+    }
+
+    // Add features
+    if (plan.features) {
+      plan.features.forEach((feature, index) => {
+        const featureTask = {
+          id: taskId.toString(),
+          title: feature.name,
+          description: feature.description,
+          status: "pending",
+          priority: feature.priority || "medium",
+          level: 0,
+          dependencies: [],
+          subtasks: feature.sub_features?.map((subFeature, subIndex) => ({
+            id: `${taskId}.${subIndex + 1}`,
+            title: subFeature.name,
+            description: subFeature.description,
+            status: "pending",
+            priority: subFeature.priority || "medium",
+            prompt: subFeature.prompt
+          })) || [],
+          prompt: feature.prompt
+        };
+        tasks.push(featureTask);
+        taskId++;
+      });
+    }
+
+    // Add visual identity steps
+    if (plan.visualIdentity?.detailedSteps) {
+      tasks.push({
+        id: taskId.toString(),
+        title: "Identité visuelle",
+        description: "Création de l'identité visuelle complète",
+        status: "pending",
+        priority: "medium",
+        level: 0,
+        dependencies: [],
+        subtasks: plan.visualIdentity.detailedSteps.map((step: any, index: number) => ({
+          id: `${taskId}.${index + 1}`,
+          title: step.step,
+          description: step.description,
+          status: "pending",
+          priority: "medium",
+          tools: step.deliverables,
+          prompt: step.prompt
+        }))
+      });
+      taskId++;
+    }
+
+    // Add pages
+    if (plan.pages) {
+      plan.pages.forEach((page, index) => {
+        tasks.push({
+          id: taskId.toString(),
+          title: page.name,
+          description: page.description,
+          status: "pending",
+          priority: page.priority || "medium",
+          level: 0,
+          dependencies: [],
+          subtasks: [],
+          prompt: page.prompt
+        });
+        taskId++;
+      });
+    }
+
+    return tasks;
+  };
 
   return (
     <div className="w-full h-full flex flex-col bg-background relative overflow-hidden">

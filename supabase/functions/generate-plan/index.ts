@@ -131,6 +131,8 @@ IMPORTANT: Si le contexte de conversation precedente contient deja ces informati
 
 IMPORTANT: Repondez uniquement avec un JSON valide, sans texte supplementaire. Tous les contenus textuels doivent etre en MARKDOWN avec syntaxe complete et des descriptions TRES DETAILLEES basees sur le type de produit specifique.
 
+NOUVEAU: Pour l'identite visuelle, incluez des prompts detailles pour chaque etape d'execution.
+
 Structure attendue (TOUS LES CHAMPS OBLIGATOIRES):
 {
   "title": "Titre du plan complet",
@@ -256,6 +258,50 @@ Structure attendue (TOUS LES CHAMPS OBLIGATOIRES):
   "visualIdentity": {
     "title": "Identite visuelle ultra-detaillee",
     "brandPersonality": "## Personnalite de la marque\\n\\n### Traits de personnalite\\n- Description detaillee de la personnalite de marque (moderne, trustworthy, innovative, etc.)\\n- Ton de communication (formel, decontracte, expert, accessible)\\n- Valeurs vehiculees par le design\\n\\n### Positionnement visuel\\n- Style visuel adapte au secteur d'activite\\n- Differentiation par rapport aux concurrents\\n- Evolution prevue de l'identite",
+    "detailedSteps": [
+      {
+        "step": "Recherche et inspiration",
+        "description": "Analyser la concurrence et collecter des references visuelles",
+        "prompt": "Analysez la concurrence dans le secteur ${productType} et proposez 5 references visuelles inspirantes pour l'identite de marque. Documentez les tendances actuelles et justifiez vos choix.",
+        "deliverables": ["Planche d'inspiration", "Analyse concurrentielle", "Moodboard"],
+        "duration": "3-5 jours"
+      },
+      {
+        "step": "Definition de la palette",
+        "description": "Creer une palette de couleurs coherente avec la strategie de marque",
+        "prompt": "Creez une palette de couleurs complete pour ${productType} incluant : couleurs primaires (3), secondaires (3-5), neutres (5-7). Justifiez chaque choix par la psychologie des couleurs et l'adequation au secteur.",
+        "deliverables": ["Palette de couleurs", "Codes couleurs (HEX, RGB, CMYK, HSL)", "Guide d'usage et contrastes"],
+        "duration": "2-3 jours"
+      },
+      {
+        "step": "Selection typographique",
+        "description": "Choisir et associer les polices pour creer une hierarchie visuelle",
+        "prompt": "Selectionnez 2-3 polices complementaires pour ${productType}. Creez un systeme typographique complet avec hierarchie (H1-H6, body, caption, labels) et justifiez vos choix selon la lisibilite et la personnalite de marque.",
+        "deliverables": ["Systeme typographique", "Exemples d'application", "Licences des polices", "Guide de bonnes pratiques"],
+        "duration": "2-3 jours"
+      },
+      {
+        "step": "Creation du logo",
+        "description": "Concevoir le logo principal et ses declinaisons",
+        "prompt": "Concevez 3 variations de logo pour ${productType} : version principale, version simplifiee, version monochrome. Explorez differents concepts (wordmark, pictogramme, combine) et testez la scalabilite.",
+        "deliverables": ["3 concepts de logo", "Declinaisons (couleur, N&B, monochrome)", "Versions responsive", "Fichiers vectoriels"],
+        "duration": "5-7 jours"
+      },
+      {
+        "step": "Applications visuelles",
+        "description": "Decliner l'identite sur differents supports",
+        "prompt": "Appliquez l'identite visuelle de ${productType} sur tous les supports : carte de visite, en-tete de lettre, signature email, favicon, merchandise. Montrez la coherence et l'adaptabilite du systeme.",
+        "deliverables": ["Mockups des applications", "Templates editables", "Guide d'utilisation complet", "Assets finaux"],
+        "duration": "4-6 jours"
+      },
+      {
+        "step": "Systeme de design digital",
+        "description": "Creer le design system pour les interfaces digitales",
+        "prompt": "Developpez un design system complet pour ${productType} incluant : composants UI, etats d'interaction, grilles, espacements, animations. Assurez-vous de la coherence sur tous les ecrans.",
+        "deliverables": ["Design tokens", "Bibliotheque de composants", "Guidelines UI/UX", "Prototypes interactifs"],
+        "duration": "7-10 jours"
+      }
+    ],
     "colorSystem": {
       "primaryColors": {
         "main": "#000000",
