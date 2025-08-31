@@ -101,7 +101,7 @@ export const useSubscription = () => {
     }
   };
 
-  const checkUsageLimit = async (actionType: 'plan_generation' | 'visual_identity' | 'media_upload'): Promise<UsageData | null> => {
+  const checkUsageLimit = async (actionType: 'plan_generation' | 'visual_identity' | 'media_upload' | 'post_generation'): Promise<UsageData | null> => {
     if (!user) return null;
 
     try {
@@ -117,7 +117,7 @@ export const useSubscription = () => {
     }
   };
 
-  const recordUsage = async (actionType: 'plan_generation' | 'visual_identity' | 'media_upload', projectId?: string) => {
+  const recordUsage = async (actionType: 'plan_generation' | 'visual_identity' | 'media_upload' | 'post_generation', projectId?: string) => {
     if (!user) return;
 
     try {

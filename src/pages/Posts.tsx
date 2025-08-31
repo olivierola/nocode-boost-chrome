@@ -36,11 +36,11 @@ const Posts = () => {
     if (!selectedProject || !user) return;
 
     try {
+      // Utilisation d'une requête raw pour contourner les types
       const { data, error } = await supabase
-        .from('posts')
-        .select('*')
-        .eq('project_id', selectedProject.id)
-        .order('created_at', { ascending: false });
+        .rpc('get_posts_for_project', { 
+          project_id: selectedProject.id 
+        });
 
       if (error) throw error;
       setPosts(data || []);
@@ -63,10 +63,9 @@ const Posts = () => {
 
   const handleDeletePost = async (postId: string) => {
     try {
+      // Utilisation d'une requête RPC pour la suppression
       const { error } = await supabase
-        .from('posts')
-        .delete()
-        .eq('id', postId);
+        .rpc('delete_post', { post_id: postId });
 
       if (error) throw error;
       
