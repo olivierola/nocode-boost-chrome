@@ -186,7 +186,7 @@ Structure attendue (TOUS LES CHAMPS OBLIGATOIRES):
     },
     "technicalDocumentation": {
       "title": "Documentation technique & Architecture",
-      "architecture": "## Architecture systeme\\n\\n### Vue d'ensemble\\n```\\n[Frontend] -> [API Gateway] -> [Services] -> [Database]\\n```\\n\\n### Microservices\\n- **Service Auth**: Gestion authentification\\n- **Service Core**: Logique metier",
+      "architecture": "## Architecture systeme\\n\\n### Vue d'ensemble\\n\`\`\`\\n[Frontend] -> [API Gateway] -> [Services] -> [Database]\\n\`\`\`\\n\\n### Microservices\\n- **Service Auth**: Gestion authentification\\n- **Service Core**: Logique metier",
       "modules": [
         {
           "name": "Module Authentication",
@@ -204,7 +204,7 @@ Structure attendue (TOUS LES CHAMPS OBLIGATOIRES):
       ],
       "database": {
         "type": "PostgreSQL (Supabase)",
-        "schema": "## Schema de base de donnees\\n\\n### Tables principales\\n\\n#### users\\n```sql\\nCREATE TABLE users (\\n  id UUID PRIMARY KEY,\\n  email VARCHAR UNIQUE,\\n  created_at TIMESTAMP\\n);\\n```",
+        "schema": "## Schema de base de donnees\\n\\n### Tables principales\\n\\n#### users\\n\`\`\`sql\\nCREATE TABLE users (\\n  id UUID PRIMARY KEY,\\n  email VARCHAR UNIQUE,\\n  created_at TIMESTAMP\\n);\\n\`\`\`",
         "tables": [
           {
             "name": "users",
