@@ -533,6 +533,7 @@ export type Database = {
           collaboration_enabled: boolean
           monthly_media_uploads: number
           monthly_plan_generations: number
+          monthly_post_generations: number
           monthly_visual_identity: number
           plan_name: string
         }[]

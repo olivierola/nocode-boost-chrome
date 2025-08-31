@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { LogOut, Home, Code, Map, Search, Upload, Users, FolderOpen, X, CreditCard, Plus } from 'lucide-react';
+import { LogOut, Home, Code, Map, Search, Upload, Users, FolderOpen, X, CreditCard, Plus, MessageSquare } from 'lucide-react';
 
 // Import all components
 import Dashboard from '@/pages/Dashboard';
@@ -16,6 +16,7 @@ import UXAudit from '@/pages/UXAudit';
 import MediaUpload from '@/pages/MediaUpload';
 import Collaboration from '@/pages/Collaboration';
 import Payment from '@/pages/Payment';
+import Posts from '@/pages/Posts';
 import NotificationCenter from '@/components/NotificationCenter';
 import ProjectSelector from '@/components/ProjectSelector';
 
@@ -129,6 +130,15 @@ const MainLayout = () => {
                   <Upload className="h-3 w-3" />
                 </Button>
                 <Button 
+                  variant={activeTab === 'posts' ? 'default' : 'ghost'} 
+                  size="sm" 
+                  onClick={() => setActiveTab('posts')}
+                  className={`h-7 w-7 p-0 rounded-md ${activeTab === 'posts' ? 'bg-background shadow-sm' : 'hover:bg-background/50'}`}
+                  title="Posts"
+                >
+                  <MessageSquare className="h-3 w-3" />
+                </Button>
+                <Button 
                   variant={activeTab === 'collaboration' ? 'default' : 'ghost'} 
                   size="sm" 
                   onClick={() => setActiveTab('collaboration')}
@@ -199,6 +209,12 @@ const MainLayout = () => {
 
               <TabsContent value="media" className="h-full m-0 data-[state=active]:flex data-[state=active]:flex-col">
                 <MediaUpload />
+              </TabsContent>
+
+              <TabsContent value="posts" className="h-full m-0 data-[state=active]:flex data-[state=active]:flex-col">
+                <div className="flex-1 px-6 py-4 overflow-y-auto">
+                  <Posts />
+                </div>
               </TabsContent>
 
               <TabsContent value="collaboration" className="h-full m-0 data-[state=active]:flex data-[state=active]:flex-col">

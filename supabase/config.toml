@@ -90,3 +90,6 @@ verify_jwt = true
 
 [functions.record-usage]
 verify_jwt = true
+
+[functions.generate-posts]
+verify_jwt = true
