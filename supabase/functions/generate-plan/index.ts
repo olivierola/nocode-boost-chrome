@@ -135,165 +135,153 @@ Structure attendue (TOUS LES CHAMPS OBLIGATOIRES):
 {
   "title": "Titre du plan complet",
   "description": "Description markdown du projet avec contexte detaille",
-  "centralNode": {
-    "id": "central",
-    "title": "Nom du projet",
-    "description": "# Description centrale du projet\\n\\n**Vision** du projet avec details markdown"
+  "mainIdea": {
+    "concept": "## Concept principal\\n\\nDescription de l'idee maitresse du projet",
+    "vision": "## Vision du projet\\n\\nVision a long terme",
+    "mission": "## Mission\\n\\nMission et objectifs principaux",
+    "valueProposition": "## Proposition de valeur\\n\\nCe qui rend le projet unique"
   },
-  "branches": {
-    "marketStudy": {
-      "title": "Etude de marche & Analyse concurrentielle",
-      "content": "## Analyse approfondie du marche\\n\\n### Contexte economique\\n- **Taille du marche**: Details\\n- **Croissance annuelle**: Pourcentage\\n\\n### Positionnement\\nAnalyse du positionnement",
-      "competitors": [
-        {
-          "name": "Nom concurrent",
-          "description": "## Description complete\\n\\n**Forces identifiees**:\\n- Force 1 avec details\\n- Force 2 avec analyse",
-          "strengths": ["Force detaillee 1", "Force detaillee 2"],
-          "weaknesses": ["Faiblesse analysee 1", "Faiblesse analysee 2"],
-          "marketShare": "X% du marche avec justification",
-          "pricing": "### Strategie tarifaire\\n\\n- **Freemium**: Details\\n- **Premium**: Details",
-          "userBase": "Nombre d'utilisateurs estime",
-          "revenue": "Chiffre d'affaires estime",
-          "technologies": ["Tech 1", "Tech 2"],
-          "differentiators": ["Differenciateur 1", "Differenciateur 2"]
-        }
-      ],
-      "opportunities": [
-        "## Opportunite 1\\n\\n**Description**: Details\\n**Impact**: Impact estime\\n**Facilite**: Niveau de difficulte"
-      ],
-      "risks": [
-        "## Risque 1\\n\\n**Probabilite**: Haute/Moyenne/Faible\\n**Impact**: Description\\n**Mitigation**: Plan d'action"
-      ],
-      "marketSize": "## Taille du marche\\n\\n- **TAM**: Total Addressable Market\\n- **SAM**: Serviceable Addressable Market\\n- **SOM**: Serviceable Obtainable Market",
-      "targetMarket": "## Marche cible\\n\\n### Segments principaux\\n1. **Segment 1**: Description\\n2. **Segment 2**: Description",
-      "trends": [
-        "## Tendance 1\\n\\n**Impact**: Description\\n**Timeline**: Calendrier"
-      ]
+  "productSummary": {
+    "overview": "## Resume complet du produit\\n\\nDescription detaillee",
+    "targetAudience": "## Public cible\\n\\nPersonas detailles",
+    "problemSolution": "## Probleme et solution\\n\\nProbleme resolu et solution apportee",
+    "businessModel": "## Modele economique\\n\\nSources de revenus et strategie",
+    "mvpDefinition": "## Definition du MVP\\n\\nFeatures essentielles du produit minimum viable"
+  },
+  "technicalDocumentation": {
+    "title": "Documentation technique & Architecture",
+    "architecture": "## Architecture systeme\\n\\n### Vue d'ensemble\\n\`\`\`\\n[Frontend] -> [API Gateway] -> [Services] -> [Database]\\n\`\`\`",
+    "technologiesStack": {
+      "frontend": ["React", "TypeScript", "Tailwind CSS"],
+      "backend": ["Supabase", "PostgreSQL", "Edge Functions"],
+      "deployment": ["Vercel", "Supabase Hosting"],
+      "tools": ["Git", "VS Code", "Figma"]
     },
-    "projectDescription": {
-      "title": "Description complete & Vision produit",
-      "summary": "## Resume executif\\n\\n**Mission**: Description de la mission\\n\\n**Vision**: Description de la vision\\n\\n### Probleme resolu\\nDescription du probleme\\n\\n### Solution apportee\\nDescription de la solution",
-      "objectives": [
-        "## Objectif 1\\n\\n**Description**: Details\\n**KPI**: Indicateurs\\n**Timeline**: Calendrier"
-      ],
-      "targetAudience": "## Public cible\\n\\n### Persona 1: [Nom]\\n- **Age**: Range d'age\\n- **Profession**: Type de profession\\n- **Besoins**: Besoins identifies\\n- **Frustrations**: Points de douleur",
-      "valueProposition": "## Proposition de valeur unique\\n\\n### Avantages cles\\n1. **Avantage 1**: Description\\n2. **Avantage 2**: Description\\n\\n### Differenciation\\nPoints de differenciation",
-      "successMetrics": [
-        "## KPI 1: Acquisition\\n\\n- **Metrique**: Nom de la metrique\\n- **Objectif**: Objectif chiffre\\n- **Mesure**: Methode de mesure"
-      ],
-      "businessModel": "## Modele economique\\n\\n### Sources de revenus\\n1. **Revenue Stream 1**: Description\\n2. **Revenue Stream 2**: Description\\n\\n### Couts principaux\\n- **CAC**: Customer Acquisition Cost\\n- **LTV**: Lifetime Value",
-      "mvp": "## Definition du MVP\\n\\n### Features essentielles\\n1. **Core Feature 1**: Description\\n2. **Core Feature 2**: Description\\n\\n### Criteres de validation\\nCriteres de succes"
-    },
-    "technicalDocumentation": {
-      "title": "Documentation technique & Architecture",
-      "architecture": "## Architecture systeme\\n\\n### Vue d'ensemble\\n\`\`\`\\n[Frontend] -> [API Gateway] -> [Services] -> [Database]\\n\`\`\`\\n\\n### Microservices\\n- **Service Auth**: Gestion authentification\\n- **Service Core**: Logique metier",
-      "modules": [
+    "database": {
+      "type": "PostgreSQL (Supabase)",
+      "schema": "## Schema de base de donnees\\n\\n### Tables principales\\n\\n\`\`\`sql\\nCREATE TABLE users (\\n  id UUID PRIMARY KEY,\\n  email VARCHAR UNIQUE\\n);\\n\`\`\`",
+      "tables": [
         {
-          "name": "Module Authentication",
-          "description": "## Module d'authentification\\n\\n### Responsabilites\\n- **Login/Logout**: Gestion des sessions\\n- **JWT Management**: Gestion des tokens\\n\\n### Technologies\\n- **Frontend**: React + Context\\n- **Backend**: Supabase Auth",
-          "technologies": ["React Context", "Supabase Auth", "JWT"],
-          "dependencies": ["Module Core", "Module Database"],
-          "complexity": "moyenne",
-          "endpoints": ["/api/login", "/api/logout", "/api/refresh"],
-          "database": ["users", "sessions", "permissions"]
-        }
-      ],
-      "recommendedTools": [
-        "## React + TypeScript\\n\\n**Justification**: Ecosysteme mature\\n**Alternatives**: Vue.js, Angular",
-        "## Supabase\\n\\n**Avantages**: Backend as a Service\\n**Limitations**: Vendor lock-in"
-      ],
-      "database": {
-        "type": "PostgreSQL (Supabase)",
-        "schema": "## Schema de base de donnees\\n\\n### Tables principales\\n\\n#### users\\n\`\`\`sql\\nCREATE TABLE users (\\n  id UUID PRIMARY KEY,\\n  email VARCHAR UNIQUE,\\n  created_at TIMESTAMP\\n);\\n\`\`\`",
-        "tables": [
-          {
-            "name": "users",
-            "description": "Table des utilisateurs",
-            "fields": ["id", "email", "created_at"],
-            "relations": ["profiles", "projects"]
-          }
-        ]
-      },
-      "apis": [
-        {
-          "name": "API Authentification",
-          "description": "## API de gestion des utilisateurs\\n\\n### Endpoints\\n- **POST** /auth/login\\n- **POST** /auth/register",
-          "endpoints": [
-            {
-              "method": "POST",
-              "path": "/auth/login",
-              "description": "Connexion utilisateur",
-              "parameters": ["email", "password"],
-              "response": "JWT token + user data"
-            }
-          ]
-        }
-      ],
-      "security": [
-        "## Authentification\\n\\n- **JWT** avec refresh tokens\\n- **OAuth 2.0** pour connexions sociales",
-        "## Protection des donnees\\n\\n- **Chiffrement** en transit (HTTPS)\\n- **Validation** cote serveur"
-      ]
-    },
-    "timeline": {
-      "title": "Planning & Roadmap detaille",
-      "totalDuration": "6 mois de developpement",
-      "phases": [
-        {
-          "id": "phase-1",
-          "name": "Phase 1 - Foundation & MVP",
-          "duration": "8 semaines",
-          "description": "## Phase 1: Fondations\\n\\n### Objectifs\\n- **Setup** du projet\\n- **Authentification**\\n- **Interface** de base",
-          "deliverables": [
-            "Setup projet complet avec CI/CD",
-            "Interface d'authentification fonctionnelle",
-            "Dashboard utilisateur basique"
-          ],
-          "milestones": [
-            "Semaine 2: Setup technique termine",
-            "Semaine 4: Auth fonctionnelle",
-            "Semaine 6: Dashboard MVP"
-          ]
+          "name": "users",
+          "description": "Table des utilisateurs",
+          "fields": ["id", "email", "created_at"],
+          "relations": ["profiles", "projects"]
         }
       ]
     },
-    "team": {
-      "title": "Equipe & Ressources detaillees",
-      "roles": [
-        {
-          "role": "Lead Developer",
-          "description": "## Lead Developer\\n\\n### Responsabilites\\n- **Architecture** technique\\n- **Code review**\\n- **Mentoring** equipe",
-          "skills": [
-            "React/TypeScript (Expert)",
-            "Node.js/PostgreSQL (Avance)",
-            "Architecture logicielle"
-          ],
-          "timeAllocation": "100% pendant 6 mois"
-        }
-      ]
-    },
-    "features": [
+    "apis": [
       {
-        "id": "feature-auth",
-        "title": "Systeme d'authentification complet",
-        "description": "## Authentification utilisateur\\n\\n### Fonctionnalites\\n- **Inscription/Connexion** email/password\\n- **OAuth** Google, GitHub\\n- **Reset password**\\n- **Verification email**",
-        "specifications": "## Specifications techniques\\n\\n### Frontend\\n- **React Hook Form** pour la validation\\n- **Zod** pour les schemas\\n\\n### Backend\\n- **Supabase Auth**\\n- **JWT** avec refresh tokens",
-        "prompt": "Creez un systeme d'authentification complet avec React et Supabase. Implementez :\\n\\n1. **Page de connexion** avec email/password et validation en temps reel\\n2. **Page d'inscription** avec confirmation d'email\\n3. **Reset password** avec lien securise\\n4. **OAuth** Google et GitHub\\n5. **Hook useAuth** pour la gestion d'etat\\n6. **Protection de routes** avec redirections\\n7. **Interface** moderne avec Tailwind CSS\\n\\nUtilisez React Hook Form + Zod pour la validation, et Supabase Auth pour le backend.",
-        "order": 1,
-        "priority": "haute",
-        "complexity": "moyenne",
-        "estimatedTime": "40 heures",
-        "dependencies": [],
-        "acceptanceCriteria": [
-          "Utilisateur peut creer un compte avec email",
-          "Connexion avec email/password fonctionne",
-          "OAuth Google/GitHub operationnel"
+        "name": "API Authentication",
+        "description": "## API de gestion des utilisateurs",
+        "endpoints": [
+          {
+            "method": "POST",
+            "path": "/auth/login",
+            "description": "Connexion utilisateur"
+          }
         ]
       }
     ]
+  },
+  "roadmap": {
+    "title": "Roadmap detaillee",
+    "totalDuration": "6 mois de developpement",
+    "phases": [
+      {
+        "id": "phase-1",
+        "name": "Phase 1 - Foundation & Setup",
+        "duration": "4 semaines",
+        "description": "## Phase 1: Fondations\\n\\nSetup initial du projet",
+        "deliverables": ["Setup projet", "Architecture de base", "Authentification"],
+        "milestones": ["Semaine 2: Setup termine", "Semaine 4: Auth fonctionnelle"]
+      }
+    ]
+  },
+  "features": [
+    {
+      "id": "feature-auth",
+      "title": "Authentification utilisateur",
+      "description": "## Systeme d'authentification complet\\n\\nGestion des utilisateurs",
+      "priority": "haute",
+      "complexity": "moyenne",
+      "estimatedTime": "40 heures",
+      "subFeatures": [
+        {
+          "id": "auth-login",
+          "title": "Page de connexion",
+          "description": "Interface de connexion utilisateur",
+          "prompt": "Creez une page de connexion avec React Hook Form et validation Zod"
+        }
+      ],
+      "prompt": "Implementez un systeme d'authentification complet avec Supabase Auth",
+      "acceptanceCriteria": ["Connexion fonctionnelle", "Validation des formulaires"]
+    }
+  ],
+  "pages": [
+    {
+      "id": "home",
+      "name": "Page d'accueil",
+      "description": "## Page d'accueil\\n\\nLanding page principale",
+      "sections": [
+        {
+          "id": "hero",
+          "name": "Section Hero",
+          "description": "Section d'accroche principale",
+          "components": ["HeroTitle", "HeroDescription", "CTAButton"]
+        }
+      ],
+      "visualIdentity": {
+        "colorScheme": "primary et accent",
+        "typography": "headings modernes",
+        "layout": "centree avec espacement genereux"
+      }
+    }
+  ],
+  "marketingStrategy": {
+    "title": "Strategie marketing",
+    "targetMarket": "## Marche cible\\n\\nSegments de marche identifies",
+    "positioning": "## Positionnement\\n\\nPosition sur le marche",
+    "channels": ["Marketing digital", "Reseaux sociaux", "SEO"],
+    "budget": "## Budget marketing\\n\\nRepartition du budget",
+    "kpis": ["Acquisition d'utilisateurs", "Taux de conversion", "Retention"]
+  },
+  "visualIdentity": {
+    "title": "Identite visuelle globale",
+    "brandGuidelines": "## Guidelines de marque\\n\\nRegles d'usage de la marque",
+    "colorPalette": {
+      "primary": "#000000",
+      "secondary": "#666666", 
+      "accent": "#FF6B35"
+    },
+    "typography": {
+      "headings": "Inter Bold",
+      "body": "Inter Regular"
+    },
+    "designSystem": "## Systeme de design\\n\\nComposants et tokens de design"
+  },
+  "security": {
+    "title": "Plan de securisation",
+    "authentication": "## Authentification\\n\\nStrategies d'authentification securisee",
+    "dataProtection": "## Protection des donnees\\n\\nChiffrement et stockage securise",
+    "accessControl": "## Controle d'acces\\n\\nGestion des permissions et roles",
+    "compliance": "## Conformite\\n\\nRGPD et autres reglementations",
+    "bestPractices": [
+      "Validation cote serveur",
+      "Chiffrement des donnees sensibles",
+      "Audit trails",
+      "Rate limiting"
+    ]
+  },
+  "startupPrompt": {
+    "title": "Prompt de demarrage",
+    "initialSetup": "## Setup initial\\n\\nCommandes pour initialiser le projet",
+    "firstSteps": "## Premieres etapes\\n\\n1. Cloner le repository\\n2. Installer les dependances\\n3. Configurer l'environnement",
+    "developmentWorkflow": "## Workflow de developpement\\n\\nProcessus de developpement recommande",
+    "deploymentGuide": "## Guide de deploiement\\n\\nEtapes pour deployer en production"
   }
 }
 
-Creez un plan ULTRA-COMPLET avec minimum 15-20 features detaillees et 8-12 pages, chaque feature ayant 3-5 sous-features connectees avec des prompts precis pour l'IA et des specifications techniques completes.`;
+Creez un plan ULTRA-COMPLET avec minimum 15-20 features detaillees, chaque feature ayant 3-5 sous-features avec des prompts precis pour l'IA.`;
 
     const userPrompt = `Creez un plan mindmap complet pour : ${contextualPrompt}`;
 
