@@ -127,9 +127,9 @@ IMPORTANT: Si le contexte de conversation precedente contient deja ces informati
     }
 
     // Step 2: Generate comprehensive mindmap plan
-    const systemPrompt = `Vous etes un expert en planification de projets et architecture logicielle. Creez un plan detaille sous forme de mindmap structuree.
+    const systemPrompt = `Vous etes un expert en planification de projets, architecture logicielle, etude de marche et design. Creez un plan ultra-detaille sous forme de mindmap structuree.
 
-IMPORTANT: Repondez uniquement avec un JSON valide, sans texte supplementaire. Tous les contenus textuels doivent etre en MARKDOWN avec syntaxe complete.
+IMPORTANT: Repondez uniquement avec un JSON valide, sans texte supplementaire. Tous les contenus textuels doivent etre en MARKDOWN avec syntaxe complete et des descriptions TRES DETAILLEES basees sur le type de produit specifique.
 
 Structure attendue (TOUS LES CHAMPS OBLIGATOIRES):
 {
@@ -237,6 +237,14 @@ Structure attendue (TOUS LES CHAMPS OBLIGATOIRES):
       }
     }
   ],
+  "marketStudy": {
+    "title": "Etude de marche complete",
+    "marketSize": "## Taille du marche\\n\\n### Marche total addressable (TAM)\\n- Estimation quantitative du marche global\\n- Sources et methodologie d'estimation\\n\\n### Marche addressable serviceable (SAM)\\n- Segment de marche realiste\\n- Contraintes geographiques et demographiques\\n\\n### Marche obtenable (SOM)\\n- Part de marche realisable a court/moyen terme",
+    "competitiveAnalysis": "## Analyse concurrentielle\\n\\n### Concurrents directs\\n- Analyse detaillee des 3-5 principaux concurrents\\n- Forces et faiblesses de chacun\\n- Positionnement prix et fonctionnalites\\n\\n### Concurrents indirects\\n- Solutions alternatives utilisees par la cible\\n- Menaces de substitution\\n\\n### Analyse SWOT\\n- Strengths: Forces du projet\\n- Weaknesses: Faiblesses identifiees\\n- Opportunities: Opportunites de marche\\n- Threats: Menaces concurrentielles",
+    "targetSegments": "## Segments de marche\\n\\n### Segmentation primaire\\n- Criteres de segmentation (demographiques, comportementaux, geographiques)\\n- Description detaillee de chaque segment\\n- Taille et potentiel de chaque segment\\n\\n### Personas detailles\\n- 3-5 personas principaux avec demographics, motivations, pain points\\n- Parcours client type pour chaque persona\\n- Canaux de communication preferes",
+    "marketTrends": "## Tendances du marche\\n\\n### Tendances actuelles\\n- Evolution du marche sur les 2-3 dernieres annees\\n- Facteurs de croissance identifiees\\n\\n### Tendances futures\\n- Projections sur les 3-5 prochaines annees\\n- Technologies emergentes impactantes\\n- Changements reglementaires anticipes",
+    "entryBarriers": "## Barrieres a l'entree\\n\\n### Barrieres techniques\\n- Complexite technologique\\n- Brevets et propriete intellectuelle\\n\\n### Barrieres financieres\\n- Investissement initial requis\\n- Couts d'acquisition client\\n\\n### Barrieres reglementaires\\n- Conformite et certifications requises\\n- Licences necessaires"
+  },
   "marketingStrategy": {
     "title": "Strategie marketing",
     "targetMarket": "## Marche cible\\n\\nSegments de marche identifies",
@@ -246,18 +254,67 @@ Structure attendue (TOUS LES CHAMPS OBLIGATOIRES):
     "kpis": ["Acquisition d'utilisateurs", "Taux de conversion", "Retention"]
   },
   "visualIdentity": {
-    "title": "Identite visuelle globale",
-    "brandGuidelines": "## Guidelines de marque\\n\\nRegles d'usage de la marque",
-    "colorPalette": {
-      "primary": "#000000",
-      "secondary": "#666666", 
-      "accent": "#FF6B35"
+    "title": "Identite visuelle ultra-detaillee",
+    "brandPersonality": "## Personnalite de la marque\\n\\n### Traits de personnalite\\n- Description detaillee de la personnalite de marque (moderne, trustworthy, innovative, etc.)\\n- Ton de communication (formel, decontracte, expert, accessible)\\n- Valeurs vehiculees par le design\\n\\n### Positionnement visuel\\n- Style visuel adapte au secteur d'activite\\n- Differentiation par rapport aux concurrents\\n- Evolution prevue de l'identite",
+    "colorSystem": {
+      "primaryColors": {
+        "main": "#000000",
+        "description": "## Couleur principale\\n\\n### Utilisation\\n- Couleur dominante pour les CTA et elements importants\\n- Psychologie de la couleur adaptee au produit\\n- Variantes (light, dark, muted)\\n\\n### Applications\\n- Headers et navigation\\n- Boutons d'action principaux\\n- Highlights et accents visuels",
+        "variants": ["#1a1a1a", "#333333", "#4d4d4d"]
+      },
+      "secondaryColors": {
+        "main": "#666666",
+        "description": "## Couleurs secondaires\\n\\n### Palette harmonieuse\\n- Couleurs complementaires basees sur la theorie des couleurs\\n- Adaptation selon le type de produit (tech, creative, business, etc.)\\n- Contraste et accessibilite WCAG",
+        "variants": ["#808080", "#999999", "#b3b3b3"]
+      },
+      "accent": "#FF6B35",
+      "semantic": {
+        "success": "#10B981",
+        "warning": "#F59E0B", 
+        "error": "#EF4444",
+        "info": "#3B82F6"
+      },
+      "neutrals": ["#F8F9FA", "#E9ECEF", "#DEE2E6", "#CED4DA"],
+      "gradients": ["linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%)"]
     },
     "typography": {
-      "headings": "Inter Bold",
-      "body": "Inter Regular"
+      "fontStrategy": "## Strategie typographique\\n\\n### Selection des polices\\n- Police principale adaptee au secteur (tech: sans-serif moderne, luxury: serif elegant, creative: display unique)\\n- Hierarchie typographique complete\\n- Lisibilite multi-device",
+      "headings": {
+        "family": "Inter Bold",
+        "sizes": ["4rem", "3rem", "2.25rem", "1.875rem", "1.5rem", "1.25rem"],
+        "lineHeights": ["1.1", "1.2", "1.3"],
+        "letterSpacing": ["-0.025em", "0", "0.025em"]
+      },
+      "body": {
+        "family": "Inter Regular",
+        "sizes": ["1rem", "0.875rem", "0.75rem"],
+        "lineHeights": ["1.6", "1.5", "1.4"]
+      },
+      "display": {
+        "family": "Inter Black",
+        "usage": "Titres hero et elements de forte visibilite"
+      }
     },
-    "designSystem": "## Systeme de design\\n\\nComposants et tokens de design"
+    "layoutPrinciples": {
+      "spacing": "## Systeme d'espacement\\n\\n### Grille de base\\n- Unite de base: 8px ou 4px selon la densite\\n- Multiplicateurs harmonieux (1x, 1.5x, 2x, 3x, 4x, 6x, 8x)\\n- Adaptation responsive automatique\\n\\n### Compositions\\n- Layouts adaptes au type de contenu\\n- Equilibre visuel et breathing room\\n- Focus sur la hierarchie visuelle",
+      "grid": "## Systeme de grille\\n\\n### Breakpoints\\n- Mobile: 320px-768px\\n- Tablet: 768px-1024px\\n- Desktop: 1024px+\\n\\n### Colonnes et gutters\\n- Grille flexible 12 colonnes\\n- Gutters adaptatifs selon l'ecran",
+      "components": "## Composition des composants\\n\\n### Cards et containers\\n- Styles de cartes selon le contexte\\n- Ombres et elevations\\n- Borders et radius harmonieux\\n\\n### Buttons et interactions\\n- Etats (default, hover, active, disabled)\\n- Animations micro-interactions\\n- Feedback visuel immediate"
+    },
+    "designTokens": {
+      "spacing": ["0.25rem", "0.5rem", "1rem", "1.5rem", "2rem", "3rem", "4rem"],
+      "borderRadius": ["0.25rem", "0.5rem", "1rem", "999px"],
+      "shadows": [
+        "0 1px 3px 0 rgba(0, 0, 0, 0.1)",
+        "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+        "0 10px 15px -3px rgba(0, 0, 0, 0.1)"
+      ],
+      "animations": {
+        "duration": ["150ms", "300ms", "500ms"],
+        "easing": ["ease-in-out", "cubic-bezier(0.4, 0, 0.2, 1)"]
+      }
+    },
+    "componentLibrary": "## Bibliotheque de composants\\n\\n### Composants de base\\n- Buttons (primary, secondary, tertiary, ghost)\\n- Inputs et forms avec validation visuelle\\n- Cards avec variantes selon le contenu\\n- Modals et overlays\\n\\n### Composants avances\\n- Navigation adaptee au produit\\n- Tableaux et data display\\n- Charts et visualisations\\n- Media players et galleries\\n\\n### Specifications techniques\\n- Props et variants pour chaque composant\\n- Etats d'interaction detailles\\n- Responsive behavior automatique",
+    "brandAssets": "## Assets de marque\\n\\n### Logo et variations\\n- Logo principal avec versions monochromes\\n- Favicon et app icons\\n- Watermarks et signatures\\n\\n### Iconographie\\n- Style d'icones coherent (outline, filled, duotone)\\n- Bibliotheque d'icones custom si necessaire\\n- Pictogrammes et illustrations\\n\\n### Imagery guidelines\\n- Style photographique ou illustratif\\n- Filtres et traitements d'image\\n- Placeholder et fallback images"
   },
   "security": {
     "title": "Plan de securisation",
@@ -280,6 +337,13 @@ Structure attendue (TOUS LES CHAMPS OBLIGATOIRES):
     "deploymentGuide": "## Guide de deploiement\\n\\nEtapes pour deployer en production"
   }
 }
+
+INSTRUCTIONS SPECIALES:
+1. ADAPTEZ tout le contenu au TYPE SPECIFIQUE de produit demande (e-commerce, SaaS, mobile app, etc.)
+2. Pour l'etude de marche: recherchez des donnees realistes selon le secteur
+3. Pour l'identite visuelle: proposez des choix esthetiques coherents avec l'industrie
+4. Pour les features: listez des fonctionnalites SPECIFIQUES au domaine d'application
+5. Pour la strategie marketing: adaptez aux canaux pertinents pour la cible
 
 Creez un plan ULTRA-COMPLET avec minimum 15-20 features detaillees, chaque feature ayant 3-5 sous-features avec des prompts precis pour l'IA.`;
 
