@@ -11,6 +11,7 @@ import AutoExecutionDialog from '@/components/AutoExecutionDialog';
 import PlanAutoExecutor from '@/components/PlanAutoExecutor';
 import { MindmapModal } from '@/components/MindmapModal';
 import { PlanSummaryCard } from '@/components/PlanSummaryCard';
+import { PlanMindmapVisualization } from '@/components/PlanMindmapVisualization';
 
 interface ProjectPlan {
   id: string;
@@ -476,15 +477,61 @@ const PlanGenerator = () => {
       {/* Auto Executor Dialog */}
       {currentPlan && (
         <PlanAutoExecutor
-          steps={currentPlan.steps.map(step => ({
-            id: step.id,
-            titre: step.title,
-            description: step.description,
-            prompt: currentPlan.plan_type === 'mindmap' && currentPlan.mindmap_data?.branches?.features
-              ? currentPlan.mindmap_data.branches.features.find((f: any) => f.id === step.id)?.prompt || `Implémentez l'étape: ${step.title}. ${step.description}`
-              : `Implémentez l'étape: ${step.title}. ${step.description}`,
-            status: step.status
-          }))}
+          steps={(() => {
+            // Organiser les étapes: prompt de démarrage -> features principales -> sous-features
+            const allSteps = [];
+            
+            // 1. Ajouter le prompt de démarrage en premier si disponible
+            if (currentPlan.plan_type === 'mindmap' && currentPlan.mindmap_data?.startupPrompt) {
+              allSteps.push({
+                id: 'startup',
+                titre: 'Prompt de Démarrage',
+                description: 'Initialisation et configuration du projet',
+                prompt: currentPlan.mindmap_data.startupPrompt.initialSetup + '\n\n' + currentPlan.mindmap_data.startupPrompt.firstSteps,
+                status: 'pending' as const
+              });
+            }
+            
+            // 2. Ajouter les features principales avec leurs prompts
+            if (currentPlan.plan_type === 'mindmap' && currentPlan.mindmap_data?.features) {
+              currentPlan.mindmap_data.features.forEach((feature: any) => {
+                // Feature principale
+                allSteps.push({
+                  id: `feature-${feature.id}`,
+                  titre: `Feature: ${feature.title}`,
+                  description: feature.description,
+                  prompt: feature.prompt || `Implémentez la feature: ${feature.title}. ${feature.description}`,
+                  status: 'pending' as const
+                });
+                
+                // Sous-features de cette feature
+                if (feature.subFeatures && feature.subFeatures.length > 0) {
+                  feature.subFeatures.forEach((subFeature: any) => {
+                    allSteps.push({
+                      id: `subfeature-${subFeature.id}`,
+                      titre: `Sous-feature: ${subFeature.title}`,
+                      description: subFeature.description,
+                      prompt: subFeature.prompt || `Implémentez la sous-feature: ${subFeature.title}. ${subFeature.description}`,
+                      status: 'pending' as const
+                    });
+                  });
+                }
+              });
+            }
+            
+            // 3. Fallback pour les plans standards
+            if (allSteps.length === 0) {
+              return currentPlan.steps.map(step => ({
+                id: step.id,
+                titre: step.title,
+                description: step.description,
+                prompt: `Implémentez l'étape: ${step.title}. ${step.description}`,
+                status: step.status
+              }));
+            }
+            
+            return allSteps;
+          })()}
           isOpen={showExecutionDialog}
           onClose={() => {
             setShowExecutionDialog(false);
@@ -495,15 +542,15 @@ const PlanGenerator = () => {
         />
       )}
 
-      {/* Mindmap Modal */}
+      {/* Plan Mindmap Visualization */}
       {selectedMindmapData && (
-        <MindmapModal
+        <PlanMindmapVisualization
           isOpen={showMindmapModal}
           onClose={() => {
             setShowMindmapModal(false);
             setSelectedMindmapData(null);
           }}
-          data={selectedMindmapData}
+          data={selectedMindmapData.plan || selectedMindmapData}
           onExecuteFeature={executeFeatureFromMindmap}
         />
       )}

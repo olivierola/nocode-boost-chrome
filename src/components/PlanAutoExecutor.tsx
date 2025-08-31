@@ -159,6 +159,23 @@ const PlanAutoExecutor = ({ steps, isOpen, onClose, mode, onUpdateSteps }: PlanA
     const step = steps[stepIndex];
     setCurrentStepIndex(stepIndex);
 
+    // Organiser l'exécution par priorité: features principales puis sous-features
+    const isMainFeature = step.titre.toLowerCase().includes('feature principale') || 
+                         step.description.toLowerCase().includes('feature principale');
+    const isSubFeature = step.titre.toLowerCase().includes('sous-feature') || 
+                        step.description.toLowerCase().includes('sous-feature');
+
+    // Si c'est une feature principale, exécuter d'abord son prompt principal
+    if (isMainFeature) {
+      addLog(`Exécution de la feature principale: ${step.titre}`, 'info');
+      const mainPromptResponse = await sendPromptToAI(step.prompt, stepIndex);
+      setChatMessages(prev => [...prev, `Feature principale - Prompt: ${step.prompt}`, `Réponse: ${mainPromptResponse.response}`]);
+      
+      if (mainPromptResponse.success) {
+        addLog(`Feature principale ${step.titre} exécutée avec succès`, 'success');
+      }
+    }
+
     // Mettre à jour le statut de l'étape
     const updatedSteps = [...steps];
     updatedSteps[stepIndex] = { ...step, status: 'in_progress' };
@@ -313,6 +330,12 @@ const PlanAutoExecutor = ({ steps, isOpen, onClose, mode, onUpdateSteps }: PlanA
     addLog(`Début de l'exécution en mode ${mode}`, 'info');
     
     try {
+      // Commencer par le prompt de démarrage si c'est le début
+      if (currentStepIndex === 0) {
+        addLog("Exécution du prompt de démarrage...", 'info');
+        await executeStartupPrompt();
+      }
+      
       await executeStep(currentStepIndex);
     } catch (error) {
       addLog(`Erreur générale: ${error}`, 'error');
@@ -321,6 +344,28 @@ const PlanAutoExecutor = ({ steps, isOpen, onClose, mode, onUpdateSteps }: PlanA
         setIsExecuting(false);
         addLog("Exécution terminée", 'info');
       }
+    }
+  };
+
+  const executeStartupPrompt = async () => {
+    // Rechercher le prompt de démarrage dans les étapes
+    const startupStep = steps.find(step => 
+      step.titre.toLowerCase().includes('démarrage') || 
+      step.titre.toLowerCase().includes('startup') ||
+      step.description.toLowerCase().includes('initialisation')
+    );
+
+    if (startupStep) {
+      addLog("Prompt de démarrage trouvé, exécution...", 'info');
+      const toolResponse = await sendPromptToAI(startupStep.prompt, -1);
+      
+      if (toolResponse.success) {
+        addLog("Prompt de démarrage exécuté avec succès", 'success');
+      } else {
+        addLog(`Erreur lors du prompt de démarrage: ${toolResponse.response}`, 'warning');
+      }
+    } else {
+      addLog("Aucun prompt de démarrage trouvé, poursuite normale", 'info');
     }
   };
 
