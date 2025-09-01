@@ -7,6 +7,73 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Helper function to call AI with fallback
+async function callAIWithFallback(messages: any[], model: string, maxTokens: number, temperature: number) {
+  const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+  const groqApiKey = Deno.env.get('GROQ_API_KEY');
+
+  // Try OpenAI first
+  if (openAIApiKey) {
+    try {
+      console.log('Attempting OpenAI API call...');
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openAIApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model,
+          messages,
+          max_tokens: maxTokens,
+          temperature,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        return data.choices[0].message.content;
+      } else {
+        console.log(`OpenAI failed with status ${response.status}, trying Groq...`);
+      }
+    } catch (error) {
+      console.log('OpenAI error:', error, 'trying Groq...');
+    }
+  }
+
+  // Fallback to Groq
+  if (groqApiKey) {
+    try {
+      console.log('Attempting Groq API call...');
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${groqApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'llama-3.1-70b-versatile',
+          messages,
+          max_tokens: maxTokens,
+          temperature,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        return data.choices[0].message.content;
+      } else {
+        throw new Error(`Groq API error: ${response.status}`);
+      }
+    } catch (error) {
+      console.error('Groq error:', error);
+      throw new Error('Both OpenAI and Groq APIs failed');
+    }
+  }
+
+  throw new Error('No AI API keys configured');
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -15,10 +82,6 @@ serve(async (req) => {
 
   try {
     const { prompt, mode = 'enhance' } = await req.json();
-    const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-    if (!openAIApiKey) {
-      throw new Error('OpenAI API key not configured');
-    }
 
     if (mode === 'replace') {
       // Mode remplacement des tags de composants
@@ -52,49 +115,28 @@ serve(async (req) => {
       });
     }
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
+    const enhancedPrompt = await callAIWithFallback([
+      {
+        role: 'system',
+        content: `Tu es un expert en création de prompts pour des outils d'intelligence artificielle. 
+        Ton rôle est d'améliorer et d'optimiser les prompts pour qu'ils soient plus clairs, précis et efficaces.
+        
+        Règles d'amélioration :
+        - Rendre le prompt plus spécifique et détaillé
+        - Ajouter du contexte pertinent
+        - Structurer le prompt de manière logique
+        - Préciser les attentes de résultat
+        - Ajouter des exemples si nécessaire
+        - Conserver l'intention originale
+        - Utiliser un langage clair et professionnel
+        
+        Réponds uniquement avec le prompt amélioré, sans préambule ni explication.`
       },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: `Tu es un expert en création de prompts pour des outils d'intelligence artificielle. 
-            Ton rôle est d'améliorer et d'optimiser les prompts pour qu'ils soient plus clairs, précis et efficaces.
-            
-            Règles d'amélioration :
-            - Rendre le prompt plus spécifique et détaillé
-            - Ajouter du contexte pertinent
-            - Structurer le prompt de manière logique
-            - Préciser les attentes de résultat
-            - Ajouter des exemples si nécessaire
-            - Conserver l'intention originale
-            - Utiliser un langage clair et professionnel
-            
-            Réponds uniquement avec le prompt amélioré, sans préambule ni explication.`
-          },
-          {
-            role: 'user',
-            content: `Améliore ce prompt : "${prompt}"`
-          }
-        ],
-        max_tokens: 1000,
-        temperature: 0.7,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error('OpenAI API error:', errorData);
-      throw new Error(`OpenAI API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    const enhancedPrompt = data.choices[0].message.content;
+      {
+        role: 'user',
+        content: `Améliore ce prompt : "${prompt}"`
+      }
+    ], 'gpt-4o-mini', 1000, 0.7);
 
     return new Response(JSON.stringify({ enhancedPrompt }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

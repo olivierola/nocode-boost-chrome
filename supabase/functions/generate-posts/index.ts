@@ -6,6 +6,72 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Helper function to call AI with fallback
+async function callAIWithFallback(messages: any[], model: string, temperature: number) {
+  const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+  const groqApiKey = Deno.env.get('GROQ_API_KEY');
+
+  // Try OpenAI first
+  if (openAIApiKey) {
+    try {
+      console.log('Attempting OpenAI API call...');
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openAIApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model,
+          messages,
+          temperature,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        return data.choices[0].message.content;
+      } else {
+        console.log(`OpenAI failed with status ${response.status}, trying Groq...`);
+      }
+    } catch (error) {
+      console.log('OpenAI error:', error, 'trying Groq...');
+    }
+  }
+
+  // Fallback to Groq
+  if (groqApiKey) {
+    try {
+      console.log('Attempting Groq API call...');
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${groqApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'llama-3.1-70b-versatile',
+          messages,
+          max_tokens: 2000,
+          temperature,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        return data.choices[0].message.content;
+      } else {
+        throw new Error(`Groq API error: ${response.status}`);
+      }
+    } catch (error) {
+      console.error('Groq error:', error);
+      throw new Error('Both OpenAI and Groq APIs failed');
+    }
+  }
+
+  throw new Error('No AI API keys configured');
+}
+
 const logStep = (step: string, details?: any) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
   console.log(`[GENERATE-POSTS] ${step}${detailsStr}`);
@@ -89,12 +155,6 @@ serve(async (req) => {
       recentPlans: plans || []
     };
 
-    // Generate posts using OpenAI
-    const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-    if (!openAIApiKey) {
-      throw new Error("OpenAI API key not configured");
-    }
-
     const systemPrompt = `Tu es un expert en marketing digital et création de contenu pour les réseaux sociaux. Tu génères des tweets engageants pour promouvoir des projets tech/startup.
 
 CONTEXTE DU PROJET:
@@ -124,37 +184,19 @@ Réponds uniquement avec un tableau JSON de tweets, sans texte supplémentaire:
   }
 ]`;
 
-    logStep("Calling OpenAI API");
-    const openAIResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: `Génère ${count} tweets ${post_type} sur ${subject} avec une tonalité ${tone}` }
-        ],
-        temperature: 0.7,
-      }),
-    });
-
-    if (!openAIResponse.ok) {
-      throw new Error(`OpenAI API error: ${openAIResponse.statusText}`);
-    }
-
-    const openAIData = await openAIResponse.json();
-    const generatedContent = openAIData.choices[0].message.content;
-    logStep("OpenAI response received", { content: generatedContent });
+    logStep("Calling AI API with fallback");
+    const generatedContent = await callAIWithFallback([
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: `Génère ${count} tweets ${post_type} sur ${subject} avec une tonalité ${tone}` }
+    ], 'gpt-4o-mini', 0.7);
+    logStep("AI response received", { content: generatedContent });
 
     // Parse the JSON response
     let posts;
     try {
       posts = JSON.parse(generatedContent);
     } catch (e) {
-      logStep("Error parsing OpenAI response", { error: e, content: generatedContent });
+      logStep("Error parsing AI response", { error: e, content: generatedContent });
       throw new Error("Invalid response format from AI");
     }
 

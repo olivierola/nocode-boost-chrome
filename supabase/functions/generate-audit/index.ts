@@ -7,7 +7,73 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+// Helper function to call AI with fallback
+async function callAIWithFallback(messages: any[], model: string, maxTokens: number, temperature: number) {
+  const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+  const groqApiKey = Deno.env.get('GROQ_API_KEY');
+
+  // Try OpenAI first
+  if (openAIApiKey) {
+    try {
+      console.log('Attempting OpenAI API call...');
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openAIApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model,
+          messages,
+          max_tokens: maxTokens,
+          temperature,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        return data.choices[0].message.content;
+      } else {
+        console.log(`OpenAI failed with status ${response.status}, trying Groq...`);
+      }
+    } catch (error) {
+      console.log('OpenAI error:', error, 'trying Groq...');
+    }
+  }
+
+  // Fallback to Groq
+  if (groqApiKey) {
+    try {
+      console.log('Attempting Groq API call...');
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${groqApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'llama-3.1-70b-versatile',
+          messages,
+          max_tokens: maxTokens,
+          temperature,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        return data.choices[0].message.content;
+      } else {
+        throw new Error(`Groq API error: ${response.status}`);
+      }
+    } catch (error) {
+      console.error('Groq error:', error);
+      throw new Error('Both OpenAI and Groq APIs failed');
+    }
+  }
+
+  throw new Error('No AI API keys configured');
+}
+
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
@@ -20,49 +86,24 @@ serve(async (req) => {
     const { prompt, projectId, title } = await req.json();
     console.log('Generating UX audit for project:', projectId);
 
-    if (!openAIApiKey) {
-      throw new Error('OpenAI API key not configured');
-    }
-
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          { 
-            role: 'system', 
-            content: `Tu es un expert UX qui effectue des audits détaillés d'interfaces utilisateur. Analyse les éléments fournis et génère un audit complet. Retourne le résultat au format JSON avec cette structure:
+    const auditContent = await callAIWithFallback([
+      { 
+        role: 'system', 
+        content: `Tu es un expert UX qui effectue des audits détaillés d'interfaces utilisateur. Analyse les éléments fournis et génère un audit complet. Retourne le résultat au format JSON avec cette structure:
+        {
+          "etapes": [
             {
-              "etapes": [
-                {
-                  "categorie": "Navigation|Design|Accessibilité|Performance|Contenu",
-                  "probleme": "Description du problème identifié",
-                  "impact": "Impact sur l'utilisateur",
-                  "solution": "Solution recommandée",
-                  "priorite": "critique|haute|moyenne|basse"
-                }
-              ]
-            }` 
-          },
-          { role: 'user', content: prompt }
-        ],
-        max_tokens: 2000,
-        temperature: 0.7,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error('OpenAI API error:', errorData);
-      throw new Error(`OpenAI API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    const auditContent = data.choices[0].message.content;
+              "categorie": "Navigation|Design|Accessibilité|Performance|Contenu",
+              "probleme": "Description du problème identifié",
+              "impact": "Impact sur l'utilisateur",
+              "solution": "Solution recommandée",
+              "priorite": "critique|haute|moyenne|basse"
+            }
+          ]
+        }` 
+      },
+      { role: 'user', content: prompt }
+    ], 'gpt-4o-mini', 2000, 0.7);
 
     let auditData;
     try {

@@ -7,7 +7,81 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+// Helper function to call AI with fallback
+async function callAIWithFallback(messages: any[], model: string, maxTokens?: number, temperature?: number) {
+  const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+  const groqApiKey = Deno.env.get('GROQ_API_KEY');
+
+  // Try OpenAI first
+  if (openAIApiKey) {
+    try {
+      console.log('Attempting OpenAI API call...');
+      const body: any = {
+        model,
+        messages,
+        temperature: temperature || 0.7,
+      };
+
+      // Use max_completion_tokens for newer models
+      if (model.includes('gpt-5') || model.includes('o3') || model.includes('o4') || model.includes('gpt-4.1')) {
+        if (maxTokens) body.max_completion_tokens = maxTokens;
+      } else {
+        if (maxTokens) body.max_tokens = maxTokens;
+      }
+
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openAIApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        return data.choices[0].message.content;
+      } else {
+        console.log(`OpenAI failed with status ${response.status}, trying Groq...`);
+      }
+    } catch (error) {
+      console.log('OpenAI error:', error, 'trying Groq...');
+    }
+  }
+
+  // Fallback to Groq
+  if (groqApiKey) {
+    try {
+      console.log('Attempting Groq API call...');
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${groqApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'llama-3.1-70b-versatile',
+          messages,
+          max_tokens: maxTokens || 4000,
+          temperature: temperature || 0.7,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        return data.choices[0].message.content;
+      } else {
+        throw new Error(`Groq API error: ${response.status}`);
+      }
+    } catch (error) {
+      console.error('Groq error:', error);
+      throw new Error('Both OpenAI and Groq APIs failed');
+    }
+  }
+
+  throw new Error('No AI API keys configured');
+}
+
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
@@ -19,10 +93,6 @@ serve(async (req) => {
   try {
     const { prompt, projectId, conversationHistory = [] } = await req.json();
     console.log('Generating plan for project:', projectId);
-
-    if (!openAIApiKey) {
-      throw new Error('OpenAI API key not configured');
-    }
 
     // Check authentication and usage limits
     const authHeader = req.headers.get("Authorization");
@@ -82,27 +152,11 @@ Une demande est claire si elle contient :
 
 IMPORTANT: Si le contexte de conversation precedente contient deja ces informations, considerez la demande comme claire meme si la nouvelle demande seule semble incomplete.`;
 
-    const clarityResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-5-2025-08-07',
-        messages: [{ role: 'user', content: clarityCheckPrompt }],
-        max_completion_tokens: 300
-      }),
-    });
-
-    if (!clarityResponse.ok) {
-      const errorData = await clarityResponse.json();
-      console.error('OpenAI API error during clarity check:', errorData);
-      throw new Error(`OpenAI API error: ${clarityResponse.status}`);
-    }
-
-    const clarityData = await clarityResponse.json();
-    const clarityContent = clarityData.choices?.[0]?.message?.content;
+    const clarityContent = await callAIWithFallback(
+      [{ role: 'user', content: clarityCheckPrompt }],
+      'gpt-5-2025-08-07',
+      300
+    );
     
     if (!clarityContent) {
       throw new Error('No response received from OpenAI for clarity check');
@@ -395,34 +449,10 @@ Creez un plan ULTRA-COMPLET avec minimum 15-20 features detaillees, chaque featu
 
     const userPrompt = `Creez un plan mindmap complet pour : ${contextualPrompt}`;
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-5-2025-08-07',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
-        ],
-        max_completion_tokens: 4000
-      }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error('OpenAI API error:', errorData);
-      throw new Error(`OpenAI API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    const generatedPlan = data.choices?.[0]?.message?.content;
-
-    if (!generatedPlan) {
-      throw new Error('No plan generated');
-    }
+    const generatedPlan = await callAIWithFallback([
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt }
+    ], 'gpt-5-2025-08-07', 4000);
 
     let planData;
     try {

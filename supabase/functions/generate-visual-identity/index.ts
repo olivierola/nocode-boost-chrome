@@ -7,7 +7,73 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+// Helper function to call AI with fallback
+async function callAIWithFallback(messages: any[], model: string, maxTokens: number, temperature: number) {
+  const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+  const groqApiKey = Deno.env.get('GROQ_API_KEY');
+
+  // Try OpenAI first
+  if (openAIApiKey) {
+    try {
+      console.log('Attempting OpenAI API call...');
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openAIApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model,
+          messages,
+          max_tokens: maxTokens,
+          temperature,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        return data.choices[0].message.content;
+      } else {
+        console.log(`OpenAI failed with status ${response.status}, trying Groq...`);
+      }
+    } catch (error) {
+      console.log('OpenAI error:', error, 'trying Groq...');
+    }
+  }
+
+  // Fallback to Groq
+  if (groqApiKey) {
+    try {
+      console.log('Attempting Groq API call...');
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${groqApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'llama-3.1-70b-versatile',
+          messages,
+          max_tokens: maxTokens,
+          temperature,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        return data.choices[0].message.content;
+      } else {
+        throw new Error(`Groq API error: ${response.status}`);
+      }
+    } catch (error) {
+      console.error('Groq error:', error);
+      throw new Error('Both OpenAI and Groq APIs failed');
+    }
+  }
+
+  throw new Error('No AI API keys configured');
+}
+
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
@@ -19,10 +85,6 @@ serve(async (req) => {
   try {
     const { prompt, projectId } = await req.json();
     console.log('Generating visual identity for project:', projectId);
-
-    if (!openAIApiKey) {
-      throw new Error('OpenAI API key not configured');
-    }
 
     // Check usage limits before proceeding
     const authHeader = req.headers.get("Authorization");
@@ -54,60 +116,39 @@ serve(async (req) => {
       });
     }
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          { 
-            role: 'system', 
-            content: `Tu es un expert en design et identité visuelle. Génère une identité visuelle complète basée sur la description fournie. Retourne le résultat au format JSON avec cette structure:
+    const visualIdentityContent = await callAIWithFallback([
+      { 
+        role: 'system', 
+        content: `Tu es un expert en design et identité visuelle. Génère une identité visuelle complète basée sur la description fournie. Retourne le résultat au format JSON avec cette structure:
+        {
+          "couleurs": [
             {
-              "couleurs": [
-                {
-                  "nom": "Couleur primaire",
-                  "hex": "#1234AB",
-                  "usage": "Éléments principaux, boutons"
-                }
-              ],
-              "polices": [
-                {
-                  "nom": "Inter",
-                  "type": "sans-serif",
-                  "usage": "Titres et corps de texte"
-                }
-              ],
-              "styles": {
-                "theme": "moderne|minimaliste|coloré|professionnel",
-                "bordures": "arrondies|carrées|mixtes",
-                "ombres": "douces|marquées|aucune",
-                "espacement": "compact|normal|aéré"
-              }
-            }` 
-          },
-          { role: 'user', content: prompt }
-        ],
-        max_tokens: 1500,
-        temperature: 0.7,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error('OpenAI API error:', errorData);
-      throw new Error(`OpenAI API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    const identityContent = data.choices[0].message.content;
+              "nom": "Couleur primaire",
+              "hex": "#1234AB",
+              "usage": "Éléments principaux, boutons"
+            }
+          ],
+          "polices": [
+            {
+              "nom": "Inter",
+              "type": "sans-serif",
+              "usage": "Titres et corps de texte"
+            }
+          ],
+          "styles": {
+            "theme": "moderne|minimaliste|coloré|professionnel",
+            "bordures": "arrondies|carrées|mixtes",
+            "ombres": "douces|marquées|aucune",
+            "espacement": "compact|normal|aéré"
+          }
+        }` 
+      },
+      { role: 'user', content: prompt }
+    ], 'gpt-4o-mini', 1500, 0.7);
 
     let identityData;
     try {
-      identityData = JSON.parse(identityContent);
+      identityData = JSON.parse(visualIdentityContent);
     } catch (parseError) {
       console.error('Failed to parse identity JSON:', parseError);
       identityData = {
