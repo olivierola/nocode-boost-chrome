@@ -6,7 +6,7 @@ const Index = () => {
 
   if (loading) {
     return (
-      <div className="w-[800px] h-[600px] flex items-center justify-center bg-background">
+      <div className="w-[900px] h-[600px] flex items-center justify-center bg-background">
         <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
       </div>
     );

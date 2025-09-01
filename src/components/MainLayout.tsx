@@ -40,7 +40,7 @@ const MainLayout = () => {
   };
 
   return (
-    <div className="w-[800px] h-[600px] bg-background flex flex-col relative">
+    <div className="w-[900px] h-[600px] bg-background flex flex-col relative">
       <NotificationCenter />
       
       {/* Animated Background */}
@@ -51,7 +51,7 @@ const MainLayout = () => {
       </div>
       
       {/* Fixed Header */}
-      <header className="border-b border-border bg-card flex-shrink-0 fixed top-0 left-0 right-0 z-50 w-[800px]">
+      <header className="border-b border-border bg-card flex-shrink-0 fixed top-0 left-0 right-0 z-50 w-[900px]">
         <div className="px-6 py-3 flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <h1 className="text-lg font-bold text-foreground">Super NoCode</h1>
