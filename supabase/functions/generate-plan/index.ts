@@ -19,8 +19,12 @@ async function callAIWithFallback(messages: any[], model: string, maxTokens?: nu
       const body: any = {
         model,
         messages,
-        temperature: temperature || 0.7,
       };
+
+      // Add temperature only for compatible models
+      if (!model.includes('gpt-5') && !model.includes('o3') && !model.includes('o4') && !model.includes('gpt-4.1')) {
+        body.temperature = temperature || 0.7;
+      }
 
       // Use max_completion_tokens for newer models
       if (model.includes('gpt-5') || model.includes('o3') || model.includes('o4') || model.includes('gpt-4.1')) {
@@ -42,14 +46,15 @@ async function callAIWithFallback(messages: any[], model: string, maxTokens?: nu
         const data = await response.json();
         return data.choices[0].message.content;
       } else {
-        console.log(`OpenAI failed with status ${response.status}, trying Groq...`);
+        const errorText = await response.text();
+        console.log(`OpenAI failed with status ${response.status}: ${errorText}, trying Groq...`);
       }
     } catch (error) {
       console.log('OpenAI error:', error, 'trying Groq...');
     }
   }
 
-  // Fallback to Groq
+  // Fallback to Groq with appropriate model
   if (groqApiKey) {
     try {
       console.log('Attempting Groq API call...');
@@ -60,7 +65,7 @@ async function callAIWithFallback(messages: any[], model: string, maxTokens?: nu
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'llama-3.1-70b-versatile',
+          model: 'llama-3.1-70b-versatile', // Use Groq-compatible model
           messages,
           max_tokens: maxTokens || 4000,
           temperature: temperature || 0.7,
@@ -71,11 +76,13 @@ async function callAIWithFallback(messages: any[], model: string, maxTokens?: nu
         const data = await response.json();
         return data.choices[0].message.content;
       } else {
-        throw new Error(`Groq API error: ${response.status}`);
+        const errorText = await response.text();
+        console.error(`Groq API error ${response.status}: ${errorText}`);
+        throw new Error(`Groq API error: ${response.status} - ${errorText}`);
       }
     } catch (error) {
       console.error('Groq error:', error);
-      throw new Error('Both OpenAI and Groq APIs failed');
+      throw new Error(`Both OpenAI and Groq APIs failed. Last error: ${error.message}`);
     }
   }
 
