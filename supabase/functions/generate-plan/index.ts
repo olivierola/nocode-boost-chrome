@@ -54,7 +54,7 @@ async function callAIWithFallback(messages: any[], model: string, maxTokens?: nu
     }
   }
 
-  // Fallback to Groq with appropriate model
+  // Fallback to Groq with supported model
   if (groqApiKey) {
     try {
       console.log('Attempting Groq API call...');
@@ -65,7 +65,7 @@ async function callAIWithFallback(messages: any[], model: string, maxTokens?: nu
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'llama-3.1-70b-versatile', // Use Groq-compatible model
+          model: 'llama-3.1-8b-instant', // Updated to supported Groq model
           messages,
           max_tokens: maxTokens || 4000,
           temperature: temperature || 0.7,
