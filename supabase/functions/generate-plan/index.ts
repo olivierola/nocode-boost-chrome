@@ -452,9 +452,13 @@ INSTRUCTIONS SPECIALES:
 4. Pour les features: listez des fonctionnalites SPECIFIQUES au domaine d'application
 5. Pour la strategie marketing: adaptez aux canaux pertinents pour la cible
 
-Creez un plan ULTRA-COMPLET avec minimum 15-20 features detaillees, chaque feature ayant 3-5 sous-features avec des prompts precis pour l'IA.`;
+Creez un plan ULTRA-COMPLET avec minimum 15-20 features detaillees, chaque feature ayant 3-5 sous-features avec des prompts precis pour l'IA.
 
-    const userPrompt = `Creez un plan mindmap complet pour : ${contextualPrompt}`;
+IMPORTANT: Votre reponse DOIT être uniquement un JSON valide, sans texte avant ou après. Utilisez exactement la structure JSON fournie ci-dessus.`;
+
+    const userPrompt = `Creez un plan mindmap complet au format JSON pour : ${contextualPrompt}
+
+RAPPEL: Retournez UNIQUEMENT le JSON valide, sans markdown, sans explication, sans texte additionnel.`;
 
     const generatedPlan = await callAIWithFallback([
       { role: 'system', content: systemPrompt },
