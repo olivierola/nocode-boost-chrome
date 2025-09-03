@@ -96,15 +96,71 @@ const PlanGenerator = () => {
   }, [chatMessages]);
 
   useEffect(() => {
-    if (selectedProject && chatMessages.length === 0) {
-      setChatMessages([{
-        id: '1',
-        role: 'assistant',
-        content: `Bonjour ! Je vais vous aider à créer un plan détaillé pour votre projet "${selectedProject.name}". Décrivez-moi votre idée ou ce que vous souhaitez développer.`,
-        timestamp: new Date()
-      }]);
+    if (selectedProject) {
+      // Load conversation history
+      loadConversationHistory();
+      
+      if (chatMessages.length === 0) {
+        setChatMessages([{
+          id: '1',
+          role: 'assistant',
+          content: `Bonjour ! Je vais vous aider à créer un plan détaillé pour votre projet "${selectedProject.name}". Décrivez-moi votre idée ou ce que vous souhaitez développer.`,
+          timestamp: new Date()
+        }]);
+      }
     }
-  }, [selectedProject, chatMessages.length]);
+  }, [selectedProject]);
+
+  const loadConversationHistory = async () => {
+    if (!selectedProject || !user) return;
+
+    try {
+      const { data, error } = await supabase.rpc('get_conversation_history', {
+        p_project_id: selectedProject.id,
+        p_user_id: user.id,
+        p_conversation_type: 'plan_generation'
+      });
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        const messages: ChatMessage[] = data.map((msg: any) => ({
+          id: msg.id,
+          role: msg.role,
+          content: msg.content,
+          timestamp: new Date(msg.created_at),
+          plan: msg.plan_data ? {
+            ...msg.plan_data,
+            id: msg.plan_data.id || msg.id,
+            project_id: selectedProject.id,
+            created_at: msg.created_at,
+            updated_at: msg.created_at
+          } : undefined
+        }));
+        
+        setChatMessages(messages);
+      }
+    } catch (error) {
+      console.error('Error loading conversation history:', error);
+    }
+  };
+
+  const saveConversationMessage = async (message: ChatMessage) => {
+    if (!selectedProject || !user) return;
+
+    try {
+      await supabase.rpc('save_conversation_message', {
+        p_project_id: selectedProject.id,
+        p_user_id: user.id,
+        p_conversation_type: 'plan_generation',
+        p_role: message.role,
+        p_content: message.content,
+        p_plan_data: message.plan ? JSON.stringify(message.plan) : null
+      });
+    } catch (error) {
+      console.error('Error saving conversation message:', error);
+    }
+  };
 
   const fetchPlans = async () => {
     if (!user || !selectedProject) return;
@@ -144,6 +200,9 @@ const PlanGenerator = () => {
       timestamp: new Date()
     };
     setChatMessages(prev => [...prev, userMessage]);
+    
+    // Save user message to conversation history
+    await saveConversationMessage(userMessage);
 
     setIsGenerating(true);
     try {
@@ -167,6 +226,7 @@ const PlanGenerator = () => {
           questions: data.questions
         };
         setChatMessages(prev => [...prev, aiMessage]);
+        await saveConversationMessage(aiMessage);
         return;
       }
 
@@ -194,19 +254,43 @@ const PlanGenerator = () => {
           type: 'mindmap_plan'
         };
         setChatMessages(prev => [...prev, aiMessage]);
+        await saveConversationMessage(aiMessage);
         fetchPlans(); // Rafraîchir la liste des plans
         return;
       }
 
-      // Plan standard (fallback)
+      // Plan standard (fallback) - Convert features to steps if available
+      let steps = [];
+      if (data.features && Array.isArray(data.features)) {
+        steps = data.features.map((feature: any, index: number) => ({
+          id: feature.id || `feature-${index}`,
+          title: feature.title || feature.name || `Fonctionnalité ${index + 1}`,
+          description: feature.description || '',
+          status: 'pending' as const
+        }));
+      } else if (data.steps && Array.isArray(data.steps)) {
+        steps = data.steps;
+      } else if (data.roadmap?.phases && Array.isArray(data.roadmap.phases)) {
+        steps = data.roadmap.phases.map((phase: any, index: number) => ({
+          id: phase.id || `phase-${index}`,
+          title: phase.name || `Phase ${index + 1}`,
+          description: phase.description || '',
+          status: 'pending' as const
+        }));
+      }
+
       const planForMessage: ProjectPlan = {
         id: data.id || Date.now().toString(),
         project_id: selectedProject.id,
         title: data.title || `Plan pour ${selectedProject.name}`,
         description: data.description || prompt,
-        steps: data.steps || [],
+        steps: steps,
         status: 'draft',
         plan_type: 'standard',
+        features: data.features || [],
+        pages: data.pages || [],
+        visualIdentity: data.visualIdentity || null,
+        startupPrompt: data.startupPrompt || null,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
@@ -219,6 +303,7 @@ const PlanGenerator = () => {
         plan: planForMessage
       };
       setChatMessages(prev => [...prev, aiMessage]);
+      await saveConversationMessage(aiMessage);
 
       toast({
         title: "Plan généré",
@@ -235,6 +320,7 @@ const PlanGenerator = () => {
         timestamp: new Date()
       };
       setChatMessages(prev => [...prev, errorMessage]);
+      await saveConversationMessage(errorMessage);
       toast({
         title: "Erreur",
         description: "Impossible de générer le plan",

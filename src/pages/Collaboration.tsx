@@ -80,7 +80,7 @@ const Collaboration = () => {
           .from('collaborators')
           .select(`
             *,
-            profiles!inner (
+            profiles (
               full_name,
               email,
               avatar_url
@@ -88,14 +88,24 @@ const Collaboration = () => {
           `)
           .eq('project_id', project.id);
 
-        if (error) throw error;
+        if (error) {
+          console.warn(`Failed to fetch collaborators for project ${project.id}:`, error);
+          // Continue with empty collaborators instead of throwing
+          collaborationsData.push({
+            project_id: project.id,
+            project_name: project.name,
+            collaborators: [],
+            is_owner: isOwner
+          });
+          continue;
+        }
 
         collaborationsData.push({
           project_id: project.id,
           project_name: project.name,
           collaborators: (collaborators as any)?.map((collab: any) => ({
             ...collab,
-            profile: collab.profiles?.[0] || null
+            profile: collab.profiles || null
           })) || [],
           is_owner: isOwner
         });

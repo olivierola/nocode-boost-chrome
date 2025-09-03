@@ -83,101 +83,43 @@ const UXAudit = () => {
     setIsGenerating(true);
 
     try {
-      // Generate audit steps based on type
-      let auditSteps = [];
+      // Generate detailed prompt for AI
+      const prompt = `Générer un audit ${auditType} détaillé pour le projet "${auditTitle}". 
+      Description: ${auditDescription}
+      Type d'audit: ${auditType}
+      
+      Créer des étapes d'audit spécifiques avec des prompts détaillés pour chaque aspect à analyser.`;
 
-      if (auditType === 'ux' || auditType === 'complete') {
-        auditSteps.push(
-          {
-            id: crypto.randomUUID(),
-            type: 'ux' as const,
-            titre: "Analyse de l'interface utilisateur",
-            description: "Évaluer la clarté, l'intuitivité et l'utilisabilité de l'interface",
-            priority: 'high' as const,
-            prompt: "Analyser l'interface utilisateur en se concentrant sur la navigation, la hiérarchie visuelle et l'expérience utilisateur globale",
-            status: 'pending' as const
-          },
-          {
-            id: crypto.randomUUID(),
-            type: 'ux' as const,
-            titre: "Parcours utilisateur",
-            description: "Analyser les parcours clés et identifier les points de friction",
-            priority: 'high' as const,
-            prompt: "Examiner les parcours utilisateur principaux et identifier les obstacles ou confusions potentielles",
-            status: 'pending' as const
-          },
-          {
-            id: crypto.randomUUID(),
-            type: 'accessibility' as const,
-            titre: "Accessibilité",
-            description: "Vérifier la conformité aux standards d'accessibilité",
-            priority: 'medium' as const,
-            prompt: "Auditer l'accessibilité selon les guidelines WCAG 2.1 AA",
-            status: 'pending' as const
-          }
-        );
-      }
-
-      if (auditType === 'seo' || auditType === 'complete') {
-        auditSteps.push(
-          {
-            id: crypto.randomUUID(),
-            type: 'seo' as const,
-            titre: "SEO technique",
-            description: "Analyser les aspects techniques du référencement",
-            priority: 'high' as const,
-            prompt: "Examiner les balises meta, la structure des URLs, les temps de chargement et l'optimisation mobile",
-            status: 'pending' as const
-          },
-          {
-            id: crypto.randomUUID(),
-            type: 'seo' as const,
-            titre: "Contenu et mots-clés",
-            description: "Évaluer la qualité et l'optimisation du contenu",
-            priority: 'medium' as const,
-            prompt: "Analyser la densité des mots-clés, la qualité du contenu et la structure sémantique",
-            status: 'pending' as const
-          },
-          {
-            id: crypto.randomUUID(),
-            type: 'performance' as const,
-            titre: "Performance",
-            description: "Mesurer et optimiser les performances de chargement",
-            priority: 'high' as const,
-            prompt: "Auditer les performances avec un focus sur Core Web Vitals et optimisations possibles",
-            status: 'pending' as const
-          }
-        );
-      }
-
-      // Save audit to database
-      const { data, error } = await supabase
-        .from('ux_audits')
-        .insert({
-          project_id: selectedProject,
-          title: auditTitle,
-          description: auditDescription || null,
-          etapes: auditSteps
-        })
-        .select()
-        .single();
+      const { data, error } = await supabase.functions.invoke('generate-audit', {
+        body: {
+          prompt,
+          projectId: selectedProject,
+          title: auditTitle
+        }
+      });
 
       if (error) throw error;
 
-      const newAudit: UXAudit = {
-        ...data,
-        etapes: auditSteps
-      };
+      if (data && data.etapes) {
+        const newAudit: UXAudit = {
+          id: data.id,
+          project_id: selectedProject,
+          title: auditTitle,
+          description: auditDescription || null,
+          etapes: data.etapes,
+          created_at: new Date().toISOString()
+        };
 
-      setCurrentAudit(newAudit);
-      setIsCreating(false);
-      
-      toast({
-        title: "Audit généré",
-        description: "L'audit a été créé avec succès",
-      });
+        setCurrentAudit(newAudit);
+        setIsCreating(false);
+        
+        toast({
+          title: "Audit généré",
+          description: "L'audit a été créé avec succès avec l'IA",
+        });
 
-      await fetchAudits();
+        await fetchAudits();
+      }
     } catch (error: any) {
       toast({
         title: "Erreur",

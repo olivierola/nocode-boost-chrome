@@ -110,6 +110,15 @@ export const PostGenerationModal = ({
           post_type: '',
           count: 10,
         });
+        
+        // Record usage tracking manually if not handled by edge function
+        await supabase.rpc('record_usage', {
+          p_user_id: user.id,
+          p_action_type: 'post_generation',
+          p_project_id: projectId
+        });
+        
+        toast.success(`${data.posts.length} posts générés avec succès`);
       }
     } catch (error) {
       console.error('Error generating posts:', error);
