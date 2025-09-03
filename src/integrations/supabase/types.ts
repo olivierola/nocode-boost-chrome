@@ -223,11 +223,13 @@ export type Database = {
           etapes: Json
           id: string
           mindmap_data: Json | null
+          plan_data: Json | null
           plan_type: string | null
           project_id: string
           status: string | null
           title: string | null
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string
@@ -235,11 +237,13 @@ export type Database = {
           etapes?: Json
           id?: string
           mindmap_data?: Json | null
+          plan_data?: Json | null
           plan_type?: string | null
           project_id: string
           status?: string | null
           title?: string | null
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string
@@ -247,11 +251,13 @@ export type Database = {
           etapes?: Json
           id?: string
           mindmap_data?: Json | null
+          plan_data?: Json | null
           plan_type?: string | null
           project_id?: string
           status?: string | null
           title?: string | null
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -262,6 +268,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      posts: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: string
+          metadata: Json | null
+          post_type: string
+          project_id: string
+          subject: string
+          tone: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          post_type: string
+          project_id: string
+          subject: string
+          tone: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          post_type?: string
+          project_id?: string
+          subject?: string
+          tone?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {

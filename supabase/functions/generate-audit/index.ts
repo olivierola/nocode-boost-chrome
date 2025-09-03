@@ -1,10 +1,9 @@
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
 // Helper function to call AI with fallback
@@ -34,10 +33,11 @@ async function callAIWithFallback(messages: any[], model: string, maxTokens: num
         const data = await response.json();
         return data.choices[0].message.content;
       } else {
-        console.log(`OpenAI failed with status ${response.status}, trying Groq...`);
+        const errorData = await response.text();
+        console.log(`OpenAI failed with status ${response.status}: ${errorData}, trying Groq...`);
       }
     } catch (error) {
-      console.log('OpenAI error:', error, 'trying Groq...');
+      console.log('OpenAI error:', error, ', trying Groq...');
     }
   }
 
@@ -52,7 +52,7 @@ async function callAIWithFallback(messages: any[], model: string, maxTokens: num
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'llama-3.1-70b-versatile',
+          model: 'llama-3.1-8b-instant',
           messages,
           max_tokens: maxTokens,
           temperature,
@@ -63,88 +63,137 @@ async function callAIWithFallback(messages: any[], model: string, maxTokens: num
         const data = await response.json();
         return data.choices[0].message.content;
       } else {
-        throw new Error(`Groq API error: ${response.status}`);
+        const errorData = await response.text();
+        throw new Error(`Groq API error: ${response.status} - ${errorData}`);
       }
     } catch (error) {
       console.error('Groq error:', error);
-      throw new Error('Both OpenAI and Groq APIs failed');
+      throw error;
     }
   }
 
   throw new Error('No AI API keys configured');
 }
 
-const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+const logStep = (step: string, details?: any) => {
+  const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
+  console.log(`[GENERATE-AUDIT] ${step}${detailsStr}`);
+};
 
 serve(async (req) => {
-  if (req.method === 'OPTIONS') {
+  if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    logStep("Function started");
+
     const { prompt, projectId, title } = await req.json();
-    console.log('Generating UX audit for project:', projectId);
+    logStep("Request data received", { projectId, title, prompt: prompt?.slice(0, 100) });
 
-    const auditContent = await callAIWithFallback([
-      { 
-        role: 'system', 
-        content: `Tu es un expert UX qui effectue des audits détaillés d'interfaces utilisateur. Analyse les éléments fournis et génère un audit complet. Retourne le résultat au format JSON avec cette structure:
-        {
-          "etapes": [
-            {
-              "categorie": "Navigation|Design|Accessibilité|Performance|Contenu",
-              "probleme": "Description du problème identifié",
-              "impact": "Impact sur l'utilisateur",
-              "solution": "Solution recommandée",
-              "priorite": "critique|haute|moyenne|basse"
-            }
-          ]
-        }` 
-      },
-      { role: 'user', content: prompt }
-    ], 'gpt-4o-mini', 2000, 0.7);
-
-    let auditData;
-    try {
-      auditData = JSON.parse(auditContent);
-    } catch (parseError) {
-      console.error('Failed to parse audit JSON:', parseError);
-      auditData = {
-        etapes: [{
-          categorie: "Général",
-          probleme: "Audit généré",
-          impact: auditContent,
-          solution: "Réviser les recommandations",
-          priorite: "moyenne"
-        }]
-      };
+    if (!prompt || !projectId || !title) {
+      return new Response(JSON.stringify({ error: "Missing required fields" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+      });
     }
 
+    const supabaseClient = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+      { auth: { persistSession: false } }
+    );
+
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) throw new Error("No authorization header provided");
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
+    if (userError) throw new Error(`Authentication error: ${userError.message}`);
+    const user = userData.user;
+    if (!user) throw new Error("User not authenticated");
+    logStep("User authenticated", { userId: user.id });
+
+    const systemPrompt = `Tu es un expert en audit UX/SEO. Génère un audit détaillé basé sur le prompt fourni.
+
+RÉPONSE REQUISE - Format JSON uniquement:
+{
+  "title": "Titre de l'audit",
+  "description": "Description courte",
+  "etapes": [
+    {
+      "id": "unique-id",
+      "type": "ux|seo|performance|accessibility",
+      "titre": "Titre de l'étape",
+      "description": "Description de l'étape",
+      "priority": "high|medium|low",
+      "prompt": "Prompt détaillé pour cette étape d'audit",
+      "status": "pending",
+      "recommendations": "Recommandations optionnelles"
+    }
+  ]
+}
+
+IMPORTANT: Retourne UNIQUEMENT le JSON, sans texte avant ou après.`;
+
+    logStep("Calling AI API with fallback");
+    const generatedContent = await callAIWithFallback([
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: prompt }
+    ], 'gpt-4o-mini', 2000, 0.7);
+    logStep("AI response received");
+
+    // Parse the JSON response
+    let auditData;
+    try {
+      auditData = JSON.parse(generatedContent);
+    } catch (e) {
+      logStep("Error parsing AI response", { error: e, content: generatedContent });
+      throw new Error("Invalid response format from AI");
+    }
+
+    // If projectId is provided, save to database
     if (projectId) {
-      const supabase = createClient(supabaseUrl, supabaseServiceKey);
-      
-      const { error: dbError } = await supabase
+      const { data: savedAudit, error: saveError } = await supabaseClient
         .from('ux_audits')
         .insert({
           project_id: projectId,
-          title: title || 'Audit UX',
+          title: title,
+          description: auditData.description,
           etapes: auditData.etapes
-        });
+        })
+        .select()
+        .single();
 
-      if (dbError) {
-        console.error('Database error:', dbError);
+      if (saveError) {
+        logStep("Error saving audit", { error: saveError });
+        throw new Error("Failed to save audit");
       }
+
+      logStep("Audit saved successfully", { auditId: savedAudit.id });
+      
+      return new Response(JSON.stringify({ 
+        ...auditData,
+        id: savedAudit.id,
+        success: true 
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
     }
 
+    // Return generated audit without saving
     return new Response(JSON.stringify(auditData), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 200,
     });
+
   } catch (error) {
-    console.error('Error in generate-audit function:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    logStep("ERROR in generate-audit", { message: errorMessage });
+    return new Response(JSON.stringify({ error: errorMessage }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
 });

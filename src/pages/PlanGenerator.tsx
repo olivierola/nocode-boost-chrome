@@ -298,7 +298,7 @@ const PlanGenerator = () => {
       const aiMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: `J'ai généré un plan détaillé pour votre projet ! Le plan comprend ${data.steps?.length || 0} étapes principales. Vous pouvez continuer à discuter pour l'affiner.`,
+        content: `J'ai généré un plan détaillé pour votre projet ! Le plan comprend ${steps.length} étapes principales. Vous pouvez continuer à discuter pour l'affiner.`,
         timestamp: new Date(),
         plan: planForMessage
       };
@@ -377,6 +377,12 @@ const PlanGenerator = () => {
     if (plan.mindmap_data) {
       setSelectedMindmapData(plan.mindmap_data);
       setShowMindmapModal(true);
+    } else {
+      toast({
+        title: "Mindmap indisponible",
+        description: "Ce plan n'a pas de données mindmap associées",
+        variant: "destructive",
+      });
     }
   };
 
