@@ -5,7 +5,15 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { LogOut, Home, Code, Map, Search, Upload, Users, FolderOpen, X, CreditCard, Plus, MessageSquare } from 'lucide-react';
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { LogOut, Home, Code, Map, Search, Upload, Users, FolderOpen, X, CreditCard, Plus, MessageSquare, User } from 'lucide-react';
 
 // Import all components
 import Dashboard from '@/pages/Dashboard';
@@ -71,108 +79,129 @@ const MainLayout = () => {
                 </Button>
               </div>
             )}
-            
-            {/* Compact Tab Navigation */}
-            {isProjectSelected && (
-              <div className="flex items-center gap-1 ml-4 bg-muted/50 p-1 rounded-lg backdrop-blur-sm">
-                <Button 
-                  variant={activeTab === 'dashboard' ? 'default' : 'ghost'} 
-                  size="sm" 
-                  onClick={() => setActiveTab('dashboard')}
-                  className={`h-7 w-7 p-0 rounded-md ${activeTab === 'dashboard' ? 'bg-background shadow-sm' : 'hover:bg-background/50'}`}
-                  title="Dashboard"
-                >
-                  <Home className="h-3 w-3" />
-                </Button>
-                <Button 
-                  variant={activeTab === 'plans' ? 'default' : 'ghost'} 
-                  size="sm" 
-                  onClick={() => setActiveTab('plans')}
-                  className={`h-7 w-7 p-0 rounded-md ${activeTab === 'plans' ? 'bg-background shadow-sm' : 'hover:bg-background/50'}`}
-                  title="Plans"
-                >
-                  <Map className="h-3 w-3" />
-                </Button>
-                <Button 
-                  variant={activeTab === 'audits' ? 'default' : 'ghost'} 
-                  size="sm" 
-                  onClick={() => setActiveTab('audits')}
-                  className={`h-7 w-7 p-0 rounded-md ${activeTab === 'audits' ? 'bg-background shadow-sm' : 'hover:bg-background/50'}`}
-                  title="Audits"
-                >
-                  <Search className="h-3 w-3" />
-                </Button>
-                <Button 
-                  variant={activeTab === 'components' ? 'default' : 'ghost'} 
-                  size="sm" 
-                  onClick={() => setActiveTab('components')}
-                  className={`h-7 w-7 p-0 rounded-md ${activeTab === 'components' ? 'bg-background shadow-sm' : 'hover:bg-background/50'}`}
-                  title="21st.dev"
-                >
-                  <Code className="h-3 w-3" />
-                </Button>
-                <Button 
-                  variant={activeTab === 'saved-components' ? 'default' : 'ghost'} 
-                  size="sm" 
-                  onClick={() => setActiveTab('saved-components')}
-                  className={`h-7 w-7 p-0 rounded-md ${activeTab === 'saved-components' ? 'bg-background shadow-sm' : 'hover:bg-background/50'}`}
-                  title="Composants sauvés"
-                >
-                  <Plus className="h-3 w-3" />
-                </Button>
-                <Button 
-                  variant={activeTab === 'media' ? 'default' : 'ghost'} 
-                  size="sm" 
-                  onClick={() => setActiveTab('media')}
-                  className={`h-7 w-7 p-0 rounded-md ${activeTab === 'media' ? 'bg-background shadow-sm' : 'hover:bg-background/50'}`}
-                  title="Médias"
-                >
-                  <Upload className="h-3 w-3" />
-                </Button>
-                <Button 
-                  variant={activeTab === 'posts' ? 'default' : 'ghost'} 
-                  size="sm" 
-                  onClick={() => setActiveTab('posts')}
-                  className={`h-7 w-7 p-0 rounded-md ${activeTab === 'posts' ? 'bg-background shadow-sm' : 'hover:bg-background/50'}`}
-                  title="Posts"
-                >
-                  <MessageSquare className="h-3 w-3" />
-                </Button>
-                <Button 
-                  variant={activeTab === 'collaboration' ? 'default' : 'ghost'} 
-                  size="sm" 
-                  onClick={() => setActiveTab('collaboration')}
-                  className={`h-7 w-7 p-0 rounded-md ${activeTab === 'collaboration' ? 'bg-background shadow-sm' : 'hover:bg-background/50'}`}
-                  title="Équipe"
-                >
-                  <Users className="h-3 w-3" />
-                </Button>
-                <Button 
-                  variant={activeTab === 'payment' ? 'default' : 'ghost'} 
-                  size="sm" 
-                  onClick={() => setActiveTab('payment')}
-                  className={`h-7 w-7 p-0 rounded-md ${activeTab === 'payment' ? 'bg-background shadow-sm' : 'hover:bg-background/50'}`}
-                  title="Abonnements"
-                >
-                  <CreditCard className="h-3 w-3" />
-                </Button>
-              </div>
-            )}
           </div>
+
+          {/* Centered Tab Navigation */}
+          {isProjectSelected && (
+            <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center gap-1 bg-muted/50 p-1 rounded-lg backdrop-blur-sm">
+              <Button 
+                variant={activeTab === 'dashboard' ? 'default' : 'ghost'} 
+                size="sm" 
+                onClick={() => setActiveTab('dashboard')}
+                className={`h-7 w-7 p-0 rounded-md ${activeTab === 'dashboard' ? 'bg-background shadow-sm' : 'hover:bg-background/50'}`}
+                title="Dashboard"
+              >
+                <Home className="h-3 w-3" />
+              </Button>
+              <Button 
+                variant={activeTab === 'plans' ? 'default' : 'ghost'} 
+                size="sm" 
+                onClick={() => setActiveTab('plans')}
+                className={`h-7 w-7 p-0 rounded-md ${activeTab === 'plans' ? 'bg-background shadow-sm' : 'hover:bg-background/50'}`}
+                title="Plans"
+              >
+                <Map className="h-3 w-3" />
+              </Button>
+              <Button 
+                variant={activeTab === 'audits' ? 'default' : 'ghost'} 
+                size="sm" 
+                onClick={() => setActiveTab('audits')}
+                className={`h-7 w-7 p-0 rounded-md ${activeTab === 'audits' ? 'bg-background shadow-sm' : 'hover:bg-background/50'}`}
+                title="Audits"
+              >
+                <Search className="h-3 w-3" />
+              </Button>
+              <Button 
+                variant={activeTab === 'components' ? 'default' : 'ghost'} 
+                size="sm" 
+                onClick={() => setActiveTab('components')}
+                className={`h-7 w-7 p-0 rounded-md ${activeTab === 'components' ? 'bg-background shadow-sm' : 'hover:bg-background/50'}`}
+                title="21st.dev"
+              >
+                <Code className="h-3 w-3" />
+              </Button>
+              <Button 
+                variant={activeTab === 'saved-components' ? 'default' : 'ghost'} 
+                size="sm" 
+                onClick={() => setActiveTab('saved-components')}
+                className={`h-7 w-7 p-0 rounded-md ${activeTab === 'saved-components' ? 'bg-background shadow-sm' : 'hover:bg-background/50'}`}
+                title="Composants sauvés"
+              >
+                <Plus className="h-3 w-3" />
+              </Button>
+              <Button 
+                variant={activeTab === 'media' ? 'default' : 'ghost'} 
+                size="sm" 
+                onClick={() => setActiveTab('media')}
+                className={`h-7 w-7 p-0 rounded-md ${activeTab === 'media' ? 'bg-background shadow-sm' : 'hover:bg-background/50'}`}
+                title="Médias"
+              >
+                <Upload className="h-3 w-3" />
+              </Button>
+              <Button 
+                variant={activeTab === 'posts' ? 'default' : 'ghost'} 
+                size="sm" 
+                onClick={() => setActiveTab('posts')}
+                className={`h-7 w-7 p-0 rounded-md ${activeTab === 'posts' ? 'bg-background shadow-sm' : 'hover:bg-background/50'}`}
+                title="Posts"
+              >
+                <MessageSquare className="h-3 w-3" />
+              </Button>
+              <Button 
+                variant={activeTab === 'collaboration' ? 'default' : 'ghost'} 
+                size="sm" 
+                onClick={() => setActiveTab('collaboration')}
+                className={`h-7 w-7 p-0 rounded-md ${activeTab === 'collaboration' ? 'bg-background shadow-sm' : 'hover:bg-background/50'}`}
+                title="Équipe"
+              >
+                <Users className="h-3 w-3" />
+              </Button>
+              <Button 
+                variant={activeTab === 'payment' ? 'default' : 'ghost'} 
+                size="sm" 
+                onClick={() => setActiveTab('payment')}
+                className={`h-7 w-7 p-0 rounded-md ${activeTab === 'payment' ? 'bg-background shadow-sm' : 'hover:bg-background/50'}`}
+                title="Abonnements"
+              >
+                <CreditCard className="h-3 w-3" />
+              </Button>
+            </div>
+          )}
           
-          <div className="flex items-center space-x-3">
-            <Avatar className="h-6 w-6">
-              <AvatarImage src={user?.user_metadata?.avatar_url} />
-              <AvatarFallback className="text-xs">
-                {getInitials(getUserName())}
-              </AvatarFallback>
-            </Avatar>
-            <span className="text-xs font-medium text-foreground max-w-[100px] truncate">
-              {getUserName()}
-            </span>
-            <Button variant="ghost" size="sm" onClick={signOut}>
-              <LogOut className="h-3 w-3" />
-            </Button>
+          {/* User Avatar with Dropdown */}
+          <div className="flex items-center">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={user?.user_metadata?.avatar_url} />
+                    <AvatarFallback className="text-xs">
+                      {getInitials(getUserName())}
+                    </AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56 bg-card border border-border shadow-lg" align="end" forceMount>
+                <DropdownMenuLabel className="font-normal">
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium leading-none">{getUserName()}</p>
+                    <p className="text-xs leading-none text-muted-foreground">
+                      {user?.email}
+                    </p>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => console.log('Profil')}>
+                  <User className="mr-2 h-4 w-4" />
+                  <span>Profil</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={signOut}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Se déconnecter</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </header>
