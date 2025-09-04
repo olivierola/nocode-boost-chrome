@@ -91,6 +91,9 @@ serve(async (req) => {
       case 'media_upload':
         limit = planLimits.monthly_media_uploads;
         break;
+      case 'post_generation':
+        limit = planLimits.monthly_post_generations;
+        break;
       default:
         throw new Error("Invalid action type");
     }
