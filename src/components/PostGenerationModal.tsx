@@ -84,8 +84,8 @@ export const PostGenerationModal = ({
 
     try {
       // Check usage limit
-      const { can_proceed } = await checkUsageLimit('post_generation');
-      if (!can_proceed) {
+      const usageLimit = await checkUsageLimit('post_generation');
+      if (!usageLimit?.can_proceed) {
         toast.error('Limite d\'usage atteinte pour la génération de posts');
         return;
       }
