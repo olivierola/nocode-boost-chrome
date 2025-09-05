@@ -4,10 +4,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Copy, Plus, Search, ExternalLink, Check } from 'lucide-react';
+import { Copy, Plus, Search, ExternalLink, Check, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import CreateComponentDialog from '@/components/CreateComponentDialog';
 
 interface Component {
   id: string;
@@ -95,7 +96,7 @@ const Components = () => {
   }, [user]);
 
   return (
-    <div className="h-full w-full">
+    <div className="h-full w-full relative">
       <iframe 
         src="https://21st.dev" 
         className="w-full h-full border-0"
@@ -103,6 +104,20 @@ const Components = () => {
         sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-modals"
         allow="clipboard-read; clipboard-write"
       />
+      
+      {/* Floating button to capture components from iframe */}
+      <div className="absolute top-4 right-4 z-10">
+        <CreateComponentDialog onComponentCreated={() => {
+          // Optionally switch to saved components tab
+          const event = new CustomEvent('switchToSavedComponents');
+          window.dispatchEvent(event);
+        }}>
+          <Button variant="secondary" size="sm" className="shadow-lg">
+            <Plus className="h-4 w-4 mr-2" />
+            Importer depuis cette page
+          </Button>
+        </CreateComponentDialog>
+      </div>
     </div>
   );
 };
@@ -135,6 +150,31 @@ const ComponentsSaved = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const deleteComponent = async (componentId: string) => {
+    try {
+      const { error } = await supabase
+        .from('components')
+        .delete()
+        .eq('id', componentId)
+        .eq('user_id', user?.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Composant supprimé",
+        description: "Le composant a été supprimé avec succès",
+      });
+
+      fetchComponents(); // Refresh list
+    } catch (error: any) {
+      toast({
+        title: "Erreur",
+        description: "Impossible de supprimer le composant",
+        variant: "destructive",
+      });
     }
   };
 
@@ -192,9 +232,10 @@ const ComponentsSaved = () => {
           <div>
             <h2 className="text-base font-bold text-foreground">Composants Sauvegardés</h2>
             <p className="text-xs text-muted-foreground">
-              Gérez vos composants importés
+              Gérez vos composants importés et créez-en de nouveaux
             </p>
           </div>
+          <CreateComponentDialog onComponentCreated={fetchComponents} />
         </div>
       </div>
 
@@ -273,6 +314,13 @@ const ComponentsSaved = () => {
                     >
                       <Plus className="h-3 w-3 mr-1" />
                       Ajouter au prompt
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => deleteComponent(component.id)}
+                    >
+                      <Trash2 className="h-3 w-3" />
                     </Button>
                   </div>
                 </CardContent>

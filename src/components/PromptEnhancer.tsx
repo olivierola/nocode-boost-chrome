@@ -209,7 +209,23 @@ const PromptEnhancer = ({ value, onChange, onSend }: PromptEnhancerProps) => {
 
   const handleAddComponentTag = (event: CustomEvent) => {
     const { tag } = event.detail;
-    onChange(value + ' ' + tag);
+    const textarea = textareaRef.current;
+    
+    if (textarea) {
+      const cursorPosition = textarea.selectionStart;
+      const currentValue = value;
+      const beforeCursor = currentValue.substring(0, cursorPosition);
+      const afterCursor = currentValue.substring(cursorPosition);
+      
+      onChange(beforeCursor + ' ' + tag + afterCursor);
+      
+      // Set cursor position after the inserted tag
+      setTimeout(() => {
+        textarea.focus();
+        const newPosition = cursorPosition + tag.length + 1;
+        textarea.setSelectionRange(newPosition, newPosition);
+      }, 0);
+    }
   };
 
   useEffect(() => {
