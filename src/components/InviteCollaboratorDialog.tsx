@@ -55,25 +55,32 @@ const InviteCollaboratorDialog = ({ projectId, children }: InviteCollaboratorDia
       // 3. Create pending invitation record
       // For now, we'll simulate adding the collaborator directly
 
-      // First, let's check if the user exists (simulated)
-      const { data: existingUser, error: userError } = await supabase
+      // Check if the user exists in profiles table
+      const { data: existingProfile, error: profileError } = await supabase
         .from('profiles')
         .select('user_id')
         .eq('email', email)
         .single();
 
-      if (userError && userError.code !== 'PGRST116') {
-        throw new Error('Erreur lors de la vérification de l\'utilisateur');
-      }
-
-      if (!existingUser) {
+      if (profileError && profileError.code !== 'PGRST116') {
         toast({
-          title: "Utilisateur introuvable",
-          description: "Cet utilisateur n'existe pas encore. Invitez-le à s'inscrire d'abord.",
+          title: "Erreur",
+          description: "Erreur lors de la vérification de l'utilisateur",
           variant: "destructive",
         });
         return;
       }
+
+      if (!existingProfile) {
+        toast({
+          title: "Utilisateur introuvable",
+          description: "Aucun utilisateur trouvé avec cet email",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const existingUser = { user_id: existingProfile.user_id };
 
       // Check if already a collaborator
       const { data: existingCollaborator } = await supabase

@@ -141,19 +141,15 @@ const EnhancedPromptEnhancer = ({ value, onChange, onSend }: EnhancedPromptEnhan
 
   const detectInsertTrigger = (text: string, cursorPosition: number) => {
     const beforeCursor = text.substring(0, cursorPosition);
-    const lastColon = beforeCursor.lastIndexOf(':');
     
-    if (lastColon !== -1) {
-      const afterColon = beforeCursor.substring(lastColon + 1);
-      // Détecter "::" pour ouvrir la modale
-      if (afterColon === ':' && cursorPosition - lastColon === 2) {
-        setShowInsertModal(true);
-      }
+    // Détecter "::" à la fin du texte avant le curseur
+    if (beforeCursor.endsWith('::')) {
+      setShowInsertModal(true);
     }
   };
 
-  const insertTag = (type: string, name: string, value?: string) => {
-    const tag = `{${type}:${name}${value ? `|${value}` : ''}}`;
+  const insertTag = (type: string, name: string, tagValue?: string) => {
+    const tag = `{${type}:${name}${tagValue ? `|${tagValue}` : ''}}`;
     const textarea = textareaRef.current;
     
     if (textarea) {
@@ -161,19 +157,26 @@ const EnhancedPromptEnhancer = ({ value, onChange, onSend }: EnhancedPromptEnhan
       const end = textarea.selectionEnd;
       const currentValue = value;
       
-      // Remplacer "::" par le tag
-      const beforeTrigger = currentValue.substring(0, start - 2);
-      const afterTrigger = currentValue.substring(end);
-      const newValue = beforeTrigger + tag + afterTrigger;
+      // Trouver et remplacer "::" par le tag
+      const beforeCursor = currentValue.substring(0, start);
+      const afterCursor = currentValue.substring(end);
       
-      onChange(newValue);
+      // Chercher "::" dans le texte avant le curseur
+      const colonIndex = beforeCursor.lastIndexOf('::');
       
-      // Remettre le focus et la position du curseur
-      setTimeout(() => {
-        textarea.focus();
-        const newPosition = beforeTrigger.length + tag.length;
-        textarea.setSelectionRange(newPosition, newPosition);
-      }, 0);
+      if (colonIndex !== -1) {
+        const beforeTrigger = beforeCursor.substring(0, colonIndex);
+        const newValue = beforeTrigger + tag + afterCursor;
+        
+        onChange(newValue);
+        
+        // Remettre le focus et la position du curseur
+        setTimeout(() => {
+          textarea.focus();
+          const newPosition = beforeTrigger.length + tag.length;
+          textarea.setSelectionRange(newPosition, newPosition);
+        }, 0);
+      }
     }
     
     setShowInsertModal(false);
