@@ -3,10 +3,10 @@ import { useProjectContext } from '@/hooks/useProjectContext';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { BentoGrid, type BentoItem } from '@/components/ui/bento-grid';
-import { Plus, Copy, Trash2, MessageSquare, Hash, Calendar, Type } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Plus, Copy, Trash2, MessageSquare, Hash, Calendar, Type, Eye } from 'lucide-react';
 import { toast } from 'sonner';
 import { PostGenerationModal } from '@/components/PostGenerationModal';
 import { format } from 'date-fns';
@@ -32,6 +32,7 @@ const Posts = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
 
   const fetchPosts = async () => {
     if (!selectedProject || !user) return;
@@ -101,21 +102,20 @@ const Posts = () => {
     return postDate.toDateString() !== today.toDateString();
   });
 
-  // Convert posts to BentoGrid items
-  const convertPostsToBentoItems = (posts: Post[]): BentoItem[] => {
-    return posts.map((post, index) => ({
-      title: post.subject || "Post sans titre",
-      description: post.content.slice(0, 120) + (post.content.length > 120 ? "..." : ""),
-      icon: post.post_type === "linkedin" ? <MessageSquare className="w-4 h-4 text-blue-500" /> : 
-            post.post_type === "twitter" ? <Hash className="w-4 h-4 text-sky-500" /> :
-            <Type className="w-4 h-4 text-purple-500" />,
-      status: post.tone,
-      tags: post.metadata?.hashtags ? post.metadata.hashtags.slice(0, 3) : [post.post_type],
-      meta: new Date(post.created_at).toLocaleDateString(),
-      cta: "Voir →",
-      colSpan: index === 0 ? 2 : 1,
-      hasPersistentHover: index === 0,
-    }));
+  const renderPostCards = (posts: Post[]) => {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {posts.map((post) => (
+          <PostCard 
+            key={post.id}
+            post={post}
+            onCopy={handleCopyPost}
+            onDelete={handleDeletePost}
+            onView={setSelectedPost}
+          />
+        ))}
+      </div>
+    );
   };
 
   return (
@@ -154,7 +154,7 @@ const Posts = () => {
                 <h2 className="text-xl font-semibold">Posts du jour</h2>
                 <Badge variant="secondary">{todayPosts.length}</Badge>
               </div>
-              <BentoGrid items={convertPostsToBentoItems(todayPosts)} />
+              {renderPostCards(todayPosts)}
             </div>
           )}
 
@@ -165,7 +165,7 @@ const Posts = () => {
                 <h2 className="text-xl font-semibold">Posts récents</h2>
                 <Badge variant="outline">{recentPosts.length}</Badge>
               </div>
-              <BentoGrid items={convertPostsToBentoItems(recentPosts)} />
+              {renderPostCards(recentPosts)}
             </div>
           )}
         </>
@@ -177,6 +177,79 @@ const Posts = () => {
         projectId={selectedProject.id}
         onPostsGenerated={handlePostsGenerated}
       />
+
+      <Dialog open={!!selectedPost} onOpenChange={() => setSelectedPost(null)}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{selectedPost?.subject || "Post"}</DialogTitle>
+          </DialogHeader>
+          {selectedPost && (
+            <div className="space-y-4">
+              <div className="flex gap-2">
+                <Badge variant="outline">{selectedPost.tone}</Badge>
+                <Badge variant="secondary">{selectedPost.post_type}</Badge>
+              </div>
+              
+              <div className="space-y-4">
+                <div>
+                  <h4 className="font-medium mb-2">Contenu</h4>
+                  <p className="text-sm leading-relaxed whitespace-pre-wrap bg-muted p-4 rounded-md">
+                    {selectedPost.content}
+                  </p>
+                </div>
+                
+                {selectedPost.metadata.hashtags && selectedPost.metadata.hashtags.length > 0 && (
+                  <div>
+                    <h4 className="font-medium mb-2">Hashtags</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedPost.metadata.hashtags.map((hashtag, index) => (
+                        <Badge key={index} variant="outline" className="text-primary">
+                          {hashtag}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {selectedPost.metadata.cta && (
+                  <div>
+                    <h4 className="font-medium mb-2">Call to Action</h4>
+                    <p className="text-sm bg-muted p-3 rounded-md italic">
+                      {selectedPost.metadata.cta}
+                    </p>
+                  </div>
+                )}
+                
+                <div className="text-xs text-muted-foreground pt-4 border-t">
+                  Créé le {format(new Date(selectedPost.created_at), 'dd/MM/yyyy à HH:mm', { locale: fr })}
+                </div>
+              </div>
+
+              <div className="flex gap-2 pt-4">
+                <Button
+                  onClick={() => handleCopyPost(selectedPost.content)}
+                  variant="outline"
+                  className="gap-2"
+                >
+                  <Copy className="h-4 w-4" />
+                  Copier le contenu
+                </Button>
+                <Button
+                  onClick={() => {
+                    handleDeletePost(selectedPost.id);
+                    setSelectedPost(null);
+                  }}
+                  variant="destructive"
+                  className="gap-2"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Supprimer
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
@@ -185,66 +258,98 @@ interface PostCardProps {
   post: Post;
   onCopy: (content: string) => void;
   onDelete: (postId: string) => void;
+  onView: (post: Post) => void;
 }
 
-const PostCard = ({ post, onCopy, onDelete }: PostCardProps) => {
+const PostCard = ({ post, onCopy, onDelete, onView }: PostCardProps) => {
   return (
-    <Card className="p-4 space-y-3 hover:shadow-md transition-shadow">
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex flex-wrap gap-1">
-          <Badge variant="outline" className="text-xs">
-            {post.tone}
-          </Badge>
-          <Badge variant="secondary" className="text-xs">
-            {post.post_type}
-          </Badge>
-        </div>
-        <div className="flex gap-1">
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => onCopy(post.content)}
-            className="h-8 w-8 p-0"
-          >
-            <Copy className="h-3 w-3" />
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => onDelete(post.id)}
-            className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-          >
-            <Trash2 className="h-3 w-3" />
-          </Button>
-        </div>
-      </div>
-      
-      <div className="space-y-2">
-        <p className="text-sm leading-relaxed">{post.content}</p>
-        
-        {post.metadata.hashtags && post.metadata.hashtags.length > 0 && (
+    <Card className="group hover:shadow-lg transition-all duration-200 cursor-pointer">
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between gap-2">
           <div className="flex flex-wrap gap-1">
-            {post.metadata.hashtags.map((hashtag, index) => (
-              <span key={index} className="text-xs text-blue-600">
-                {hashtag}
-              </span>
-            ))}
+            <Badge variant="outline" className="text-xs">
+              {post.tone}
+            </Badge>
+            <Badge variant="secondary" className="text-xs">
+              {post.post_type}
+            </Badge>
           </div>
-        )}
-        
-        {post.metadata.cta && (
-          <p className="text-xs text-muted-foreground italic">
-            CTA: {post.metadata.cta}
-          </p>
-        )}
-      </div>
+          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={(e) => {
+                e.stopPropagation();
+                onView(post);
+              }}
+              className="h-8 w-8 p-0"
+              title="Voir le post complet"
+            >
+              <Eye className="h-3 w-3" />
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={(e) => {
+                e.stopPropagation();
+                onCopy(post.content);
+              }}
+              className="h-8 w-8 p-0"
+              title="Copier le contenu"
+            >
+              <Copy className="h-3 w-3" />
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(post.id);
+              }}
+              className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+              title="Supprimer le post"
+            >
+              <Trash2 className="h-3 w-3" />
+            </Button>
+          </div>
+        </div>
+        <CardTitle className="text-base line-clamp-2">{post.subject}</CardTitle>
+      </CardHeader>
       
-      <div className="flex items-center justify-between text-xs text-muted-foreground">
-        <span>{post.subject}</span>
-        <span>
-          {format(new Date(post.created_at), 'dd/MM/yyyy HH:mm', { locale: fr })}
-        </span>
-      </div>
+      <CardContent className="pt-0" onClick={() => onView(post)}>
+        <div className="space-y-3">
+          <p className="text-sm leading-relaxed line-clamp-3">
+            {post.content}
+          </p>
+          
+          {post.metadata.hashtags && post.metadata.hashtags.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {post.metadata.hashtags.slice(0, 3).map((hashtag, index) => (
+                <Badge key={index} variant="outline" className="text-xs text-primary">
+                  {hashtag}
+                </Badge>
+              ))}
+              {post.metadata.hashtags.length > 3 && (
+                <Badge variant="outline" className="text-xs">
+                  +{post.metadata.hashtags.length - 3}
+                </Badge>
+              )}
+            </div>
+          )}
+          
+          <div className="flex items-center justify-between text-xs text-muted-foreground pt-2 border-t">
+            <span className="flex items-center gap-1">
+              {post.post_type === "linkedin" ? <MessageSquare className="w-3 h-3" /> : 
+               post.post_type === "twitter" ? <Hash className="w-3 h-3" /> :
+               <Type className="w-3 h-3" />}
+              {post.post_type}
+            </span>
+            <span>
+              {format(new Date(post.created_at), 'dd/MM/yyyy', { locale: fr })}
+            </span>
+          </div>
+        </div>
+      </CardContent>
     </Card>
   );
 };
