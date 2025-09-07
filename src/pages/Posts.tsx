@@ -11,7 +11,6 @@ import { toast } from 'sonner';
 import { PostGenerationModal } from '@/components/PostGenerationModal';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Component as BlueBackground } from '@/components/ui/raycast-animated-blue-background';
 
 interface Post {
   id: string;
@@ -120,12 +119,8 @@ const Posts = () => {
   };
 
   return (
-    <div className="relative min-h-screen">
-      <div className="absolute inset-0 z-0">
-        <BlueBackground />
-      </div>
-      <div className="relative z-10 space-y-6 p-6">
-        <div className="flex items-center justify-between">
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Posts</h1>
           <p className="text-muted-foreground">
@@ -255,7 +250,6 @@ const Posts = () => {
           )}
         </DialogContent>
       </Dialog>
-      </div>
     </div>
   );
 };
