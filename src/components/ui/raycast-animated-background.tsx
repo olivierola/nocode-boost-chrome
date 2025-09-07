@@ -29,11 +29,10 @@ export const useWindowSize = () => {
 };
 
 export const Component = () => {
-
   const { width, height } = useWindowSize();
 
   return (
-    <div className={cn("flex flex-col items-center")}>
+    <div className={cn("absolute inset-0 w-full h-full")}>
         <UnicornScene 
         production={true} projectId="cbmTT38A0CcuYxeiyj5H" width={width} height={height} />
     </div>

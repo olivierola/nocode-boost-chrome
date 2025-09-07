@@ -62,8 +62,8 @@ const Auth = () => {
   }
 
   return (
-    <div className="relative w-full h-[600px] flex items-center justify-center p-6 overflow-hidden">
-      <div className="absolute inset-0 z-0">
+    <div className="relative w-full h-screen flex items-center justify-center p-6 overflow-hidden">
+      <div className="absolute inset-0 w-full h-full z-0">
         <RaycastBackground />
       </div>
       <Card className="relative z-10 w-full max-w-sm backdrop-blur-sm bg-card/90 border-border/50 shadow-2xl">
