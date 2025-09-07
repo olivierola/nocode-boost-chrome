@@ -12,6 +12,7 @@ import PlanAutoExecutor from '@/components/PlanAutoExecutor';
 import { MindmapModal } from '@/components/MindmapModal';
 import { PlanSummaryCard } from '@/components/PlanSummaryCard';
 import { PlanMindmapVisualization } from '@/components/PlanMindmapVisualization';
+import { PlanTableView } from '@/components/PlanTableView';
 
 interface ProjectPlan {
   id: string;
@@ -81,6 +82,7 @@ const PlanGenerator = () => {
   const [isExecuting, setIsExecuting] = useState(false);
   const [showMindmapModal, setShowMindmapModal] = useState(false);
   const [selectedMindmapData, setSelectedMindmapData] = useState<any>(null);
+  const [viewMode, setViewMode] = useState<'chat' | 'table'>('chat');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   const { user } = useAuth();
@@ -527,6 +529,31 @@ const PlanGenerator = () => {
         <div className="absolute top-2/3 left-1/4 w-48 h-48 bg-blue-400/8 rounded-full blur-xl animate-pulse delay-500" />
         <div className="absolute bottom-1/2 right-1/2 w-56 h-56 bg-green-400/12 rounded-full blur-2xl animate-pulse delay-700" />
       </div>
+
+      {/* Header with view toggle */}
+      {currentPlan && (
+        <div className="relative z-10 px-6 py-4 border-b border-border bg-background/50 backdrop-blur-sm">
+          <div className="flex items-center justify-between">
+            <h1 className="text-xl font-semibold">Plan de développement</h1>
+            <div className="flex items-center gap-2">
+              <Button
+                variant={viewMode === 'chat' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('chat')}
+              >
+                Chat
+              </Button>
+              <Button
+                variant={viewMode === 'table' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('table')}
+              >
+                Tableau
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
       
       {chatMessages.length === 0 ? (
         /* Empty state with centered chat */
@@ -543,6 +570,16 @@ const PlanGenerator = () => {
             disabled={isGenerating}
             placeholder="Décrivez votre idée de projet..."
           />
+        </div>
+      ) : viewMode === 'table' && currentPlan ? (
+        /* Table view */
+        <div className="flex-1 overflow-auto">
+          <div className="px-6 py-8">
+            <PlanTableView 
+              plan={currentPlan} 
+              onExecuteFeature={(feature) => executeFeatureFromMindmap(feature)}
+            />
+          </div>
         </div>
       ) : (
         /* Chat with messages and fixed input */

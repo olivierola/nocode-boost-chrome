@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Github, Mail } from 'lucide-react';
+import { AnimatedBackground } from '@/components/ui/animated-background';
 
 const Auth = () => {
   const { user, loading, signUp, signIn, signInWithGoogle, signInWithGithub } = useAuth();
@@ -61,8 +62,9 @@ const Auth = () => {
   }
 
   return (
-    <div className="w-full h-[600px] flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6">
-      <Card className="w-full max-w-sm">
+    <div className="relative w-full h-[600px] flex items-center justify-center bg-gradient-to-br from-background via-muted/50 to-background p-6 overflow-hidden">
+      <AnimatedBackground />
+      <Card className="relative w-full max-w-sm backdrop-blur-sm bg-card/80 border-border/50">
         <CardHeader className="text-center pb-4">
           <CardTitle className="text-xl font-bold">Super NoCode</CardTitle>
           <CardDescription className="text-sm">
