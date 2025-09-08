@@ -162,7 +162,18 @@ const PlanGenerator = () => {
 
       setChatMessages(historicalMessages);
       hasInitializedChat.current = true;
-    } 
+    } else if (chatMessages.length === 0) { // Check chatMessages to avoid race conditions
+      // This handles the case for a project with no plans yet.
+      setChatMessages([
+        {
+          id: '1',
+          role: 'assistant',
+          content: `Hello! I will help you create a detailed plan for your project "${selectedProject.name}". Describe your idea or what you want to develop.`,
+          timestamp: new Date(),
+        },
+      ]);
+      hasInitializedChat.current = true;
+    }
   }, [plans, selectedProject, chatMessages.length]);
 
   const generatePlan = async (prompt: string) => {
