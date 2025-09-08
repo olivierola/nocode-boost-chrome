@@ -12,6 +12,8 @@ import PlanAutoExecutor from '@/components/PlanAutoExecutor';
 import { MindmapModal } from '@/components/MindmapModal';
 import { PlanSummaryCard } from '@/components/PlanSummaryCard';
 import { PlanMindmapVisualization } from '@/components/PlanMindmapVisualization';
+import { PlanTableView } from '@/components/PlanTableView';
+import { Component as RaycastBackground } from '@/components/ui/raycast-animated-background';
 
 interface ProjectPlan {
   id: string;
@@ -81,8 +83,8 @@ const PlanGenerator = () => {
   const [isExecuting, setIsExecuting] = useState(false);
   const [showMindmapModal, setShowMindmapModal] = useState(false);
   const [selectedMindmapData, setSelectedMindmapData] = useState<any>(null);
+  const [viewMode, setViewMode] = useState<'chat' | 'table'>('chat');
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const hasInitializedChat = useRef(false);
   
   const { user } = useAuth();
   const { selectedProject } = useProjectContext();
@@ -98,15 +100,63 @@ const PlanGenerator = () => {
 
   useEffect(() => {
     if (selectedProject) {
-      hasInitializedChat.current = false;
-      setChatMessages([]);
-      setPlans([]);
-      fetchPlans();
-    } else {
-      setChatMessages([]);
-      setPlans([]);
+      // Load conversation history
+      loadConversationHistory();
     }
   }, [selectedProject]);
+
+  const loadConversationHistory = async () => {
+    if (!selectedProject || !user) return;
+
+    try {
+      const { data, error } = await supabase.rpc('get_plan_chat_history', {
+        p_project_id: selectedProject.id,
+        p_user_id: user.id
+      });
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        const messages: ChatMessage[] = data.map((msg: any) => ({
+          id: msg.id,
+          role: msg.role,
+          content: msg.content,
+          timestamp: new Date(msg.created_at),
+          type: msg.message_type as 'clarification_needed' | 'mindmap_plan' | 'standard',
+          questions: msg.questions || [],
+          plan: msg.plan_data ? {
+            ...msg.plan_data,
+            id: msg.plan_data.id || msg.id,
+            project_id: selectedProject.id,
+            created_at: msg.created_at,
+            updated_at: msg.created_at
+          } : undefined
+        }));
+        
+        setChatMessages(messages);
+      }
+    } catch (error) {
+      console.error('Error loading conversation history:', error);
+    }
+  };
+
+  const saveConversationMessage = async (message: ChatMessage) => {
+    if (!selectedProject || !user) return;
+
+    try {
+      await supabase.rpc('save_plan_chat_message', {
+        p_project_id: selectedProject.id,
+        p_user_id: user.id,
+        p_role: message.role,
+        p_content: message.content,
+        p_message_type: message.type || 'standard',
+        p_plan_data: message.plan ? JSON.stringify(message.plan) : null,
+        p_questions: message.questions || null
+      });
+    } catch (error) {
+      console.error('Error saving conversation message:', error);
+    }
+  };
 
   const fetchPlans = async () => {
     if (!user || !selectedProject) return;
@@ -122,64 +172,18 @@ const PlanGenerator = () => {
       setPlans((data as unknown as ProjectPlan[]) || []);
     } catch (error: any) {
       toast({
-        title: "Error",
-        description: "Could not load plans",
+        title: "Erreur",
+        description: "Impossible de charger les plans",
         variant: "destructive",
       });
     }
   };
 
-  useEffect(() => {
-    if (!selectedProject || hasInitializedChat.current) {
-      return;
-    }
-
-    if (plans.length > 0) {
-      const historicalMessages: ChatMessage[] = plans
-        .map(plan => {
-          const messageContent =
-            plan.plan_type === 'mindmap'
-              ? `I have created a complete mindmap plan for your project! It includes ${
-                  plan.mindmap_data?.features?.length || 0
-                } main features, ${
-                  plan.mindmap_data?.pages?.length || 0
-                } pages, a market study and a visual identity. You can open the interactive mindmap to explore all the details.`
-              : `I have generated a detailed plan for your project! The plan includes ${
-                  plan.steps?.length || 0
-                } main steps. You can continue to discuss it to refine it.`;
-
-          return {
-            id: plan.id,
-            role: 'assistant' as const,
-            content: messageContent,
-            timestamp: new Date(plan.created_at),
-            plan: plan,
-            type: plan.plan_type === 'mindmap' ? 'mindmap_plan' as const : 'standard' as const,
-          };
-        })
-        .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
-
-      setChatMessages(historicalMessages);
-      hasInitializedChat.current = true;
-    } else if (chatMessages.length === 0) { // Check chatMessages to avoid race conditions
-      // This handles the case for a project with no plans yet.
-      setChatMessages([
-        {
-          id: '1',
-          role: 'assistant',
-          content: `Hello! I will help you create a detailed plan for your project "${selectedProject.name}". Describe your idea or what you want to develop.`,
-          timestamp: new Date(),
-        },
-      ]);
-      hasInitializedChat.current = true;
-    }
-  }, [plans, selectedProject, chatMessages.length]);
-
   const generatePlan = async (prompt: string) => {
     if (!selectedProject) {
       toast({
-        title: "Error",
-        description: "Please select a project",
+        title: "Erreur",
+        description: "Veuillez sélectionner un projet",
         variant: "destructive",
       });
       return;
@@ -192,6 +196,9 @@ const PlanGenerator = () => {
       timestamp: new Date()
     };
     setChatMessages(prev => [...prev, userMessage]);
+    
+    // Save user message to conversation history
+    await saveConversationMessage(userMessage);
 
     setIsGenerating(true);
     try {
@@ -201,7 +208,7 @@ const PlanGenerator = () => {
           projectId: selectedProject.id
         }
       });
-      console.log(data)
+
       if (error) throw error;
 
       // Gérer les différents types de réponse
@@ -215,46 +222,81 @@ const PlanGenerator = () => {
           questions: data.questions
         };
         setChatMessages(prev => [...prev, aiMessage]);
+        await saveConversationMessage(aiMessage);
         return;
       }
 
-      if (data.type === 'plan_generated') {
+      if (data.type === 'mindmap_plan') {
         // Plan mindmap généré et sauvegardé
         const planForMessage: ProjectPlan = {
-          id: data.planId,
+          id: data.id,
           project_id: selectedProject.id,
-          title: data.plan.title,
-          description: data.plan.description,
+          title: data.title,
+          description: data.description,
           plan_type: 'mindmap',
-          mindmap_data: data.plan,
-          steps: data.plan.features || [],
+          mindmap_data: data,
+          steps: data.features?.map((feature: any, index: number) => ({
+            id: feature.id || `feature-${index}`,
+            title: feature.title || feature.name || `Fonctionnalité ${index + 1}`,
+            description: feature.description || '',
+            status: 'pending' as const
+          })) || [],
+          features: data.features || [],
+          pages: data.pages || [],
           status: 'draft',
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         };
 
+        const featuresCount = data.features?.length || 0;
+        const pagesCount = data.pages?.length || 0;
+
         const aiMessage: ChatMessage = {
           id: (Date.now() + 1).toString(),
           role: 'assistant',
-          content: `I have created a complete mindmap plan for your project! It includes ${data.plan.features?.length || 0} main features, ${data.plan.pages?.length || 0} pages, a market study and a visual identity. You can open the interactive mindmap to explore all the details.`,
+          content: `J'ai créé un plan mindmap complet pour votre projet ! Il comprend ${featuresCount} fonctionnalités principales, ${pagesCount} pages, une étude de marché et une identité visuelle. Vous pouvez ouvrir la mindmap interactive pour explorer tous les détails.`,
           timestamp: new Date(),
           plan: planForMessage,
           type: 'mindmap_plan'
         };
         setChatMessages(prev => [...prev, aiMessage]);
+        await saveConversationMessage(aiMessage);
         fetchPlans(); // Rafraîchir la liste des plans
         return;
       }
 
-      // Plan standard (fallback)
+      // Plan standard (fallback) - Convert features to steps if available
+      let steps = [];
+      if (data.features && Array.isArray(data.features)) {
+        steps = data.features.map((feature: any, index: number) => ({
+          id: feature.id || `feature-${index}`,
+          title: feature.title || feature.name || `Fonctionnalité ${index + 1}`,
+          description: feature.description || '',
+          status: 'pending' as const
+        }));
+      } else if (data.steps && Array.isArray(data.steps)) {
+        steps = data.steps;
+      } else if (data.roadmap?.phases && Array.isArray(data.roadmap.phases)) {
+        steps = data.roadmap.phases.map((phase: any, index: number) => ({
+          id: phase.id || `phase-${index}`,
+          title: phase.name || `Phase ${index + 1}`,
+          description: phase.description || '',
+          status: 'pending' as const
+        }));
+      }
+
       const planForMessage: ProjectPlan = {
         id: data.id || Date.now().toString(),
         project_id: selectedProject.id,
         title: data.title || `Plan pour ${selectedProject.name}`,
         description: data.description || prompt,
-        steps: data.steps || [],
+        steps: steps,
         status: 'draft',
         plan_type: 'standard',
+        features: data.features || [],
+        pages: data.pages || [],
+        visualIdentity: data.visualIdentity || null,
+        startupPrompt: data.startupPrompt || null,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
@@ -262,15 +304,16 @@ const PlanGenerator = () => {
       const aiMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: `I have generated a detailed plan for your project! The plan includes ${data.steps?.length || 0} main steps. You can continue to discuss it to refine it.`,
+        content: `J'ai généré un plan détaillé pour votre projet ! Le plan comprend ${steps.length} étapes principales. Vous pouvez continuer à discuter pour l'affiner.`,
         timestamp: new Date(),
         plan: planForMessage
       };
       setChatMessages(prev => [...prev, aiMessage]);
+      await saveConversationMessage(aiMessage);
 
       toast({
-        title: "Plan generated",
-        description: "Your plan has been successfully created",
+        title: "Plan généré",
+        description: "Votre plan a été créé avec succès",
       });
 
       fetchPlans();
@@ -279,13 +322,14 @@ const PlanGenerator = () => {
       const errorMessage: ChatMessage = {
         id: (Date.now() + 2).toString(),
         role: 'assistant',
-        content: "Sorry, I encountered an error while generating the plan. Can you rephrase your request?",
+        content: "Désolé, j'ai rencontré une erreur lors de la génération du plan. Pouvez-vous reformuler votre demande ?",
         timestamp: new Date()
       };
       setChatMessages(prev => [...prev, errorMessage]);
+      await saveConversationMessage(errorMessage);
       toast({
-        title: "Error",
-        description: "Could not generate the plan",
+        title: "Erreur",
+        description: "Impossible de générer le plan",
         variant: "destructive",
       });
     } finally {
@@ -303,15 +347,15 @@ const PlanGenerator = () => {
       if (error) throw error;
 
       toast({
-        title: "Plan deleted",
-        description: "The plan has been successfully deleted",
+        title: "Plan supprimé",
+        description: "Le plan a été supprimé avec succès",
       });
 
       fetchPlans();
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Could not delete the plan",
+        title: "Erreur",
+        description: "Impossible de supprimer le plan",
         variant: "destructive",
       });
     }
@@ -323,8 +367,8 @@ const PlanGenerator = () => {
     setShowExecutionDialog(true);
     
     toast({
-      title: "Execution started",
-      description: `mode ${mode === 'manual' ? 'manual' : mode === 'auto' ? 'automatic' : 'full-auto'} activated`,
+      title: "Exécution démarrée",
+      description: `Mode ${mode === 'manual' ? 'manuel' : mode === 'auto' ? 'automatique' : 'automatique complet'} activé`,
     });
   };
 
@@ -339,6 +383,12 @@ const PlanGenerator = () => {
     if (plan.mindmap_data) {
       setSelectedMindmapData(plan.mindmap_data);
       setShowMindmapModal(true);
+    } else {
+      toast({
+        title: "Mindmap indisponible",
+        description: "Ce plan n'a pas de données mindmap associées",
+        variant: "destructive",
+      });
     }
   };
 
@@ -365,16 +415,18 @@ const PlanGenerator = () => {
     setIsExecuting(true);
   };
 
-  
+  useEffect(() => {
+    fetchPlans();
+  }, [user, selectedProject]);
 
   if (!selectedProject) {
     return (
       <div className="w-full h-full flex items-center justify-center bg-background">
         <div className="text-center space-y-4">
           <Target className="h-16 w-16 text-muted-foreground mx-auto" />
-          <h2 className="text-2xl font-bold text-foreground">No project selected</h2>
+          <h2 className="text-2xl font-bold text-foreground">Aucun projet sélectionné</h2>
           <p className="text-muted-foreground text-lg max-w-md">
-            Please select a project from the project selector to get started
+            Veuillez d'abord sélectionner un projet depuis le sélecteur de projet pour commencer
           </p>
         </div>
       </div>
@@ -390,8 +442,8 @@ const PlanGenerator = () => {
     if (plan.startupPrompt) {
       tasks.push({
         id: taskId.toString(),
-        title: "Startup prompt",
-        description: plan.startupPrompt.initialSetup || "Initial project setup",
+        title: "Prompt de démarrage",
+        description: plan.startupPrompt.initialSetup || "Configuration initiale du projet",
         status: "pending",
         priority: "high",
         level: 0,
@@ -432,8 +484,8 @@ const PlanGenerator = () => {
     if (plan.visualIdentity?.detailedSteps) {
       tasks.push({
         id: taskId.toString(),
-        title: "Visual Identity",
-        description: "Creation of the complete visual identity",
+        title: "Identité visuelle",
+        description: "Création de l'identité visuelle complète",
         status: "pending",
         priority: "medium",
         level: 0,
@@ -473,30 +525,68 @@ const PlanGenerator = () => {
   };
 
   return (
-    <div className="w-full h-full flex flex-col bg-background relative overflow-hidden">
-      {/* Animated Background with Blue and Green Blur Effects */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 left-1/3 w-72 h-72 bg-blue-500/10 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-1/4 right-1/3 w-64 h-64 bg-green-500/15 rounded-full blur-2xl animate-pulse delay-1000" />
-        <div className="absolute top-2/3 left-1/4 w-48 h-48 bg-blue-400/8 rounded-full blur-xl animate-pulse delay-500" />
-        <div className="absolute bottom-1/2 right-1/2 w-56 h-56 bg-green-400/12 rounded-full blur-2xl animate-pulse delay-700" />
+    <div className="w-full h-screen flex flex-col relative overflow-hidden">
+      {/* Raycast Animated Background */}
+      <div className="absolute inset-0 w-full h-full">
+        <RaycastBackground />
       </div>
+
+      {/* Header with view toggle */}
+      {currentPlan && (
+        <div className="relative z-10 px-6 py-4 border-b border-border bg-background/50 backdrop-blur-sm">
+          <div className="flex items-center justify-between">
+            <h1 className="text-xl font-semibold">Plan de développement</h1>
+            <div className="flex items-center gap-2">
+              <Button
+                variant={viewMode === 'chat' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('chat')}
+              >
+                Chat
+              </Button>
+              <Button
+                variant={viewMode === 'table' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('table')}
+              >
+                Tableau
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
       
       {chatMessages.length === 0 ? (
-        /* Empty state with centered chat */
-        <div className="flex-1 flex flex-col items-center justify-center px-6">
-          <div className="text-center mb-8">
-            <Target className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-foreground mb-2">Plan Generator - {selectedProject.name}</h2>
-            <p className="text-muted-foreground text-lg max-w-md">
-              Describe your idea and the AI will help you create a detailed step-by-step plan
+        /* Empty state with centered chat and dark background */
+        <div className="flex-1 flex flex-col items-center justify-center px-6 relative">
+          {/* Dark overlay to match login screen */}
+          <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" />
+          
+          <div className="relative z-10 text-center mb-8">
+            <Target className="h-16 w-16 text-white/80 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-white mb-2">Générateur de Plans - {selectedProject.name}</h2>
+            <p className="text-white/70 text-lg max-w-md">
+              Décrivez votre idée et l'IA vous aidera à créer un plan détaillé étape par étape
             </p>
           </div>
-          <ClaudeChatInput
-            onSendMessage={(message) => generatePlan(message)}
-            disabled={isGenerating}
-            placeholder="Describe your project idea..."
-          />
+          
+          <div className="relative z-10 w-full max-w-2xl">
+            <ClaudeChatInput
+              onSendMessage={(message) => generatePlan(message)}
+              disabled={isGenerating}
+              placeholder="Décrivez votre idée de projet..."
+            />
+          </div>
+        </div>
+      ) : viewMode === 'table' && currentPlan ? (
+        /* Table view */
+        <div className="flex-1 overflow-auto">
+          <div className="px-6 py-8">
+            <PlanTableView 
+              plan={currentPlan} 
+              onExecuteFeature={(feature) => executeFeatureFromMindmap(feature)}
+            />
+          </div>
         </div>
       ) : (
         /* Chat with messages and fixed input */
@@ -525,7 +615,7 @@ const PlanGenerator = () => {
                         <User className="h-5 w-5" />
                       )}
                       <span className="text-sm opacity-70 font-medium">
-                        {message.role === 'assistant' ? 'AI Assistant' : 'You'}
+                        {message.role === 'assistant' ? 'IA Assistant' : 'Vous'}
                       </span>
                       <span className="text-xs opacity-50">
                         {message.timestamp.toLocaleTimeString()}
@@ -539,7 +629,7 @@ const PlanGenerator = () => {
                         <div className="mt-4 space-y-3">
                           <div className="flex items-center gap-2 text-orange-600">
                             <HelpCircle className="h-5 w-5" />
-                            <span className="font-semibold">Questions to clarify your request:</span>
+                            <span className="font-semibold">Questions pour préciser votre demande :</span>
                           </div>
                           <div className="space-y-2">
                             {message.questions.map((question, index) => (
@@ -555,10 +645,10 @@ const PlanGenerator = () => {
                       {/* Plan mindmap */}
                       {message.type === 'mindmap_plan' && message.plan && (
                         <PlanSummaryCard
-                          title={message.plan.title || 'Untitled plan'}
-                          description={message.plan.description || 'Description not available'}
-                          featuresCount={message.plan.mindmap_data?.features?.length || 0}
-                          pagesCount={message.plan.mindmap_data?.pages?.length || 0}
+                          title={message.plan.title || 'Plan sans titre'}
+                          description={message.plan.description || 'Description non disponible'}
+                          featuresCount={message.plan.mindmap_data?.branches?.features?.length || 0}
+                          pagesCount={message.plan.mindmap_data?.branches?.pages?.length || 0}
                           onOpenMindmap={() => openMindmap(message.plan!)}
                           onExecutePlan={() => {
                             setCurrentPlan(message.plan!);
@@ -572,13 +662,13 @@ const PlanGenerator = () => {
                       {(!message.type || message.type === 'standard') && message.plan && (
                         <div className="mt-4 space-y-3">
                           <div className="font-semibold text-lg border-b border-current/20 pb-2 flex items-center justify-between">
-                            <span>📋 Generated plan: {message.plan.title}</span>
+                            <span>📋 Plan généré: {message.plan.title}</span>
                             <AutoExecutionDialog
                               steps={message.plan.steps.map(step => ({
                                 id: step.id,
                                 titre: step.title,
                                 description: step.description,
-                                prompt: `Implement the step: ${step.title}. ${step.description}`,
+                                prompt: `Implémentez l'étape: ${step.title}. ${step.description}`,
                                 status: step.status
                               }))}
                               onExecute={startExecution}
@@ -587,7 +677,7 @@ const PlanGenerator = () => {
                             >
                               <Button size="sm" variant="outline" onClick={() => setCurrentPlan(message.plan)}>
                                 <Play className="h-3 w-3 mr-1" />
-                                Execute
+                                Exécuter
                               </Button>
                             </AutoExecutionDialog>
                           </div>
@@ -613,7 +703,7 @@ const PlanGenerator = () => {
                   <div className="bg-card text-card-foreground backdrop-blur-sm border border-border rounded-2xl p-4">
                     <div className="flex items-center gap-3">
                       <Bot className="h-5 w-5" />
-                      <span className="text-sm font-medium">AI Assistant is generating your plan...</span>
+                      <span className="text-sm font-medium">IA Assistant génère votre plan...</span>
                       <div className="flex gap-1">
                         <div className="w-2 h-2 bg-primary rounded-full animate-bounce"></div>
                         <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
@@ -635,7 +725,7 @@ const PlanGenerator = () => {
             <ClaudeChatInput
               onSendMessage={(message) => generatePlan(message)}
               disabled={isGenerating}
-              placeholder="Continue the discussion to refine your plan..."
+              placeholder="Continuez la discussion pour affiner votre plan..."
             />
           </div>
         </div>
@@ -652,8 +742,8 @@ const PlanGenerator = () => {
             if (currentPlan.plan_type === 'mindmap' && currentPlan.mindmap_data?.startupPrompt) {
               allSteps.push({
                 id: 'startup',
-                titre: 'Startup Prompt',
-                description: 'Project initialization and configuration',
+                titre: 'Prompt de Démarrage',
+                description: 'Initialisation et configuration du projet',
                 prompt: currentPlan.mindmap_data.startupPrompt.initialSetup + '\n\n' + currentPlan.mindmap_data.startupPrompt.firstSteps,
                 status: 'pending' as const
               });
@@ -667,7 +757,7 @@ const PlanGenerator = () => {
                   id: `feature-${feature.id}`,
                   titre: `Feature: ${feature.title}`,
                   description: feature.description,
-                  prompt: feature.prompt || `Implement the feature: ${feature.title}. ${feature.description}`,
+                  prompt: feature.prompt || `Implémentez la feature: ${feature.title}. ${feature.description}`,
                   status: 'pending' as const
                 });
                 
@@ -676,9 +766,9 @@ const PlanGenerator = () => {
                   feature.subFeatures.forEach((subFeature: any) => {
                     allSteps.push({
                       id: `subfeature-${subFeature.id}`,
-                      titre: `Sub-feature: ${subFeature.title}`,
+                      titre: `Sous-feature: ${subFeature.title}`,
                       description: subFeature.description,
-                      prompt: subFeature.prompt || `Implement the sub-feature: ${subFeature.title}. ${subFeature.description}`,
+                      prompt: subFeature.prompt || `Implémentez la sous-feature: ${subFeature.title}. ${subFeature.description}`,
                       status: 'pending' as const
                     });
                   });
@@ -692,7 +782,7 @@ const PlanGenerator = () => {
                 id: step.id,
                 titre: step.title,
                 description: step.description,
-                prompt: `Implement the step: ${step.title}. ${step.description}`,
+                prompt: `Implémentez l'étape: ${step.title}. ${step.description}`,
                 status: step.status
               }));
             }
@@ -717,7 +807,7 @@ const PlanGenerator = () => {
             setShowMindmapModal(false);
             setSelectedMindmapData(null);
           }}
-          data={selectedMindmapData}
+          data={selectedMindmapData.plan || selectedMindmapData}
           onExecuteFeature={executeFeatureFromMindmap}
         />
       )}
