@@ -465,18 +465,18 @@ const PlanGenerator = () => {
   return (
     <div className="w-full h-full flex flex-col bg-background relative overflow-hidden">
       {/* Animated Background with Blue and Green Blur Effects */}
-      {chatMessages.length === 0 ? (
+      
       <div className="absolute inset-0 w-full h-full">
         <RaycastBackground />
       </div>
-      ):(
+      {/* ):(
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 left-1/3 w-72 h-72 bg-blue-500/10 rounded-full blur-3xl animate-pulse" />
         <div className="absolute bottom-1/4 right-1/3 w-64 h-64 bg-green-500/15 rounded-full blur-2xl animate-pulse delay-1000" />
         <div className="absolute top-2/3 left-1/4 w-48 h-48 bg-blue-400/8 rounded-full blur-xl animate-pulse delay-500" />
         <div className="absolute bottom-1/2 right-1/2 w-56 h-56 bg-green-400/12 rounded-full blur-2xl animate-pulse delay-700" />
       </div>
-      )}
+      )} */}
       
       
       {chatMessages.length === 0 ? (
@@ -501,7 +501,7 @@ const PlanGenerator = () => {
           {/* Messages */}
           <ScrollArea className="flex-1 px-6 pb-24">
             <div className="space-y-6 py-8 max-w-4xl mx-auto">
-              
+              {chatMessages.length === 0 ? (
                 {chatMessages.map((message) => (
                 <div
                   key={message.id}
@@ -606,7 +606,7 @@ const PlanGenerator = () => {
                   </div>
                 </div>
               ))}
-              
+              )}
               
               {isGenerating && (
                 <div className="flex gap-4 justify-start">
