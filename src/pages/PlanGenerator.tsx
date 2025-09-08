@@ -501,7 +501,7 @@ const PlanGenerator = () => {
           {/* Messages */}
           <ScrollArea className="flex-1 px-6 pb-24">
             <div className="space-y-6 py-8 max-w-4xl mx-auto">
-              {chatMessages.length === 0 ? (
+              
                 {chatMessages.map((message) => (
                 <div
                   key={message.id}
@@ -606,7 +606,7 @@ const PlanGenerator = () => {
                   </div>
                 </div>
               ))}
-              )}
+              
               
               {isGenerating && (
                 <div className="flex gap-4 justify-start">
