@@ -12,6 +12,7 @@ import PlanAutoExecutor from '@/components/PlanAutoExecutor';
 import { MindmapModal } from '@/components/MindmapModal';
 import { PlanSummaryCard } from '@/components/PlanSummaryCard';
 import { PlanMindmapVisualization } from '@/components/PlanMindmapVisualization';
+import { Component as RaycastBackground } from '@/components/ui/raycast-animated-background';
 
 interface ProjectPlan {
   id: string;
@@ -161,18 +162,7 @@ const PlanGenerator = () => {
 
       setChatMessages(historicalMessages);
       hasInitializedChat.current = true;
-    } else if (chatMessages.length === 0) { // Check chatMessages to avoid race conditions
-      // This handles the case for a project with no plans yet.
-      setChatMessages([
-        {
-          id: '1',
-          role: 'assistant',
-          content: `Hello! I will help you create a detailed plan for your project "${selectedProject.name}". Describe your idea or what you want to develop.`,
-          timestamp: new Date(),
-        },
-      ]);
-      hasInitializedChat.current = true;
-    }
+    } 
   }, [plans, selectedProject, chatMessages.length]);
 
   const generatePlan = async (prompt: string) => {
@@ -475,12 +465,18 @@ const PlanGenerator = () => {
   return (
     <div className="w-full h-full flex flex-col bg-background relative overflow-hidden">
       {/* Animated Background with Blue and Green Blur Effects */}
+      {chatMessages.length === 0 ? (
+      <div className="absolute inset-0 w-full h-full">
+        <RaycastBackground />
+      </div>
+      ):(
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 left-1/3 w-72 h-72 bg-blue-500/10 rounded-full blur-3xl animate-pulse" />
         <div className="absolute bottom-1/4 right-1/3 w-64 h-64 bg-green-500/15 rounded-full blur-2xl animate-pulse delay-1000" />
         <div className="absolute top-2/3 left-1/4 w-48 h-48 bg-blue-400/8 rounded-full blur-xl animate-pulse delay-500" />
         <div className="absolute bottom-1/2 right-1/2 w-56 h-56 bg-green-400/12 rounded-full blur-2xl animate-pulse delay-700" />
       </div>
+      )}
       
       {chatMessages.length === 0 ? (
         /* Empty state with centered chat */
