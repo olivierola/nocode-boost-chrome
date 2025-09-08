@@ -162,17 +162,6 @@ const PlanGenerator = () => {
 
       setChatMessages(historicalMessages);
       hasInitializedChat.current = true;
-    } else if (chatMessages.length === 0) { // Check chatMessages to avoid race conditions
-      // This handles the case for a project with no plans yet.
-      setChatMessages([
-        {
-          id: '1',
-          role: 'assistant',
-          content: `Hello! I will help you create a detailed plan for your project "${selectedProject.name}". Describe your idea or what you want to develop.`,
-          timestamp: new Date(),
-        },
-      ]);
-      hasInitializedChat.current = true;
     }
   }, [plans, selectedProject, chatMessages.length]);
 
@@ -489,6 +478,7 @@ const PlanGenerator = () => {
       </div>
       )}
       
+      
       {chatMessages.length === 0 ? (
         /* Empty state with centered chat */
         <div className="flex-1 flex flex-col items-center justify-center px-6">
@@ -511,7 +501,8 @@ const PlanGenerator = () => {
           {/* Messages */}
           <ScrollArea className="flex-1 px-6 pb-24">
             <div className="space-y-6 py-8 max-w-4xl mx-auto">
-              {chatMessages.map((message) => (
+              {chatMessages.length === 0 ? (
+                {chatMessages.map((message) => (
                 <div
                   key={message.id}
                   className={`flex gap-4 ${
@@ -615,6 +606,8 @@ const PlanGenerator = () => {
                   </div>
                 </div>
               ))}
+              )}
+              
               {isGenerating && (
                 <div className="flex gap-4 justify-start">
                   <div className="bg-card text-card-foreground backdrop-blur-sm border border-border rounded-2xl p-4">
