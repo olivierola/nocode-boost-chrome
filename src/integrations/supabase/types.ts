@@ -216,6 +216,45 @@ export type Database = {
         }
         Relationships: []
       }
+      plan_chat_history: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          message_type: string | null
+          plan_data: Json | null
+          project_id: string
+          questions: string[] | null
+          role: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          message_type?: string | null
+          plan_data?: Json | null
+          project_id: string
+          questions?: string[] | null
+          role: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          message_type?: string | null
+          plan_data?: Json | null
+          project_id?: string
+          questions?: string[] | null
+          role?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       plans: {
         Row: {
           created_at: string
@@ -576,6 +615,18 @@ export type Database = {
           visual_identity_data: Json
         }[]
       }
+      get_plan_chat_history: {
+        Args: { p_project_id: string; p_user_id: string }
+        Returns: {
+          content: string
+          created_at: string
+          id: string
+          message_type: string
+          plan_data: Json
+          questions: string[]
+          role: string
+        }[]
+      }
       get_posts_for_project: {
         Args: { p_project_id: string }
         Returns: {
@@ -633,6 +684,18 @@ export type Database = {
           p_role: string
           p_user_id: string
           p_visual_identity_data?: string
+        }
+        Returns: string
+      }
+      save_plan_chat_message: {
+        Args: {
+          p_content: string
+          p_message_type?: string
+          p_plan_data?: string
+          p_project_id: string
+          p_questions?: string[]
+          p_role: string
+          p_user_id: string
         }
         Returns: string
       }

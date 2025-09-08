@@ -102,15 +102,6 @@ const PlanGenerator = () => {
     if (selectedProject) {
       // Load conversation history
       loadConversationHistory();
-      
-      if (chatMessages.length === 0) {
-        setChatMessages([{
-          id: '1',
-          role: 'assistant',
-          content: `Bonjour ! Je vais vous aider à créer un plan détaillé pour votre projet "${selectedProject.name}". Décrivez-moi votre idée ou ce que vous souhaitez développer.`,
-          timestamp: new Date()
-        }]);
-      }
     }
   }, [selectedProject]);
 
@@ -118,10 +109,9 @@ const PlanGenerator = () => {
     if (!selectedProject || !user) return;
 
     try {
-      const { data, error } = await supabase.rpc('get_conversation_history', {
+      const { data, error } = await supabase.rpc('get_plan_chat_history', {
         p_project_id: selectedProject.id,
-        p_user_id: user.id,
-        p_conversation_type: 'plan_generation'
+        p_user_id: user.id
       });
 
       if (error) throw error;
@@ -132,6 +122,8 @@ const PlanGenerator = () => {
           role: msg.role,
           content: msg.content,
           timestamp: new Date(msg.created_at),
+          type: msg.message_type as 'clarification_needed' | 'mindmap_plan' | 'standard',
+          questions: msg.questions || [],
           plan: msg.plan_data ? {
             ...msg.plan_data,
             id: msg.plan_data.id || msg.id,
@@ -152,13 +144,14 @@ const PlanGenerator = () => {
     if (!selectedProject || !user) return;
 
     try {
-      await supabase.rpc('save_conversation_message', {
+      await supabase.rpc('save_plan_chat_message', {
         p_project_id: selectedProject.id,
         p_user_id: user.id,
-        p_conversation_type: 'plan_generation',
         p_role: message.role,
         p_content: message.content,
-        p_plan_data: message.plan ? JSON.stringify(message.plan) : null
+        p_message_type: message.type || 'standard',
+        p_plan_data: message.plan ? JSON.stringify(message.plan) : null,
+        p_questions: message.questions || null
       });
     } catch (error) {
       console.error('Error saving conversation message:', error);
@@ -242,16 +235,26 @@ const PlanGenerator = () => {
           description: data.description,
           plan_type: 'mindmap',
           mindmap_data: data,
-          steps: data.branches?.features || [],
+          steps: data.features?.map((feature: any, index: number) => ({
+            id: feature.id || `feature-${index}`,
+            title: feature.title || feature.name || `Fonctionnalité ${index + 1}`,
+            description: feature.description || '',
+            status: 'pending' as const
+          })) || [],
+          features: data.features || [],
+          pages: data.pages || [],
           status: 'draft',
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         };
 
+        const featuresCount = data.features?.length || 0;
+        const pagesCount = data.pages?.length || 0;
+
         const aiMessage: ChatMessage = {
           id: (Date.now() + 1).toString(),
           role: 'assistant',
-          content: `J'ai créé un plan mindmap complet pour votre projet ! Il comprend ${data.branches?.features?.length || 0} fonctionnalités principales, ${data.branches?.pages?.length || 0} pages, une étude de marché et une identité visuelle. Vous pouvez ouvrir la mindmap interactive pour explorer tous les détails.`,
+          content: `J'ai créé un plan mindmap complet pour votre projet ! Il comprend ${featuresCount} fonctionnalités principales, ${pagesCount} pages, une étude de marché et une identité visuelle. Vous pouvez ouvrir la mindmap interactive pour explorer tous les détails.`,
           timestamp: new Date(),
           plan: planForMessage,
           type: 'mindmap_plan'
@@ -554,20 +557,26 @@ const PlanGenerator = () => {
       )}
       
       {chatMessages.length === 0 ? (
-        /* Empty state with centered chat */
-        <div className="flex-1 flex flex-col items-center justify-center px-6">
-          <div className="text-center mb-8">
-            <Target className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-foreground mb-2">Générateur de Plans - {selectedProject.name}</h2>
-            <p className="text-muted-foreground text-lg max-w-md">
+        /* Empty state with centered chat and dark background */
+        <div className="flex-1 flex flex-col items-center justify-center px-6 relative">
+          {/* Dark overlay to match login screen */}
+          <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" />
+          
+          <div className="relative z-10 text-center mb-8">
+            <Target className="h-16 w-16 text-white/80 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-white mb-2">Générateur de Plans - {selectedProject.name}</h2>
+            <p className="text-white/70 text-lg max-w-md">
               Décrivez votre idée et l'IA vous aidera à créer un plan détaillé étape par étape
             </p>
           </div>
-          <ClaudeChatInput
-            onSendMessage={(message) => generatePlan(message)}
-            disabled={isGenerating}
-            placeholder="Décrivez votre idée de projet..."
-          />
+          
+          <div className="relative z-10 w-full max-w-2xl">
+            <ClaudeChatInput
+              onSendMessage={(message) => generatePlan(message)}
+              disabled={isGenerating}
+              placeholder="Décrivez votre idée de projet..."
+            />
+          </div>
         </div>
       ) : viewMode === 'table' && currentPlan ? (
         /* Table view */
