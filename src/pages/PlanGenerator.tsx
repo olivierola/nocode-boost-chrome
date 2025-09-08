@@ -4,7 +4,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useProjectContext } from '@/hooks/useProjectContext';
-import { ClaudeChatInput } from '@/components/ui/claude-style-ai-inpu';
+import { ClaudeChatInput } from '@/components/ui/claude-style-ai-input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import AutoExecutionDialog from '@/components/AutoExecutionDialog';
