@@ -12,7 +12,37 @@ import PlanAutoExecutor from '@/components/PlanAutoExecutor';
 import { MindmapModal } from '@/components/MindmapModal';
 import { PlanSummaryCard } from '@/components/PlanSummaryCard';
 import { PlanMindmapVisualization } from '@/components/PlanMindmapVisualization';
+import { PlanTableView } from '@/components/PlanTableView';
 import { Component as RaycastBackground } from '@/components/ui/raycast-animated-background';
+
+// Enhanced structure for better organization
+interface Section {
+  id: string;
+  name: string;
+  description: string;
+  visualIdentity: string;
+  layout: string;
+  prompt: string;
+}
+
+interface Feature {
+  id: string;
+  name: string;
+  description: string;
+  priority: 'high' | 'medium' | 'low';
+  prompt: string;
+  subFeatures?: Feature[];
+}
+
+interface Page {
+  id: string;
+  name: string;
+  description: string;
+  priority: 'high' | 'medium' | 'low';
+  features: Feature[];
+  sections: Section[];
+  prompt: string;
+}
 
 interface ProjectPlan {
   id: string;
@@ -20,17 +50,20 @@ interface ProjectPlan {
   title?: string;
   description?: string;
   status?: 'draft' | 'validated' | 'executing' | 'completed';
-  plan_type?: 'standard' | 'mindmap';
+  plan_type?: 'standard' | 'mindmap' | 'enhanced';
   mindmap_data?: any;
+  // Enhanced structure
+  pages?: Page[];
   steps: Array<{
     id: string;
     title: string;
     description: string;
     status: 'pending' | 'in_progress' | 'completed' | 'error';
   }>;
-  // New properties for plan data
+  // Legacy properties for plan data
   startupPrompt?: {
     initialSetup?: string;
+    firstSteps?: string;
   };
   features?: Array<{
     name: string;
@@ -52,12 +85,6 @@ interface ProjectPlan {
       deliverables?: string[];
     }>;
   };
-  pages?: Array<{
-    name: string;
-    description: string;
-    priority?: string;
-    prompt?: string;
-  }>;
   created_at: string;
   updated_at: string;
 }
@@ -82,6 +109,8 @@ const PlanGenerator = () => {
   const [isExecuting, setIsExecuting] = useState(false);
   const [showMindmapModal, setShowMindmapModal] = useState(false);
   const [selectedMindmapData, setSelectedMindmapData] = useState<any>(null);
+  const [currentViewMode, setCurrentViewMode] = useState<'chat' | 'table'>('chat');
+  const [selectedPlanForTable, setSelectedPlanForTable] = useState<ProjectPlan | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const hasInitializedChat = useRef(false);
   
@@ -209,30 +238,36 @@ const PlanGenerator = () => {
       }
 
       if (data.type === 'plan_generated') {
-        // Plan mindmap généré et sauvegardé
+        // Enhanced plan with new structure
         const planForMessage: ProjectPlan = {
           id: data.planId,
           project_id: selectedProject.id,
           title: data.plan.title,
           description: data.plan.description,
-          plan_type: 'mindmap',
+          plan_type: 'enhanced',
           mindmap_data: data.plan,
+          pages: data.plan.pages || [],
           steps: data.plan.features || [],
+          startupPrompt: data.plan.startupPrompt,
+          visualIdentity: data.plan.visualIdentity,
           status: 'draft',
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         };
 
+        const featuresCount = data.plan.pages?.reduce((acc: number, page: any) => acc + page.features.length, 0) || 0;
+        const sectionsCount = data.plan.pages?.reduce((acc: number, page: any) => acc + page.sections.length, 0) || 0;
+
         const aiMessage: ChatMessage = {
           id: (Date.now() + 1).toString(),
           role: 'assistant',
-          content: `I have created a complete mindmap plan for your project! It includes ${data.plan.features?.length || 0} main features, ${data.plan.pages?.length || 0} pages, a market study and a visual identity. You can open the interactive mindmap to explore all the details.`,
+          content: `I have created a comprehensive plan for your project! It includes ${data.plan.pages?.length || 0} pages, ${featuresCount} features, ${sectionsCount} sections, and detailed execution guidance. You can view it in the interactive table or mindmap.`,
           timestamp: new Date(),
           plan: planForMessage,
           type: 'mindmap_plan'
         };
         setChatMessages(prev => [...prev, aiMessage]);
-        fetchPlans(); // Rafraîchir la liste des plans
+        fetchPlans();
         return;
       }
 
@@ -550,20 +585,41 @@ const PlanGenerator = () => {
                         </div>
                       )}
 
-                      {/* Plan mindmap */}
+                      {/* Enhanced plan */}
                       {message.type === 'mindmap_plan' && message.plan && (
-                        <PlanSummaryCard
-                          title={message.plan.title || 'Untitled plan'}
-                          description={message.plan.description || 'Description not available'}
-                          featuresCount={message.plan.mindmap_data?.features?.length || 0}
-                          pagesCount={message.plan.mindmap_data?.pages?.length || 0}
-                          onOpenMindmap={() => openMindmap(message.plan!)}
-                          onExecutePlan={() => {
-                            setCurrentPlan(message.plan!);
-                            setShowExecutionDialog(true);
-                            setIsExecuting(true);
-                          }}
-                        />
+                        <div className="mt-4 space-y-3">
+                          <PlanSummaryCard
+                            title={message.plan.title || 'Untitled plan'}
+                            description={message.plan.description || 'Description not available'}
+                            featuresCount={message.plan.pages?.reduce((acc, page) => acc + page.features?.length || 0, 0) || 0}
+                            pagesCount={message.plan.pages?.length || 0}
+                            onOpenMindmap={() => openMindmap(message.plan!)}
+                            onExecutePlan={() => {
+                              setCurrentPlan(message.plan!);
+                              setShowExecutionDialog(true);
+                              setIsExecuting(true);
+                            }}
+                          />
+                          <div className="flex gap-2 mt-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setSelectedPlanForTable(message.plan!);
+                                setCurrentViewMode('table');
+                              }}
+                            >
+                              📋 Open Table View
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => openMindmap(message.plan!)}
+                            >
+                              🗺️ Open Mindmap
+                            </Button>
+                          </div>
+                        </div>
                       )}
 
                       {/* Plan standard (ancien format) */}

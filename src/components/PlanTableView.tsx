@@ -1,233 +1,360 @@
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import React, { useState } from 'react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Play, Target } from 'lucide-react';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { Table, Eye, Edit, Save, X, FileText, Layout } from 'lucide-react';
+import AgentPlan from '@/components/ui/agent-plan';
+import { PlanMindmapVisualization } from './PlanMindmapVisualization';
 
-interface ProjectPlan {
+interface Section {
   id: string;
-  project_id: string;
-  title?: string;
-  description?: string;
-  status?: 'draft' | 'validated' | 'executing' | 'completed';
-  plan_type?: 'standard' | 'mindmap';
-  steps: Array<{
-    id: string;
-    title: string;
-    description: string;
-    status: 'pending' | 'in_progress' | 'completed' | 'error';
-  }>;
-  features?: Array<{
-    name: string;
-    description: string;
-    priority?: string;
-    prompt?: string;
-    sub_features?: Array<{
-      name: string;
+  name: string;
+  description: string;
+  visualIdentity: string;
+  layout: string;
+  prompt: string;
+}
+
+interface Feature {
+  id: string;
+  name: string;
+  description: string;
+  priority: 'high' | 'medium' | 'low';
+  prompt: string;
+  subFeatures?: Feature[];
+}
+
+interface Page {
+  id: string;
+  name: string;
+  description: string;
+  priority: 'high' | 'medium' | 'low';
+  features: Feature[];
+  sections: Section[];
+  prompt: string;
+}
+
+interface EnhancedPlanData {
+  id: string;
+  title: string;
+  description: string;
+  pages: Page[];
+  startupPrompt?: {
+    initialSetup: string;
+    firstSteps: string;
+  };
+  visualIdentity?: {
+    detailedSteps: Array<{
+      step: string;
       description: string;
-      priority?: string;
-      prompt?: string;
+      prompt: string;
+      deliverables: string[];
     }>;
-  }>;
-  pages?: Array<{
-    name: string;
-    description: string;
-    priority?: string;
-    prompt?: string;
-  }>;
+  };
 }
 
 interface PlanTableViewProps {
-  plan: ProjectPlan;
+  planData: EnhancedPlanData;
+  onPlanChange?: (planData: EnhancedPlanData) => void;
   onExecuteFeature?: (feature: any) => void;
+  onValidatePlan?: (planData: EnhancedPlanData) => void;
 }
 
-export const PlanTableView: React.FC<PlanTableViewProps> = ({ plan, onExecuteFeature }) => {
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed': return 'bg-green-500/20 text-green-700 dark:text-green-400';
-      case 'in_progress': return 'bg-blue-500/20 text-blue-700 dark:text-blue-400';
-      case 'error': return 'bg-red-500/20 text-red-700 dark:text-red-400';
-      default: return 'bg-muted text-muted-foreground';
+export const PlanTableView: React.FC<PlanTableViewProps> = ({
+  planData,
+  onPlanChange,
+  onExecuteFeature,
+  onValidatePlan,
+}) => {
+  const [showMindmap, setShowMindmap] = useState(false);
+  const [currentView, setCurrentView] = useState<'list' | 'mindmap'>('list');
+
+  // Convert enhanced plan structure to AgentPlan tasks format
+  const convertToAgentPlanTasks = (data: EnhancedPlanData) => {
+    const tasks: any[] = [];
+    let taskId = 1;
+
+    // Add startup prompt as first task
+    if (data.startupPrompt) {
+      tasks.push({
+        id: taskId.toString(),
+        title: "🚀 Project Initialization",
+        description: "Initial project setup and configuration",
+        status: "pending",
+        priority: "high",
+        level: 0,
+        dependencies: [],
+        prompt: `${data.startupPrompt.initialSetup}\n\n${data.startupPrompt.firstSteps}`,
+        subtasks: []
+      });
+      taskId++;
     }
+
+    // Add visual identity as early task
+    if (data.visualIdentity?.detailedSteps) {
+      tasks.push({
+        id: taskId.toString(),
+        title: "🎨 Visual Identity Development",
+        description: "Complete visual identity and branding creation",
+        status: "pending",
+        priority: "high",
+        level: 0,
+        dependencies: data.startupPrompt ? ["1"] : [],
+        prompt: "Create the complete visual identity for the project including branding, colors, typography, and visual guidelines.",
+        subtasks: data.visualIdentity.detailedSteps.map((step, index) => ({
+          id: `${taskId}.${index + 1}`,
+          title: step.step,
+          description: step.description,
+          status: "pending",
+          priority: "medium",
+          prompt: step.prompt,
+          tools: step.deliverables
+        }))
+      });
+      taskId++;
+    }
+
+    // Add pages and their features/sections
+    data.pages.forEach((page, pageIndex) => {
+      const pageTaskId = taskId.toString();
+      
+      // Create page task
+      const pageTask = {
+        id: pageTaskId,
+        title: `📄 ${page.name} Page`,
+        description: page.description,
+        status: "pending",
+        priority: page.priority,
+        level: 0,
+        dependencies: data.visualIdentity ? [taskId - 1].map(String) : [],
+        prompt: page.prompt,
+        subtasks: [] as any[]
+      };
+
+      // Add sections as subtasks
+      page.sections.forEach((section, sectionIndex) => {
+        pageTask.subtasks.push({
+          id: `${pageTaskId}.s${sectionIndex + 1}`,
+          title: `📐 Section: ${section.name}`,
+          description: `${section.description} | Visual: ${section.visualIdentity} | Layout: ${section.layout}`,
+          status: "pending",
+          priority: "medium",
+          prompt: section.prompt,
+          tools: ["layout", "styling", "components"]
+        });
+      });
+
+      // Add features as subtasks
+      page.features.forEach((feature, featureIndex) => {
+        const featureSubtask = {
+          id: `${pageTaskId}.f${featureIndex + 1}`,
+          title: `⚡ Feature: ${feature.name}`,
+          description: feature.description,
+          status: "pending",
+          priority: feature.priority,
+          prompt: feature.prompt,
+          tools: ["development", "testing"]
+        };
+
+        pageTask.subtasks.push(featureSubtask);
+
+        // Add sub-features if they exist
+        if (feature.subFeatures && feature.subFeatures.length > 0) {
+          feature.subFeatures.forEach((subFeature, subIndex) => {
+            pageTask.subtasks.push({
+              id: `${pageTaskId}.f${featureIndex + 1}.${subIndex + 1}`,
+              title: `  └─ ${subFeature.name}`,
+              description: subFeature.description,
+              status: "pending",
+              priority: subFeature.priority,
+              prompt: subFeature.prompt,
+              tools: ["development"]
+            });
+          });
+        }
+      });
+
+      tasks.push(pageTask);
+      taskId++;
+    });
+
+    return tasks;
   };
 
-  const getPriorityColor = (priority?: string) => {
-    switch (priority?.toLowerCase()) {
-      case 'high': return 'bg-red-500/20 text-red-700 dark:text-red-400';
-      case 'medium': return 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-400';
-      case 'low': return 'bg-green-500/20 text-green-700 dark:text-green-400';
-      default: return 'bg-muted text-muted-foreground';
+  const agentPlanTasks = convertToAgentPlanTasks(planData);
+
+  const handleTasksChange = (updatedTasks: any[]) => {
+    // Convert back to enhanced plan structure if needed
+    // For now, we'll just trigger onPlanChange with the current planData
+    onPlanChange?.(planData);
+  };
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'high': return 'bg-red-100 text-red-700 border-red-200';
+      case 'medium': return 'bg-yellow-100 text-yellow-700 border-yellow-200';
+      case 'low': return 'bg-green-100 text-green-700 border-green-200';
+      default: return 'bg-gray-100 text-gray-700 border-gray-200';
     }
   };
 
   return (
-    <div className="space-y-6">
-      {/* Plan Header */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Target className="h-5 w-5" />
-            {plan.title || 'Plan de développement'}
-          </CardTitle>
-          {plan.description && (
-            <p className="text-muted-foreground">{plan.description}</p>
-          )}
-        </CardHeader>
-      </Card>
+    <div className="w-full h-full bg-background">
+      <div className="p-6 border-b border-border">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-2xl font-bold text-foreground">{planData.title}</h2>
+            <p className="text-muted-foreground">{planData.description}</p>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant={currentView === 'list' ? 'default' : 'outline'}
+              onClick={() => setCurrentView('list')}
+            >
+              <FileText className="h-4 w-4 mr-2" />
+              List View
+            </Button>
+            <Button
+              variant={currentView === 'mindmap' ? 'default' : 'outline'}
+              onClick={() => setCurrentView('mindmap')}
+            >
+              <Layout className="h-4 w-4 mr-2" />
+              Mindmap
+            </Button>
+            {onValidatePlan && (
+              <Button onClick={() => onValidatePlan(planData)} className="ml-4">
+                Validate & Execute Plan
+              </Button>
+            )}
+          </div>
+        </div>
 
-      {/* Features Cards */}
-      {plan.features && plan.features.length > 0 && (
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold">Fonctionnalités</h3>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {plan.features.map((feature, index) => (
-              <Card key={index} className="hover:shadow-md transition-shadow">
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between">
-                    <CardTitle className="text-base">{feature.name}</CardTitle>
-                    {feature.priority && (
-                      <Badge className={getPriorityColor(feature.priority)}>
-                        {feature.priority}
-                      </Badge>
-                    )}
+        <div className="flex gap-4 text-sm text-muted-foreground">
+          <span>📄 {planData.pages.length} Pages</span>
+          <span>⚡ {planData.pages.reduce((acc, page) => acc + page.features.length, 0)} Features</span>
+          <span>📐 {planData.pages.reduce((acc, page) => acc + page.sections.length, 0)} Sections</span>
+          <span>📋 {agentPlanTasks.length} Main Tasks</span>
+        </div>
+      </div>
+
+      {currentView === 'list' ? (
+        <div className="flex-1 overflow-auto">
+          <AgentPlan
+            tasks={agentPlanTasks}
+            onTasksChange={handleTasksChange}
+            editable={true}
+          />
+        </div>
+      ) : (
+        <div className="flex-1 p-6">
+          <div className="bg-card rounded-lg border border-border p-6">
+            <h3 className="text-lg font-semibold mb-6">Project Structure Overview</h3>
+            
+            <div className="space-y-8">
+              {planData.pages.map((page, pageIndex) => (
+                <div key={page.id} className="border border-border rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-bold">
+                        {pageIndex + 1}
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-lg">{page.name}</h4>
+                        <p className="text-muted-foreground text-sm">{page.description}</p>
+                      </div>
+                    </div>
+                    <Badge className={getPriorityColor(page.priority)}>
+                      {page.priority}
+                    </Badge>
                   </div>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <p className="text-sm text-muted-foreground">
-                    {feature.description}
-                  </p>
-                  
-                  {feature.sub_features && feature.sub_features.length > 0 && (
-                    <div className="space-y-2">
-                      <h5 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                        Sous-fonctionnalités
+
+                  <div className="grid md:grid-cols-2 gap-6">
+                    {/* Features */}
+                    <div>
+                      <h5 className="font-medium text-foreground mb-3 flex items-center gap-2">
+                        ⚡ Features ({page.features.length})
                       </h5>
-                      <div className="space-y-1">
-                        {feature.sub_features.map((subFeature, subIndex) => (
-                          <div key={subIndex} className="flex items-center justify-between text-xs">
-                            <span>{subFeature.name}</span>
-                            {subFeature.priority && (
-                              <Badge variant="outline" className="h-4 text-xs">
-                                {subFeature.priority}
+                      <div className="space-y-3">
+                        {page.features.map((feature) => (
+                          <div key={feature.id} className="bg-muted/50 rounded-lg p-3">
+                            <div className="flex items-center justify-between mb-2">
+                              <h6 className="font-medium text-sm">{feature.name}</h6>
+                              <Badge variant="outline" className={getPriorityColor(feature.priority)}>
+                                {feature.priority}
                               </Badge>
+                            </div>
+                            <p className="text-xs text-muted-foreground mb-2">{feature.description}</p>
+                            
+                            {feature.subFeatures && feature.subFeatures.length > 0 && (
+                              <div className="ml-4 space-y-1">
+                                {feature.subFeatures.map((subFeature) => (
+                                  <div key={subFeature.id} className="text-xs text-muted-foreground">
+                                    • {subFeature.name}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                            
+                            {onExecuteFeature && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="mt-2"
+                                onClick={() => onExecuteFeature(feature)}
+                              >
+                                Execute
+                              </Button>
                             )}
                           </div>
                         ))}
                       </div>
                     </div>
-                  )}
-                  
-                  {onExecuteFeature && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="w-full"
-                      onClick={() => onExecuteFeature(feature)}
-                    >
-                      <Play className="h-3 w-3 mr-1" />
-                      Exécuter
-                    </Button>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
+
+                    {/* Sections */}
+                    <div>
+                      <h5 className="font-medium text-foreground mb-3 flex items-center gap-2">
+                        📐 Sections ({page.sections.length})
+                      </h5>
+                      <div className="space-y-3">
+                        {page.sections.map((section) => (
+                          <div key={section.id} className="bg-muted/50 rounded-lg p-3">
+                            <h6 className="font-medium text-sm mb-2">{section.name}</h6>
+                            <p className="text-xs text-muted-foreground mb-2">{section.description}</p>
+                            <div className="text-xs space-y-1">
+                              <div><strong>Visual:</strong> {section.visualIdentity}</div>
+                              <div><strong>Layout:</strong> {section.layout}</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}
 
-      {/* Pages Table */}
-      {plan.pages && plan.pages.length > 0 && (
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold">Pages</h3>
-          <Card>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nom</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead>Priorité</TableHead>
-                  <TableHead className="w-24">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {plan.pages.map((page, index) => (
-                  <TableRow key={index}>
-                    <TableCell className="font-medium">{page.name}</TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {page.description}
-                    </TableCell>
-                    <TableCell>
-                      {page.priority && (
-                        <Badge className={getPriorityColor(page.priority)}>
-                          {page.priority}
-                        </Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {onExecuteFeature && (
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => onExecuteFeature(page)}
-                        >
-                          <Play className="h-3 w-3" />
-                        </Button>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </Card>
-        </div>
-      )}
-
-      {/* Steps Table */}
-      {plan.steps && plan.steps.length > 0 && (
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold">Étapes de développement</h3>
-          <Card>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Étape</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead>Statut</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {plan.steps.map((step, index) => (
-                  <TableRow key={step.id}>
-                    <TableCell className="font-medium">
-                      {index + 1}. {step.title}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {step.description}
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={getStatusColor(step.status)}>
-                        {step.status === 'pending' && 'En attente'}
-                        {step.status === 'in_progress' && 'En cours'}
-                        {step.status === 'completed' && 'Terminé'}
-                        {step.status === 'error' && 'Erreur'}
-                      </Badge>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </Card>
-        </div>
+      {/* Mindmap Modal */}
+      {showMindmap && (
+        <PlanMindmapVisualization
+          isOpen={showMindmap}
+          onClose={() => setShowMindmap(false)}
+          data={{
+            ...planData,
+            mainIdea: planData.description,
+            productSummary: planData.description,
+            technicalDocumentation: [],
+            roadmap: [],
+            features: planData.pages.flatMap(p => p.features),
+            marketStudy: { targetAudience: "", competitors: [] }
+          }}
+          onExecuteFeature={onExecuteFeature}
+        />
       )}
     </div>
   );
 };
+
+export default PlanTableView;
