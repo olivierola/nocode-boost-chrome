@@ -114,7 +114,7 @@ const EnhancedPromptEnhancer = ({ value, onChange, onSend }: EnhancedPromptEnhan
           .single();
 
         if (visualIdentity) {
-          if (visualIdentity.couleurs) {
+          if (visualIdentity.couleurs && Array.isArray(visualIdentity.couleurs)) {
             const projectColors = (visualIdentity.couleurs as any[]).map((color: any, index: number) => ({
               name: color.name || `Couleur ${index + 1}`,
               value: color.value || color.hex,
@@ -123,7 +123,7 @@ const EnhancedPromptEnhancer = ({ value, onChange, onSend }: EnhancedPromptEnhan
             setColors([...defaultColors, ...projectColors]);
           }
 
-          if (visualIdentity.polices) {
+          if (visualIdentity.polices && Array.isArray(visualIdentity.polices)) {
             const projectFonts = (visualIdentity.polices as any[]).map((font: any, index: number) => ({
               name: font.name || `Police ${index + 1}`,
               value: font.value || font.family,
