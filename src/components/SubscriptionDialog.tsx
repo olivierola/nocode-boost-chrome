@@ -90,7 +90,7 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
         </DialogHeader>
         
         <div className="grid md:grid-cols-3 gap-6 py-6">
-          {plans.map((plan) => (
+          {(plans || []).map((plan) => (
             <PricingCard.Card
               key={plan.name}
               className={cn(
@@ -142,7 +142,7 @@ const SubscriptionDialog: React.FC<SubscriptionDialogProps> = ({
               
               <PricingCard.Body>
                 <PricingCard.List>
-                  {plan.features.map((feature, index) => (
+                  {(plan.features || []).map((feature, index) => (
                     <PricingCard.ListItem key={index}>
                       <span className="mt-0.5">
                         <Check

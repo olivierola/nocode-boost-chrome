@@ -173,7 +173,7 @@ Utilisez ce chat pour discuter des ajustements avant de valider définitivement 
         {/* Messages */}
         <ScrollArea className="flex-1 px-4">
           <div className="space-y-3 pb-4">
-            {messages.map((message) => (
+            {(messages || []).map((message) => (
               <div
                 key={message.id}
                 className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}

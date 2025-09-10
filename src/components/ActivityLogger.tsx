@@ -190,7 +190,7 @@ const ActivityLogger = () => {
         ) : (
           <ScrollArea className="h-[200px]">
             <div className="space-y-3">
-              {activities.map((activity) => (
+              {(activities || []).map((activity) => (
                 <div key={activity.id} className="flex items-start gap-3">
                   <div className={`w-6 h-6 rounded-full flex items-center justify-center ${getActionColor(activity.action)}`}>
                     {getActionIcon(activity.action)}
