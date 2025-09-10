@@ -192,7 +192,7 @@ const PlanGenerator = () => {
       setChatMessages(historicalMessages);
       hasInitializedChat.current = true;
     }
-  }, [plans, selectedProject, chatMessages.length]);
+  }, [plans, selectedProject, (chatMessages || []).length]);
 
   const generatePlan = async (prompt: string) => {
     if (!selectedProject) {
@@ -506,7 +506,7 @@ const PlanGenerator = () => {
       
       
       
-      {chatMessages.length === 0 ? (
+      {(chatMessages || []).length === 0 ? (
         <>
           <div className="absolute inset-0 w-full h-full">
             <RaycastBackground />
@@ -541,7 +541,7 @@ const PlanGenerator = () => {
           <ScrollArea className="flex-1 px-6 pb-24">
             <div className="space-y-6 py-8 max-w-4xl mx-auto">
              
-                {chatMessages.map((message) => (
+                {(chatMessages || []).map((message) => (
                 <div
                   key={message.id}
                   className={`flex gap-4 ${
