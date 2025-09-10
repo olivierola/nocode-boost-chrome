@@ -170,12 +170,12 @@ const PlanGenerator = () => {
           const messageContent =
             plan.plan_type === 'mindmap'
               ? `I have created a complete mindmap plan for your project! It includes ${
-                  plan.mindmap_data?.features?.length || 0
+                  plan.mindmap_data?.features?.length ?? 0
                 } main features, ${
-                  plan.mindmap_data?.pages?.length || 0
+                  plan.mindmap_data?.pages?.length ?? 0
                 } pages, a market study and a visual identity. You can open the interactive mindmap to explore all the details.`
               : `I have generated a detailed plan for your project! The plan includes ${
-                  plan.steps?.length || 0
+                  (plan.steps ?? []).length
                 } main steps. You can continue to discuss it to refine it.`;
 
           return {
@@ -255,13 +255,13 @@ const PlanGenerator = () => {
           updated_at: new Date().toISOString()
         };
 
-        const featuresCount = data.plan.pages?.reduce((acc: number, page: any) => acc + page.features.length, 0) || 0;
-        const sectionsCount = data.plan.pages?.reduce((acc: number, page: any) => acc + page.sections.length, 0) || 0;
+        const featuresCount = data.plan.pages?.reduce((acc: number, page: any) => acc + (page.features?.length ?? 0), 0) ?? 0;
+        const sectionsCount = data.plan.pages?.reduce((acc: number, page: any) => acc + (page.sections?.length ?? 0), 0) ?? 0;
 
         const aiMessage: ChatMessage = {
           id: (Date.now() + 1).toString(),
           role: 'assistant',
-          content: `I have created a comprehensive plan for your project! It includes ${data.plan.pages?.length || 0} pages, ${featuresCount} features, ${sectionsCount} sections, and detailed execution guidance. You can view it in the interactive table or mindmap.`,
+          content: `I have created a comprehensive plan for your project! It includes ${data.plan.pages?.length ?? 0} pages, ${featuresCount} features, ${sectionsCount} sections, and detailed execution guidance. You can view it in the interactive table or mindmap.`,
           timestamp: new Date(),
           plan: planForMessage,
           type: 'mindmap_plan'
@@ -287,7 +287,7 @@ const PlanGenerator = () => {
       const aiMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: `I have generated a detailed plan for your project! The plan includes ${data.steps?.length || 0} main steps. You can continue to discuss it to refine it.`,
+        content: `I have generated a detailed plan for your project! The plan includes ${(data.steps ?? []).length} main steps. You can continue to discuss it to refine it.`,
         timestamp: new Date(),
         plan: planForMessage
       };
@@ -429,7 +429,7 @@ const PlanGenerator = () => {
 
     // Add features
     if (plan.features) {
-      plan.features.forEach((feature, index) => {
+      (plan.features ?? []).forEach((feature, index) => {
         const featureTask = {
           id: taskId.toString(),
           title: feature.name,
@@ -438,14 +438,14 @@ const PlanGenerator = () => {
           priority: feature.priority || "medium",
           level: 0,
           dependencies: [],
-          subtasks: feature.sub_features?.map((subFeature, subIndex) => ({
+          subtasks: (feature.sub_features ?? []).map((subFeature, subIndex) => ({
             id: `${taskId}.${subIndex + 1}`,
             title: subFeature.name,
             description: subFeature.description,
             status: "pending",
             priority: subFeature.priority || "medium",
             prompt: subFeature.prompt
-          })) || [],
+          })),
           prompt: feature.prompt
         };
         tasks.push(featureTask);
@@ -463,7 +463,7 @@ const PlanGenerator = () => {
         priority: "medium",
         level: 0,
         dependencies: [],
-        subtasks: plan.visualIdentity.detailedSteps.map((step: any, index: number) => ({
+        subtasks: (plan.visualIdentity.detailedSteps ?? []).map((step: any, index: number) => ({
           id: `${taskId}.${index + 1}`,
           title: step.step,
           description: step.description,
@@ -478,7 +478,7 @@ const PlanGenerator = () => {
 
     // Add pages
     if (plan.pages) {
-      plan.pages.forEach((page, index) => {
+      (plan.pages ?? []).forEach((page, index) => {
         tasks.push({
           id: taskId.toString(),
           title: page.name,
@@ -595,8 +595,8 @@ const PlanGenerator = () => {
                           <PlanSummaryCard
                             title={message.plan.title || 'Untitled plan'}
                             description={message.plan.description || 'Description not available'}
-                            featuresCount={message.plan.pages?.reduce((acc, page) => acc + page.features?.length || 0, 0) || 0}
-                            pagesCount={message.plan.pages?.length || 0}
+                            featuresCount={message.plan.pages?.reduce((acc, page) => acc + (page.features?.length ?? 0), 0) ?? 0}
+                            pagesCount={message.plan.pages?.length ?? 0}
                             onOpenMindmap={() => openMindmap(message.plan!)}
                             onExecutePlan={() => {
                               setCurrentPlan(message.plan!);
@@ -632,7 +632,7 @@ const PlanGenerator = () => {
                           <div className="font-semibold text-lg border-b border-current/20 pb-2 flex items-center justify-between">
                             <span>📋 Generated plan: {message.plan.title}</span>
                             <AutoExecutionDialog
-                              steps={message.plan.steps.map(step => ({
+                              steps={(message.plan.steps ?? []).map(step => ({
                                 id: step.id,
                                 titre: step.title,
                                 description: step.description,
@@ -649,7 +649,7 @@ const PlanGenerator = () => {
                               </Button>
                             </AutoExecutionDialog>
                           </div>
-                          {message.plan.steps?.map((step, index) => (
+                          {(message.plan.steps ?? []).map((step, index) => (
                             <div key={step.id} className="flex items-start gap-3 p-3 rounded-lg bg-background/50">
                               <div className="flex items-center justify-center w-7 h-7 rounded-full bg-primary text-primary-foreground text-sm font-bold">
                                 {index + 1}
@@ -722,7 +722,7 @@ const PlanGenerator = () => {
             
             // 2. Ajouter les features principales avec leurs prompts
             if (currentPlan.plan_type === 'mindmap' && currentPlan.mindmap_data?.features) {
-              currentPlan.mindmap_data.features.forEach((feature: any) => {
+              (currentPlan.mindmap_data.features ?? []).forEach((feature: any) => {
                 // Feature principale
                 allSteps.push({
                   id: `feature-${feature.id}`,
@@ -733,8 +733,8 @@ const PlanGenerator = () => {
                 });
                 
                 // Sous-features de cette feature
-                if (feature.subFeatures && feature.subFeatures.length > 0) {
-                  feature.subFeatures.forEach((subFeature: any) => {
+                if (feature.subFeatures && (feature.subFeatures?.length ?? 0) > 0) {
+                  (feature.subFeatures ?? []).forEach((subFeature: any) => {
                     allSteps.push({
                       id: `subfeature-${subFeature.id}`,
                       titre: `Sub-feature: ${subFeature.title}`,
@@ -749,7 +749,7 @@ const PlanGenerator = () => {
             
             // 3. Fallback pour les plans standards
             if (allSteps.length === 0) {
-              return currentPlan.steps.map(step => ({
+              return (currentPlan.steps ?? []).map(step => ({
                 id: step.id,
                 titre: step.title,
                 description: step.description,
