@@ -243,8 +243,7 @@ export default function AgentPlan({ tasks: initialTasks, onTasksChange, editable
       transition: { 
         duration: 0.25, 
         staggerChildren: prefersReducedMotion ? 0 : 0.05,
-        when: "beforeChildren",
-        ease: [0.2, 0.65, 0.3, 0.9]
+        when: "beforeChildren"
       }
     },
     exit: {
@@ -252,8 +251,7 @@ export default function AgentPlan({ tasks: initialTasks, onTasksChange, editable
       opacity: 0,
       overflow: "hidden",
       transition: { 
-        duration: 0.2,
-        ease: [0.2, 0.65, 0.3, 0.9]
+        duration: 0.2
       }
     }
   };
@@ -267,10 +265,7 @@ export default function AgentPlan({ tasks: initialTasks, onTasksChange, editable
       opacity: 1, 
       x: 0,
       transition: { 
-        type: prefersReducedMotion ? "tween" : "spring", 
-        stiffness: 500, 
-        damping: 25,
-        duration: prefersReducedMotion ? 0.2 : undefined
+        duration: 0.2
       }
     },
     exit: {
@@ -291,8 +286,7 @@ export default function AgentPlan({ tasks: initialTasks, onTasksChange, editable
       height: "auto",
       overflow: "visible",
       transition: { 
-        duration: 0.25,
-        ease: [0.2, 0.65, 0.3, 0.9]
+        duration: 0.25
       }
     }
   };
@@ -302,8 +296,7 @@ export default function AgentPlan({ tasks: initialTasks, onTasksChange, editable
     animate: { 
       scale: prefersReducedMotion ? 1 : [1, 1.08, 1],
       transition: { 
-        duration: 0.35,
-        ease: [0.34, 1.56, 0.64, 1]
+        duration: 0.35
       }
     }
   };

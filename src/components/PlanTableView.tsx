@@ -343,12 +343,79 @@ export const PlanTableView: React.FC<PlanTableViewProps> = ({
           onClose={() => setShowMindmap(false)}
           data={{
             ...planData,
-            mainIdea: planData.description,
-            productSummary: planData.description,
-            technicalDocumentation: [],
-            roadmap: [],
-            features: planData.pages.flatMap(p => p.features),
-            marketStudy: { targetAudience: "", competitors: [] }
+            mainIdea: {
+              concept: planData.description || '',
+              vision: '',
+              mission: '',
+              valueProposition: ''
+            },
+            productSummary: {
+              overview: planData.description || '',
+              targetAudience: '',
+              problemSolution: '',
+              businessModel: '',
+              mvpDefinition: ''
+            },
+            technicalDocumentation: {
+              architecture: '',
+              technologiesStack: {},
+              database: {},
+              apis: []
+            },
+            roadmap: {
+              totalDuration: '',
+              phases: []
+            },
+            features: planData.pages.flatMap(p => p.features).map(feature => ({
+              id: feature.id,
+              title: feature.name,
+              description: feature.description,
+              priority: feature.priority || 'medium',
+              complexity: 'medium',
+              estimatedTime: '1h',
+              prompt: feature.prompt || '',
+              subFeatures: feature.subFeatures?.map(sub => ({
+                id: sub.id,
+                title: sub.name,
+                description: sub.description,
+                prompt: sub.prompt || ''
+              })) || [],
+              acceptanceCriteria: []
+            })),
+            marketStudy: {
+              marketSize: '',
+              competitiveAnalysis: '',
+              targetSegments: '',
+              marketTrends: '',
+              entryBarriers: ''
+            },
+            security: {
+              authentication: '',
+              dataProtection: '',
+              accessControl: '',
+              compliance: '',
+              bestPractices: []
+            },
+            startupPrompt: {
+              title: 'Project Setup',
+              initialSetup: '',
+              firstSteps: '',
+              developmentWorkflow: '',
+              deploymentGuide: ''
+            },
+            pages: planData.pages.map(page => ({
+              id: page.id,
+              name: page.name,
+              description: page.description,
+              sections: page.sections.map(section => ({
+                id: section.id,
+                name: section.name,
+                description: section.description,
+                components: []
+              })),
+              visualIdentity: {}
+            })),
+            visualIdentity: planData.visualIdentity || {}
           }}
           onExecuteFeature={onExecuteFeature}
         />
