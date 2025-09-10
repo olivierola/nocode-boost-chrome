@@ -115,7 +115,7 @@ export const PlanTableView: React.FC<PlanTableViewProps> = ({
     }
 
     // Add pages and their features/sections
-    data.pages.forEach((page, pageIndex) => {
+    (data.pages || []).forEach((page, pageIndex) => {
       const pageTaskId = taskId.toString();
       
       // Create page task
@@ -132,7 +132,7 @@ export const PlanTableView: React.FC<PlanTableViewProps> = ({
       };
 
       // Add sections as subtasks
-      page.sections.forEach((section, sectionIndex) => {
+      (page.sections || []).forEach((section, sectionIndex) => {
         pageTask.subtasks.push({
           id: `${pageTaskId}.s${sectionIndex + 1}`,
           title: `📐 Section: ${section.name}`,
@@ -145,7 +145,7 @@ export const PlanTableView: React.FC<PlanTableViewProps> = ({
       });
 
       // Add features as subtasks
-      page.features.forEach((feature, featureIndex) => {
+      (page.features || []).forEach((feature, featureIndex) => {
         const featureSubtask = {
           id: `${pageTaskId}.f${featureIndex + 1}`,
           title: `⚡ Feature: ${feature.name}`,
@@ -230,9 +230,9 @@ export const PlanTableView: React.FC<PlanTableViewProps> = ({
         </div>
 
         <div className="flex gap-4 text-sm text-muted-foreground">
-          <span>📄 {planData.pages.length} Pages</span>
-          <span>⚡ {planData.pages.reduce((acc, page) => acc + page.features.length, 0)} Features</span>
-          <span>📐 {planData.pages.reduce((acc, page) => acc + page.sections.length, 0)} Sections</span>
+          <span>📄 {planData.pages?.length || 0} Pages</span>
+          <span>⚡ {planData.pages?.reduce((acc, page) => acc + (page.features?.length || 0), 0) || 0} Features</span>
+          <span>📐 {planData.pages?.reduce((acc, page) => acc + (page.sections?.length || 0), 0) || 0} Sections</span>
           <span>📋 {agentPlanTasks.length} Main Tasks</span>
         </div>
       </div>
@@ -251,7 +251,7 @@ export const PlanTableView: React.FC<PlanTableViewProps> = ({
             <h3 className="text-lg font-semibold mb-6">Project Structure Overview</h3>
             
             <div className="space-y-8">
-              {planData.pages.map((page, pageIndex) => (
+              {(planData.pages || []).map((page, pageIndex) => (
                 <div key={page.id} className="border border-border rounded-lg p-4">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-3">
@@ -272,10 +272,10 @@ export const PlanTableView: React.FC<PlanTableViewProps> = ({
                     {/* Features */}
                     <div>
                       <h5 className="font-medium text-foreground mb-3 flex items-center gap-2">
-                        ⚡ Features ({page.features.length})
+                        ⚡ Features ({page.features?.length || 0})
                       </h5>
                       <div className="space-y-3">
-                        {page.features.map((feature) => (
+                        {(page.features || []).map((feature) => (
                           <div key={feature.id} className="bg-muted/50 rounded-lg p-3">
                             <div className="flex items-center justify-between mb-2">
                               <h6 className="font-medium text-sm">{feature.name}</h6>
@@ -287,7 +287,7 @@ export const PlanTableView: React.FC<PlanTableViewProps> = ({
                             
                             {feature.subFeatures && feature.subFeatures.length > 0 && (
                               <div className="ml-4 space-y-1">
-                                {feature.subFeatures.map((subFeature) => (
+                                {(feature.subFeatures || []).map((subFeature) => (
                                   <div key={subFeature.id} className="text-xs text-muted-foreground">
                                     • {subFeature.name}
                                   </div>
@@ -313,10 +313,10 @@ export const PlanTableView: React.FC<PlanTableViewProps> = ({
                     {/* Sections */}
                     <div>
                       <h5 className="font-medium text-foreground mb-3 flex items-center gap-2">
-                        📐 Sections ({page.sections.length})
+                        📐 Sections ({page.sections?.length || 0})
                       </h5>
                       <div className="space-y-3">
-                        {page.sections.map((section) => (
+                        {(page.sections || []).map((section) => (
                           <div key={section.id} className="bg-muted/50 rounded-lg p-3">
                             <h6 className="font-medium text-sm mb-2">{section.name}</h6>
                             <p className="text-xs text-muted-foreground mb-2">{section.description}</p>
@@ -366,7 +366,7 @@ export const PlanTableView: React.FC<PlanTableViewProps> = ({
               totalDuration: '',
               phases: []
             },
-            features: planData.pages.flatMap(p => p.features).map(feature => ({
+            features: (planData.pages || []).flatMap(p => p.features || []).map(feature => ({
               id: feature.id,
               title: feature.name,
               description: feature.description,
@@ -403,11 +403,11 @@ export const PlanTableView: React.FC<PlanTableViewProps> = ({
               developmentWorkflow: '',
               deploymentGuide: ''
             },
-            pages: planData.pages.map(page => ({
+            pages: (planData.pages || []).map(page => ({
               id: page.id,
               name: page.name,
               description: page.description,
-              sections: page.sections.map(section => ({
+              sections: (page.sections || []).map(section => ({
                 id: section.id,
                 name: section.name,
                 description: section.description,
