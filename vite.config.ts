@@ -47,9 +47,12 @@ const manifest = {
     "48": "favicon.ico",
     "128": "favicon.ico"
   },
+  content_security_policy: {
+    extension_pages: "script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; object-src 'self';"
+  },
   web_accessible_resources: [
     {
-      resources: ["assets/*"],
+      resources: ["assets/*", "index.html"],
       matches: ["<all_urls>"]
     }
   ]
