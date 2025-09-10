@@ -255,7 +255,8 @@ const PlanGenerator = () => {
           updated_at: new Date().toISOString()
         };
 
-        const featuresCount = data.plan.pages?.reduce((acc: number, page: any) => acc + (page.features?.length ?? 0), 0) ?? 0;
+        const featuresCount = data.plan.features?.length ?? 
+                         data.plan.pages?.reduce((acc: number, page: any) => acc + (page.features?.length ?? 0), 0) ?? 0;
         const sectionsCount = data.plan.pages?.reduce((acc: number, page: any) => acc + (page.sections?.length ?? 0), 0) ?? 0;
 
         const aiMessage: ChatMessage = {
@@ -499,7 +500,42 @@ const PlanGenerator = () => {
 
   return (
     <div className="w-full h-full flex flex-col bg-background relative overflow-hidden">
-      {/* Animated Background with Blue and Green Blur Effects */}
+      {/* Table View Mode */}
+      {currentViewMode === 'table' && selectedPlanForTable && (
+        <div className="absolute inset-0 z-50 bg-background">
+          <div className="h-full flex flex-col">
+            <div className="flex items-center justify-between p-4 border-b border-border">
+              <h2 className="text-xl font-semibold">Table View - {selectedPlanForTable.title}</h2>
+              <Button
+                variant="outline"
+                onClick={() => setCurrentViewMode('chat')}
+              >
+                ← Back to Chat
+              </Button>
+            </div>
+            <div className="flex-1 overflow-hidden">
+              <PlanTableView
+                planData={{
+                  id: selectedPlanForTable.id,
+                  title: selectedPlanForTable.title || `Plan for ${selectedProject?.name}`,
+                  description: selectedPlanForTable.description || 'Generated project plan',
+                  pages: selectedPlanForTable.mindmap_data?.pages || selectedPlanForTable.pages || [],
+                  startupPrompt: selectedPlanForTable.mindmap_data?.startupPrompt || selectedPlanForTable.startupPrompt,
+                  visualIdentity: selectedPlanForTable.mindmap_data?.visualIdentity || selectedPlanForTable.visualIdentity
+                }}
+                onExecuteFeature={(feature) => {
+                  executeFeatureFromMindmap(feature);
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Chat View Mode (default) */}
+      {currentViewMode === 'chat' && (
+        <>
+          {/* Animated Background with Blue and Green Blur Effects */}
       
       
       
@@ -595,8 +631,12 @@ const PlanGenerator = () => {
                           <PlanSummaryCard
                             title={message.plan.title || 'Untitled plan'}
                             description={message.plan.description || 'Description not available'}
-                            featuresCount={message.plan.pages?.reduce((acc, page) => acc + (page.features?.length ?? 0), 0) ?? 0}
-                            pagesCount={message.plan.pages?.length ?? 0}
+                            featuresCount={
+                              message.plan.mindmap_data?.features?.length ?? 
+                              message.plan.pages?.reduce((acc, page) => acc + (page.features?.length ?? 0), 0) ?? 
+                              (message.plan.features?.length ?? 0)
+                            }
+                            pagesCount={message.plan.pages?.length ?? message.plan.mindmap_data?.pages?.length ?? 0}
                             onOpenMindmap={() => openMindmap(message.plan!)}
                             onExecutePlan={() => {
                               setCurrentPlan(message.plan!);
