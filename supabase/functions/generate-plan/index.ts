@@ -187,64 +187,134 @@ IMPORTANT: Si le contexte de conversation precedente contient deja ces informati
       });
     }
 
-    // Step 2: Generate comprehensive mindmap plan
-    const systemPrompt = `Vous etes un expert en planification de projets, architecture logicielle, etude de marche et design. Creez un plan ultra-detaille sous forme de mindmap structuree.
+    // Step 2: Generate comprehensive plan using new structure
+    const systemPrompt = `Vous etes un expert en planification de projets, architecture logicielle, etude de marche et design. Creez un plan ultra-detaille selon la structure universelle pour la creation d'un logiciel/SaaS/site web.
 
-IMPORTANT: Repondez uniquement avec un JSON valide, sans texte supplementaire. Tous les contenus textuels doivent etre en MARKDOWN avec syntaxe complete et des descriptions TRES DETAILLEES basees sur le type de produit specifique.
+IMPORTANT: Repondez uniquement avec un JSON valide, sans texte supplementaire. Tous les contenus textuels doivent etre en MARKDOWN avec syntaxe complete et des descriptions TRES DETAILLEES avec des prompts specifiques pour l'execution no-code.
 
-NOUVEAU: Pour l'identite visuelle, incluez des prompts detailles pour chaque etape d'execution.
-
-Structure attendue (TOUS LES CHAMPS OBLIGATOIRES):
+Structure universelle attendue (TOUS LES CHAMPS OBLIGATOIRES):
 {
   "title": "Titre du plan complet",
   "description": "Description markdown du projet avec contexte detaille",
-  "mainIdea": {
-    "concept": "## Concept principal\\n\\nDescription de l'idee maitresse du projet",
-    "vision": "## Vision du projet\\n\\nVision a long terme",
-    "mission": "## Mission\\n\\nMission et objectifs principaux",
-    "valueProposition": "## Proposition de valeur\\n\\nCe qui rend le projet unique"
+  
+  "section1_vision_objectifs": {
+    "probleme_a_resoudre": "## Problème à résoudre\\n\\nPourquoi ce projet existe-t-il ?",
+    "public_cible": "## Public cible (personas)\\n\\nPersonas détaillés avec démographie et comportements",
+    "valeur_ajoutee": "## Valeur ajoutée\\n\\nPourquoi choisir ce produit ?",
+    "objectifs_smart": "## Objectifs SMART\\n\\nObjectifs mesurables avec échéances"
   },
-  "productSummary": {
-    "overview": "## Resume complet du produit\\n\\nDescription detaillee",
-    "targetAudience": "## Public cible\\n\\nPersonas detailles",
-    "problemSolution": "## Probleme et solution\\n\\nProbleme resolu et solution apportee",
-    "businessModel": "## Modele economique\\n\\nSources de revenus et strategie",
-    "mvpDefinition": "## Definition du MVP\\n\\nFeatures essentielles du produit minimum viable"
+  
+  "section2_analyse_recherche": {
+    "etude_marche": "## Étude de marché\\n\\nConcurrents, alternatives, pricing",
+    "benchmark": "## Benchmark\\n\\nAnalyse des fonctionnalités clés des concurrents",
+    "risques_contraintes": "## Risques & contraintes\\n\\nTechniques, légales, RGPD, sécurité"
   },
-  "technicalDocumentation": {
-    "title": "Documentation technique & Architecture",
-    "architecture": "## Architecture systeme\\n\\n### Vue d'ensemble\\n\`\`\`\\n[Frontend] -> [API Gateway] -> [Services] -> [Database]\\n\`\`\`",
-    "technologiesStack": {
-      "frontend": ["React", "TypeScript", "Tailwind CSS"],
-      "backend": ["Supabase", "PostgreSQL", "Edge Functions"],
-      "deployment": ["Vercel", "Supabase Hosting"],
-      "tools": ["Git", "VS Code", "Figma"]
+  
+  "section3_cahier_charges": {
+    "cas_usage": "## Cas d'usage / User stories\\n\\nScénarios d'utilisation détaillés",
+    "mvp_vs_avance": "## MVP vs fonctionnalités avancées\\n\\nMust have vs nice to have",
+    "priorisation": "## Priorisation\\n\\nMéthode MoSCoW, RICE ou Kano"
+  },
+  
+  "section4_architecture_produit": {
+    "architecture_fonctionnelle": "## Architecture fonctionnelle\\n\\nModules, services, microservices",
+    "architecture_technique": {
+      "frontend": "## Frontend\\n\\nFramework, design system, composants",
+      "backend": "## Backend\\n\\nAPI REST/GraphQL, langage, framework",
+      "database": "## Base de données\\n\\nSQL/NoSQL, schéma de données",
+      "infrastructure": "## Hébergement & infrastructure\\n\\nVPS, cloud, containers, CI/CD",
+      "security": "## Sécurité\\n\\nAuthentification, chiffrement, backups"
     },
-    "database": {
-      "type": "PostgreSQL (Supabase)",
-      "schema": "## Schema de base de donnees\\n\\n### Tables principales\\n\\n\`\`\`sql\\nCREATE TABLE users (\\n  id UUID PRIMARY KEY,\\n  email VARCHAR UNIQUE\\n);\\n\`\`\`",
-      "tables": [
-        {
-          "name": "users",
-          "description": "Table des utilisateurs",
-          "fields": ["id", "email", "created_at"],
-          "relations": ["profiles", "projects"]
-        }
-      ]
-    },
-    "apis": [
+    "arborescence_modules": "## Arborescence des modules\\n\\nAuth, Billing, Dashboard, etc."
+  },
+  "section5_architecture_application": {
+    "pages": [
       {
-        "name": "API Authentication",
-        "description": "## API de gestion des utilisateurs",
-        "endpoints": [
+        "id": "page-1",
+        "name": "Accueil",
+        "description": "## Page d'accueil\\n\\nLanding page principale",
+        "sections": [
           {
-            "method": "POST",
-            "path": "/auth/login",
-            "description": "Connexion utilisateur"
+            "id": "section-1",
+            "name": "Header",
+            "description": "## Section Header\\n\\nNavigation principale",
+            "modules": [
+              {
+                "id": "module-1",
+                "name": "Logo",
+                "description": "## Module Logo\\n\\nLogo de l'application",
+                "design": {
+                  "typography": "## Typographie\\n\\nPolice: Inter, 18px, semi-bold",
+                  "components": ["LogoImage", "LogoText"],
+                  "content": {
+                    "logo_text": "Nom de l'application",
+                    "logo_alt": "Logo de l'application"
+                  }
+                },
+                "prompt": "Créez un composant Logo avec React et Tailwind CSS"
+              }
+            ]
           }
-        ]
+        ],
+        "prompt": "Créez la page d'accueil complète avec toutes ses sections"
       }
     ]
+  },
+  
+  "section6_design_ux": {
+    "wireframes": "## Wireframes & maquettes\\n\\nFigma design system",
+    "arborescence": "## Arborescence des pages\\n\\nParcours utilisateurs",
+    "design_system": "## UI/UX design system\\n\\nTypographie, couleurs, composants"
+  },
+  
+  "section7_plan_technique": {
+    "schema_bdd": "## Schéma de la BDD\\n\\nTables, relations, index",
+    "apis_endpoints": "## APIs & endpoints\\n\\nListe détaillée avec paramètres",
+    "modele_donnees": "## Modèle de données\\n\\nJSON, GraphQL, DTOs",
+    "standards_code": "## Standards & conventions\\n\\nRègles de codage"
+  },
+  
+  "section8_roadmap_gestion": {
+    "sprints": "## Découpage en sprints\\n\\nAgile, Scrum, Kanban",
+    "backlog": "## Backlog produit\\n\\nListe de tâches avec priorité",
+    "planning": "## Planning / milestones\\n\\nMVP, bêta, V1, V2"
+  },
+  
+  "section9_tests_qualite": {
+    "tests": "## Tests unitaires, d'intégration, E2E\\n\\nStratégie de tests",
+    "automatisation": "## Automatisation\\n\\nCI/CD pipeline",
+    "scenarios": "## Scénarios de tests\\n\\nQA, bêta-testeurs"
+  },
+  
+  "section10_deploiement": {
+    "environnements": "## Environnements\\n\\nDev, staging, prod",
+    "ci_cd": "## CI/CD pipeline\\n\\nGitHub Actions, GitLab CI",
+    "monitoring": "## Monitoring & observabilité\\n\\nLogs, alertes, métriques",
+    "scalabilite": "## Scalabilité & résilience\\n\\nLoad balancing, CDN, caches"
+  },
+  
+  "section11_business_monetisation": {
+    "modele_economique": "## Modèle économique\\n\\nAbonnement, freemium, one-shot",
+    "pricing": "## Pricing & plans\\n\\nStratégie tarifaire",
+    "facturation": "## Facturation & paiements\\n\\nStripe, PayPal"
+  },
+  
+  "section12_securite_rgpd": {
+    "protection_donnees": "## Protection des données\\n\\nCryptage, anonymisation, backups",
+    "conformite": "## Conformité légale\\n\\nRGPD, PCI-DSS, CNIL",
+    "gestion_acces": "## Gestion des accès & rôles\\n\\nRBAC"
+  },
+  
+  "section13_lancement_growth": {
+    "plan_marketing": "## Plan marketing\\n\\nSEO, SEA, réseaux sociaux",
+    "acquisition": "## Acquisition\\n\\nPublicité, contenu, partenariats",
+    "retention": "## Rétention & support\\n\\nChatbot, tickets, email"
+  },
+  
+  "section14_evolution_maintenance": {
+    "feedback_loop": "## Feedback loop\\n\\nCollecte d'avis utilisateurs",
+    "ameliorations": "## Améliorations continues\\n\\nNouveaux modules, refactor",
+    "maintenance": "## Plan de maintenance\\n\\nMises à jour"
   },
   "roadmap": {
     "title": "Roadmap detaillee",
