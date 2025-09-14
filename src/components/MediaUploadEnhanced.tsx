@@ -389,7 +389,7 @@ const MediaUploadEnhanced = () => {
             </Card>
           ) : (
             <div className="grid grid-cols-2 gap-3">
-              {(filteredFiles || []).map((file) => (
+              {filteredFiles.map((file) => (
                 <Card key={file.id} className="overflow-hidden">
                   <div className="relative">
                     {getFilePreview(file)}

@@ -12,37 +12,6 @@ import PlanAutoExecutor from '@/components/PlanAutoExecutor';
 import { MindmapModal } from '@/components/MindmapModal';
 import { PlanSummaryCard } from '@/components/PlanSummaryCard';
 import { PlanMindmapVisualization } from '@/components/PlanMindmapVisualization';
-import { PlanTableView } from '@/components/PlanTableView';
-import { Component as RaycastBackground } from '@/components/ui/raycast-animated-background';
-
-// Enhanced structure for better organization
-interface Section {
-  id: string;
-  name: string;
-  description: string;
-  visualIdentity: string;
-  layout: string;
-  prompt: string;
-}
-
-interface Feature {
-  id: string;
-  name: string;
-  description: string;
-  priority: 'high' | 'medium' | 'low';
-  prompt: string;
-  subFeatures?: Feature[];
-}
-
-interface Page {
-  id: string;
-  name: string;
-  description: string;
-  priority: 'high' | 'medium' | 'low';
-  features: Feature[];
-  sections: Section[];
-  prompt: string;
-}
 
 interface ProjectPlan {
   id: string;
@@ -50,20 +19,17 @@ interface ProjectPlan {
   title?: string;
   description?: string;
   status?: 'draft' | 'validated' | 'executing' | 'completed';
-  plan_type?: 'standard' | 'mindmap' | 'enhanced';
+  plan_type?: 'standard' | 'mindmap';
   mindmap_data?: any;
-  // Enhanced structure
-  pages?: Page[];
   steps: Array<{
     id: string;
     title: string;
     description: string;
     status: 'pending' | 'in_progress' | 'completed' | 'error';
   }>;
-  // Legacy properties for plan data
+  // New properties for plan data
   startupPrompt?: {
     initialSetup?: string;
-    firstSteps?: string;
   };
   features?: Array<{
     name: string;
@@ -85,6 +51,12 @@ interface ProjectPlan {
       deliverables?: string[];
     }>;
   };
+  pages?: Array<{
+    name: string;
+    description: string;
+    priority?: string;
+    prompt?: string;
+  }>;
   created_at: string;
   updated_at: string;
 }
@@ -109,8 +81,6 @@ const PlanGenerator = () => {
   const [isExecuting, setIsExecuting] = useState(false);
   const [showMindmapModal, setShowMindmapModal] = useState(false);
   const [selectedMindmapData, setSelectedMindmapData] = useState<any>(null);
-  const [currentViewMode, setCurrentViewMode] = useState<'chat' | 'table'>('chat');
-  const [selectedPlanForTable, setSelectedPlanForTable] = useState<ProjectPlan | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const hasInitializedChat = useRef(false);
   
@@ -170,12 +140,12 @@ const PlanGenerator = () => {
           const messageContent =
             plan.plan_type === 'mindmap'
               ? `I have created a complete mindmap plan for your project! It includes ${
-                  plan.mindmap_data?.features?.length ?? 0
+                  plan.mindmap_data?.features?.length || 0
                 } main features, ${
-                  plan.mindmap_data?.pages?.length ?? 0
+                  plan.mindmap_data?.pages?.length || 0
                 } pages, a market study and a visual identity. You can open the interactive mindmap to explore all the details.`
               : `I have generated a detailed plan for your project! The plan includes ${
-                  (plan.steps ?? []).length
+                  plan.steps?.length || 0
                 } main steps. You can continue to discuss it to refine it.`;
 
           return {
@@ -191,8 +161,19 @@ const PlanGenerator = () => {
 
       setChatMessages(historicalMessages);
       hasInitializedChat.current = true;
+    } else if (chatMessages.length === 0) { // Check chatMessages to avoid race conditions
+      // This handles the case for a project with no plans yet.
+      setChatMessages([
+        {
+          id: '1',
+          role: 'assistant',
+          content: `Hello! I will help you create a detailed plan for your project "${selectedProject.name}". Describe your idea or what you want to develop.`,
+          timestamp: new Date(),
+        },
+      ]);
+      hasInitializedChat.current = true;
     }
-  }, [plans, selectedProject, (chatMessages || []).length]);
+  }, [plans, selectedProject, chatMessages.length]);
 
   const generatePlan = async (prompt: string) => {
     if (!selectedProject) {
@@ -238,37 +219,30 @@ const PlanGenerator = () => {
       }
 
       if (data.type === 'plan_generated') {
-        // Enhanced plan with new structure
+        // Plan mindmap généré et sauvegardé
         const planForMessage: ProjectPlan = {
           id: data.planId,
           project_id: selectedProject.id,
           title: data.plan.title,
           description: data.plan.description,
-          plan_type: 'enhanced',
+          plan_type: 'mindmap',
           mindmap_data: data.plan,
-          pages: data.plan.pages || [],
           steps: data.plan.features || [],
-          startupPrompt: data.plan.startupPrompt,
-          visualIdentity: data.plan.visualIdentity,
           status: 'draft',
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         };
 
-        const featuresCount = data.plan.features?.length ?? 
-                         data.plan.pages?.reduce((acc: number, page: any) => acc + (page.features?.length ?? 0), 0) ?? 0;
-        const sectionsCount = data.plan.pages?.reduce((acc: number, page: any) => acc + (page.sections?.length ?? 0), 0) ?? 0;
-
         const aiMessage: ChatMessage = {
           id: (Date.now() + 1).toString(),
           role: 'assistant',
-          content: `I have created a comprehensive plan for your project! It includes ${data.plan.pages?.length ?? 0} pages, ${featuresCount} features, ${sectionsCount} sections, and detailed execution guidance. You can view it in the interactive table or mindmap.`,
+          content: `I have created a complete mindmap plan for your project! It includes ${data.plan.features?.length || 0} main features, ${data.plan.pages?.length || 0} pages, a market study and a visual identity. You can open the interactive mindmap to explore all the details.`,
           timestamp: new Date(),
           plan: planForMessage,
           type: 'mindmap_plan'
         };
         setChatMessages(prev => [...prev, aiMessage]);
-        fetchPlans();
+        fetchPlans(); // Rafraîchir la liste des plans
         return;
       }
 
@@ -288,7 +262,7 @@ const PlanGenerator = () => {
       const aiMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: `I have generated a detailed plan for your project! The plan includes ${(data.steps ?? []).length} main steps. You can continue to discuss it to refine it.`,
+        content: `I have generated a detailed plan for your project! The plan includes ${data.steps?.length || 0} main steps. You can continue to discuss it to refine it.`,
         timestamp: new Date(),
         plan: planForMessage
       };
@@ -430,7 +404,7 @@ const PlanGenerator = () => {
 
     // Add features
     if (plan.features) {
-      (plan.features ?? []).forEach((feature, index) => {
+      plan.features.forEach((feature, index) => {
         const featureTask = {
           id: taskId.toString(),
           title: feature.name,
@@ -439,14 +413,14 @@ const PlanGenerator = () => {
           priority: feature.priority || "medium",
           level: 0,
           dependencies: [],
-          subtasks: (feature.sub_features ?? []).map((subFeature, subIndex) => ({
+          subtasks: feature.sub_features?.map((subFeature, subIndex) => ({
             id: `${taskId}.${subIndex + 1}`,
             title: subFeature.name,
             description: subFeature.description,
             status: "pending",
             priority: subFeature.priority || "medium",
             prompt: subFeature.prompt
-          })),
+          })) || [],
           prompt: feature.prompt
         };
         tasks.push(featureTask);
@@ -464,7 +438,7 @@ const PlanGenerator = () => {
         priority: "medium",
         level: 0,
         dependencies: [],
-        subtasks: (plan.visualIdentity.detailedSteps ?? []).map((step: any, index: number) => ({
+        subtasks: plan.visualIdentity.detailedSteps.map((step: any, index: number) => ({
           id: `${taskId}.${index + 1}`,
           title: step.step,
           description: step.description,
@@ -479,7 +453,7 @@ const PlanGenerator = () => {
 
     // Add pages
     if (plan.pages) {
-      (plan.pages ?? []).forEach((page, index) => {
+      plan.pages.forEach((page, index) => {
         tasks.push({
           id: taskId.toString(),
           title: page.name,
@@ -500,55 +474,17 @@ const PlanGenerator = () => {
 
   return (
     <div className="w-full h-full flex flex-col bg-background relative overflow-hidden">
-      {/* Table View Mode */}
-      {currentViewMode === 'table' && selectedPlanForTable && (
-        <div className="absolute inset-0 z-50 bg-background">
-          <div className="h-full flex flex-col">
-            <div className="flex items-center justify-between p-4 border-b border-border">
-              <h2 className="text-xl font-semibold">Table View - {selectedPlanForTable.title}</h2>
-              <Button
-                variant="outline"
-                onClick={() => setCurrentViewMode('chat')}
-              >
-                ← Back to Chat
-              </Button>
-            </div>
-            <div className="flex-1 overflow-hidden">
-              <PlanTableView
-                planData={{
-                  id: selectedPlanForTable.id,
-                  title: selectedPlanForTable.title || `Plan for ${selectedProject?.name}`,
-                  description: selectedPlanForTable.description || 'Generated project plan',
-                  pages: selectedPlanForTable.mindmap_data?.pages || selectedPlanForTable.pages || [],
-                  startupPrompt: selectedPlanForTable.mindmap_data?.startupPrompt || selectedPlanForTable.startupPrompt,
-                  visualIdentity: selectedPlanForTable.mindmap_data?.visualIdentity || selectedPlanForTable.visualIdentity
-                }}
-                onExecuteFeature={(feature) => {
-                  executeFeatureFromMindmap(feature);
-                }}
-              />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Chat View Mode (default) */}
-      {currentViewMode === 'chat' && (
-        <>
-          {/* Animated Background with Blue and Green Blur Effects */}
+      {/* Animated Background with Blue and Green Blur Effects */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/4 left-1/3 w-72 h-72 bg-blue-500/10 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute bottom-1/4 right-1/3 w-64 h-64 bg-green-500/15 rounded-full blur-2xl animate-pulse delay-1000" />
+        <div className="absolute top-2/3 left-1/4 w-48 h-48 bg-blue-400/8 rounded-full blur-xl animate-pulse delay-500" />
+        <div className="absolute bottom-1/2 right-1/2 w-56 h-56 bg-green-400/12 rounded-full blur-2xl animate-pulse delay-700" />
+      </div>
       
-      
-      
-      
-      
-      
-      {(chatMessages || []).length === 0 ? (
-        <>
-          <div className="absolute inset-0 w-full h-full">
-            <RaycastBackground />
-          </div>
-          {/* Empty state with centered chat */}
-          <div className="flex-1 flex flex-col items-center justify-center px-6">
+      {chatMessages.length === 0 ? (
+        /* Empty state with centered chat */
+        <div className="flex-1 flex flex-col items-center justify-center px-6">
           <div className="text-center mb-8">
             <Target className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
             <h2 className="text-2xl font-bold text-foreground mb-2">Plan Generator - {selectedProject.name}</h2>
@@ -562,22 +498,13 @@ const PlanGenerator = () => {
             placeholder="Describe your project idea..."
           />
         </div>
-        </>
       ) : (
-        <>
-          <div className="absolute inset-0 overflow-hidden pointer-events-none">
-            <div className="absolute top-1/4 left-1/3 w-72 h-72 bg-blue-500/10 rounded-full blur-3xl animate-pulse" />
-            <div className="absolute bottom-1/4 right-1/3 w-64 h-64 bg-green-500/15 rounded-full blur-2xl animate-pulse delay-1000" />
-            <div className="absolute top-2/3 left-1/4 w-48 h-48 bg-blue-400/8 rounded-full blur-xl animate-pulse delay-500" />
-            <div className="absolute bottom-1/2 right-1/2 w-56 h-56 bg-green-400/12 rounded-full blur-2xl animate-pulse delay-700" />
-          </div>
-          {/* Chat with messages and fixed input */}
-          <div className="flex-1 flex flex-col relative">
+        /* Chat with messages and fixed input */
+        <div className="flex-1 flex flex-col relative">
           {/* Messages */}
           <ScrollArea className="flex-1 px-6 pb-24">
             <div className="space-y-6 py-8 max-w-4xl mx-auto">
-             
-                {(chatMessages || []).map((message) => (
+              {chatMessages.map((message) => (
                 <div
                   key={message.id}
                   className={`flex gap-4 ${
@@ -625,45 +552,20 @@ const PlanGenerator = () => {
                         </div>
                       )}
 
-                      {/* Enhanced plan */}
+                      {/* Plan mindmap */}
                       {message.type === 'mindmap_plan' && message.plan && (
-                        <div className="mt-4 space-y-3">
-                          <PlanSummaryCard
-                            title={message.plan.title || 'Untitled plan'}
-                            description={message.plan.description || 'Description not available'}
-                            featuresCount={
-                              message.plan.mindmap_data?.features?.length ?? 
-                              message.plan.pages?.reduce((acc, page) => acc + (page.features?.length ?? 0), 0) ?? 
-                              (message.plan.features?.length ?? 0)
-                            }
-                            pagesCount={message.plan.pages?.length ?? message.plan.mindmap_data?.pages?.length ?? 0}
-                            onOpenMindmap={() => openMindmap(message.plan!)}
-                            onExecutePlan={() => {
-                              setCurrentPlan(message.plan!);
-                              setShowExecutionDialog(true);
-                              setIsExecuting(true);
-                            }}
-                          />
-                          <div className="flex gap-2 mt-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => {
-                                setSelectedPlanForTable(message.plan!);
-                                setCurrentViewMode('table');
-                              }}
-                            >
-                              📋 Open Table View
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => openMindmap(message.plan!)}
-                            >
-                              🗺️ Open Mindmap
-                            </Button>
-                          </div>
-                        </div>
+                        <PlanSummaryCard
+                          title={message.plan.title || 'Untitled plan'}
+                          description={message.plan.description || 'Description not available'}
+                          featuresCount={message.plan.mindmap_data?.features?.length || 0}
+                          pagesCount={message.plan.mindmap_data?.pages?.length || 0}
+                          onOpenMindmap={() => openMindmap(message.plan!)}
+                          onExecutePlan={() => {
+                            setCurrentPlan(message.plan!);
+                            setShowExecutionDialog(true);
+                            setIsExecuting(true);
+                          }}
+                        />
                       )}
 
                       {/* Plan standard (ancien format) */}
@@ -672,7 +574,7 @@ const PlanGenerator = () => {
                           <div className="font-semibold text-lg border-b border-current/20 pb-2 flex items-center justify-between">
                             <span>📋 Generated plan: {message.plan.title}</span>
                             <AutoExecutionDialog
-                              steps={(message.plan.steps ?? []).map(step => ({
+                              steps={message.plan.steps.map(step => ({
                                 id: step.id,
                                 titre: step.title,
                                 description: step.description,
@@ -689,7 +591,7 @@ const PlanGenerator = () => {
                               </Button>
                             </AutoExecutionDialog>
                           </div>
-                          {(message.plan.steps ?? []).map((step, index) => (
+                          {message.plan.steps?.map((step, index) => (
                             <div key={step.id} className="flex items-start gap-3 p-3 rounded-lg bg-background/50">
                               <div className="flex items-center justify-center w-7 h-7 rounded-full bg-primary text-primary-foreground text-sm font-bold">
                                 {index + 1}
@@ -705,9 +607,7 @@ const PlanGenerator = () => {
                     </div>
                   </div>
                 </div>
-              )
-              )}
-              
+              ))}
               {isGenerating && (
                 <div className="flex gap-4 justify-start">
                   <div className="bg-card text-card-foreground backdrop-blur-sm border border-border rounded-2xl p-4">
@@ -739,7 +639,6 @@ const PlanGenerator = () => {
             />
           </div>
         </div>
-        </>
       )}
 
       {/* Auto Executor Dialog */}
@@ -762,7 +661,7 @@ const PlanGenerator = () => {
             
             // 2. Ajouter les features principales avec leurs prompts
             if (currentPlan.plan_type === 'mindmap' && currentPlan.mindmap_data?.features) {
-              (currentPlan.mindmap_data.features ?? []).forEach((feature: any) => {
+              currentPlan.mindmap_data.features.forEach((feature: any) => {
                 // Feature principale
                 allSteps.push({
                   id: `feature-${feature.id}`,
@@ -773,8 +672,8 @@ const PlanGenerator = () => {
                 });
                 
                 // Sous-features de cette feature
-                if (feature.subFeatures && (feature.subFeatures?.length ?? 0) > 0) {
-                  (feature.subFeatures ?? []).forEach((subFeature: any) => {
+                if (feature.subFeatures && feature.subFeatures.length > 0) {
+                  feature.subFeatures.forEach((subFeature: any) => {
                     allSteps.push({
                       id: `subfeature-${subFeature.id}`,
                       titre: `Sub-feature: ${subFeature.title}`,
@@ -789,7 +688,7 @@ const PlanGenerator = () => {
             
             // 3. Fallback pour les plans standards
             if (allSteps.length === 0) {
-              return (currentPlan.steps ?? []).map(step => ({
+              return currentPlan.steps.map(step => ({
                 id: step.id,
                 titre: step.title,
                 description: step.description,

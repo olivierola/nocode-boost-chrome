@@ -538,7 +538,7 @@ const PlanAutoExecutor = ({ steps, isOpen, onClose, mode, onUpdateSteps }: PlanA
                 </h3>
                 <ScrollArea className="h-[300px]">
                   <div className="space-y-2">
-                    {(steps || []).map((step, index) => (
+                    {steps.map((step, index) => (
                       <Card 
                         key={step.id} 
                         className={`${
@@ -597,7 +597,7 @@ const PlanAutoExecutor = ({ steps, isOpen, onClose, mode, onUpdateSteps }: PlanA
                 </h3>
                 <ScrollArea className="h-[300px]">
                   <div className="space-y-1">
-                    {(logs || []).map((log, index) => (
+                    {logs.map((log, index) => (
                       <div 
                         key={index} 
                         className={`text-xs p-2 rounded font-mono ${
@@ -610,7 +610,7 @@ const PlanAutoExecutor = ({ steps, isOpen, onClose, mode, onUpdateSteps }: PlanA
                         <span className="opacity-60">[{log.timestamp}]</span> {log.message}
                       </div>
                     ))}
-                    {(chatMessages || []).map((message, index) => (
+                    {chatMessages.map((message, index) => (
                       <div key={`chat-${index}`} className="text-xs bg-blue-50 p-2 rounded">
                         <span className="text-blue-600">💬</span> {message}
                       </div>

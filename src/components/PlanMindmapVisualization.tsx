@@ -580,7 +580,7 @@ export const PlanMindmapVisualization = ({ isOpen, onClose, data, onExecuteFeatu
                             <ReactMarkdown>{selectedNode.details}</ReactMarkdown>
                           </div>
                         ) : (
-                          selectedNode.details && typeof selectedNode.details === 'object' ? Object.entries(selectedNode.details).map(([key, value]) => (
+                          Object.entries(selectedNode.details).map(([key, value]) => (
                             <div key={key} className="border-l-4 border-blue-200 pl-4">
                               <h5 className="font-semibold text-sm mb-2 text-blue-900 capitalize">
                                 {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
@@ -624,7 +624,7 @@ export const PlanMindmapVisualization = ({ isOpen, onClose, data, onExecuteFeatu
                                 <p className="text-sm text-gray-600">{String(value)}</p>
                               )}
                             </div>
-                          )) : null
+                          ))
                         )}
                       </CardContent>
                     </Card>

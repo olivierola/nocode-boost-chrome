@@ -100,7 +100,7 @@ const NotificationCenter = () => {
         </CardHeader>
         <CardContent className="pt-0">
           <div className="space-y-2 max-h-80 overflow-y-auto">
-            {(notifications || []).map((notification) => (
+            {notifications.map((notification) => (
               <div
                 key={notification.id}
                 className={`p-3 rounded-md border cursor-pointer ${getNotificationColor(notification.type, notification.read)}`}

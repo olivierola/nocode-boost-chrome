@@ -150,7 +150,7 @@ const ExecutionProgressDialog = ({
               <h3 className="text-sm font-medium">Étapes</h3>
               <ScrollArea className="h-[300px]">
                 <div className="space-y-2">
-                  {(steps || []).map((step, index) => (
+                  {steps.map((step, index) => (
                     <Card key={step.id} className={`${getStepColor(step, index)}`}>
                       <CardContent className="p-3">
                         <div className="flex items-start gap-2">
@@ -188,7 +188,7 @@ const ExecutionProgressDialog = ({
               <h3 className="text-sm font-medium">Logs d'exécution</h3>
               <ScrollArea className="h-[300px]">
                 <div className="space-y-1">
-                  {(logs || []).map((log, index) => (
+                  {logs.map((log, index) => (
                     <div key={index} className="text-xs bg-muted p-2 rounded font-mono">
                       {log}
                     </div>

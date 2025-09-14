@@ -67,7 +67,7 @@ const ProjectSelector = () => {
           </Card>
         ) : (
           <div className="grid gap-4 md:grid-cols-2">
-            {(projects || []).map((project) => (
+            {projects.map((project) => (
               <ProjectSpotlightCard key={project.id} project={project} />
             ))}
           </div>

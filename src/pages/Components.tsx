@@ -271,7 +271,7 @@ const ComponentsSaved = () => {
               </CardContent>
             </Card>
           ) : (
-            (filteredComponents || []).map((component) => (
+            filteredComponents.map((component) => (
               <Card key={component.id} className="hover:shadow-md transition-shadow">
                 <CardHeader className="pb-2">
                   <div className="flex items-start justify-between">
