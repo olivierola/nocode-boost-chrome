@@ -222,7 +222,7 @@ export type Database = {
           created_at: string
           id: string
           message_type: string | null
-          plan_data: Json | null
+          plan_id: string | null
           project_id: string
           questions: string[] | null
           role: string
@@ -234,7 +234,7 @@ export type Database = {
           created_at?: string
           id?: string
           message_type?: string | null
-          plan_data?: Json | null
+          plan_id?: string | null
           project_id: string
           questions?: string[] | null
           role: string
@@ -246,25 +246,46 @@ export type Database = {
           created_at?: string
           id?: string
           message_type?: string | null
-          plan_data?: Json | null
+          plan_id?: string | null
           project_id?: string
           questions?: string[] | null
           role?: string
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_plan_chat_history_plan_id"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       plans: {
         Row: {
           created_at: string
           description: string | null
-          etapes: Json
           id: string
           mindmap_data: Json | null
           plan_data: Json | null
           plan_type: string | null
           project_id: string
+          section1_vision_objectifs: Json | null
+          section10_deploiement: Json | null
+          section11_business_monetisation: Json | null
+          section12_securite_rgpd: Json | null
+          section13_lancement_growth: Json | null
+          section14_evolution_maintenance: Json | null
+          section2_analyse_recherche: Json | null
+          section3_cahier_charges: Json | null
+          section4_architecture_produit: Json | null
+          section5_architecture_application: Json | null
+          section6_design_ux: Json | null
+          section7_plan_technique: Json | null
+          section8_roadmap_gestion: Json | null
+          section9_tests_qualite: Json | null
           status: string | null
           title: string | null
           updated_at: string
@@ -273,12 +294,25 @@ export type Database = {
         Insert: {
           created_at?: string
           description?: string | null
-          etapes?: Json
           id?: string
           mindmap_data?: Json | null
           plan_data?: Json | null
           plan_type?: string | null
           project_id: string
+          section1_vision_objectifs?: Json | null
+          section10_deploiement?: Json | null
+          section11_business_monetisation?: Json | null
+          section12_securite_rgpd?: Json | null
+          section13_lancement_growth?: Json | null
+          section14_evolution_maintenance?: Json | null
+          section2_analyse_recherche?: Json | null
+          section3_cahier_charges?: Json | null
+          section4_architecture_produit?: Json | null
+          section5_architecture_application?: Json | null
+          section6_design_ux?: Json | null
+          section7_plan_technique?: Json | null
+          section8_roadmap_gestion?: Json | null
+          section9_tests_qualite?: Json | null
           status?: string | null
           title?: string | null
           updated_at?: string
@@ -287,12 +321,25 @@ export type Database = {
         Update: {
           created_at?: string
           description?: string | null
-          etapes?: Json
           id?: string
           mindmap_data?: Json | null
           plan_data?: Json | null
           plan_type?: string | null
           project_id?: string
+          section1_vision_objectifs?: Json | null
+          section10_deploiement?: Json | null
+          section11_business_monetisation?: Json | null
+          section12_securite_rgpd?: Json | null
+          section13_lancement_growth?: Json | null
+          section14_evolution_maintenance?: Json | null
+          section2_analyse_recherche?: Json | null
+          section3_cahier_charges?: Json | null
+          section4_architecture_produit?: Json | null
+          section5_architecture_application?: Json | null
+          section6_design_ux?: Json | null
+          section7_plan_technique?: Json | null
+          section8_roadmap_gestion?: Json | null
+          section9_tests_qualite?: Json | null
           status?: string | null
           title?: string | null
           updated_at?: string
@@ -616,13 +663,13 @@ export type Database = {
         }[]
       }
       get_plan_chat_history: {
-        Args: { p_project_id: string; p_user_id: string }
+        Args: { p_plan_id?: string; p_project_id: string; p_user_id: string }
         Returns: {
           content: string
           created_at: string
           id: string
           message_type: string
-          plan_data: Json
+          plan_id: string
           questions: string[]
           role: string
         }[]
@@ -691,7 +738,7 @@ export type Database = {
         Args: {
           p_content: string
           p_message_type?: string
-          p_plan_data?: string
+          p_plan_id?: string
           p_project_id: string
           p_questions?: string[]
           p_role: string

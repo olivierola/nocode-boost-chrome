@@ -330,123 +330,20 @@ Structure universelle attendue (TOUS LES CHAMPS OBLIGATOIRES):
       }
     ]
   },
-  "features": [
-    {
-      "id": "feature-auth",
-      "title": "Authentification utilisateur",
-      "description": "## Systeme d'authentification complet\\n\\nGestion des utilisateurs",
-      "priority": "haute",
-      "complexity": "moyenne",
-      "estimatedTime": "40 heures",
-      "subFeatures": [
-        {
-          "id": "auth-login",
-          "title": "Page de connexion",
-          "description": "Interface de connexion utilisateur",
-          "prompt": "Creez une page de connexion avec React Hook Form et validation Zod"
-        }
-      ],
-      "prompt": "Implementez un systeme d'authentification complet avec Supabase Auth",
-      "acceptanceCriteria": ["Connexion fonctionnelle", "Validation des formulaires"]
-    }
-  ],
-  "pages": [
-    {
-      "id": "home",
-      "name": "Page d'accueil",
-      "description": "## Page d'accueil\\n\\nLanding page principale",
-      "sections": [
-        {
-          "id": "hero",
-          "name": "Section Hero",
-          "description": "Section d'accroche principale",
-          "components": ["HeroTitle", "HeroDescription", "CTAButton"]
-        }
-      ],
-      "visualIdentity": {
-        "colorScheme": "primary et accent",
-        "typography": "headings modernes",
-        "layout": "centree avec espacement genereux"
-      }
-    }
-  ],
+  "features": [],
+  "roadmap": {
+    "title": "Roadmap detaillee",
+    "totalDuration": "6 mois de developpement",
+    "phases": []
+  },
   "marketStudy": {
     "title": "Etude de marche complete",
-    "marketSize": "## Taille du marche\\n\\n### Marche total addressable (TAM)\\n- Estimation quantitative du marche global\\n- Sources et methodologie d'estimation\\n\\n### Marche addressable serviceable (SAM)\\n- Segment de marche realiste\\n- Contraintes geographiques et demographiques\\n\\n### Marche obtenable (SOM)\\n- Part de marche realisable a court/moyen terme",
-    "competitiveAnalysis": "## Analyse concurrentielle\\n\\n### Concurrents directs\\n- Analyse detaillee des 3-5 principaux concurrents\\n- Forces et faiblesses de chacun\\n- Positionnement prix et fonctionnalites\\n\\n### Concurrents indirects\\n- Solutions alternatives utilisees par la cible\\n- Menaces de substitution\\n\\n### Analyse SWOT\\n- Strengths: Forces du projet\\n- Weaknesses: Faiblesses identifiees\\n- Opportunities: Opportunites de marche\\n- Threats: Menaces concurrentielles",
-    "targetSegments": "## Segments de marche\\n\\n### Segmentation primaire\\n- Criteres de segmentation (demographiques, comportementaux, geographiques)\\n- Description detaillee de chaque segment\\n- Taille et potentiel de chaque segment\\n\\n### Personas detailles\\n- 3-5 personas principaux avec demographics, motivations, pain points\\n- Parcours client type pour chaque persona\\n- Canaux de communication preferes",
-    "marketTrends": "## Tendances du marche\\n\\n### Tendances actuelles\\n- Evolution du marche sur les 2-3 dernieres annees\\n- Facteurs de croissance identifiees\\n\\n### Tendances futures\\n- Projections sur les 3-5 prochaines annees\\n- Technologies emergentes impactantes\\n- Changements reglementaires anticipes",
-    "entryBarriers": "## Barrieres a l'entree\\n\\n### Barrieres techniques\\n- Complexite technologique\\n- Brevets et propriete intellectuelle\\n\\n### Barrieres financieres\\n- Investissement initial requis\\n- Couts d'acquisition client\\n\\n### Barrieres reglementaires\\n- Conformite et certifications requises\\n- Licences necessaires"
-  },
-  "marketingStrategy": {
-    "title": "Strategie marketing",
-    "targetMarket": "## Marche cible\\n\\nSegments de marche identifies",
-    "positioning": "## Positionnement\\n\\nPosition sur le marche",
-    "channels": ["Marketing digital", "Reseaux sociaux", "SEO"],
-    "budget": "## Budget marketing\\n\\nRepartition du budget",
-    "kpis": ["Acquisition d'utilisateurs", "Taux de conversion", "Retention"]
-  },
-  "visualIdentity": {
-    "title": "Identite visuelle ultra-detaillee",
-    "brandPersonality": "## Personnalite de la marque\\n\\n### Traits de personnalite\\n- Description detaillee de la personnalite de marque (moderne, trustworthy, innovative, etc.)\\n- Ton de communication (formel, decontracte, expert, accessible)\\n- Valeurs vehiculees par le design\\n\\n### Positionnement visuel\\n- Style visuel adapte au secteur d'activite\\n- Differentiation par rapport aux concurrents\\n- Evolution prevue de l'identite",
-    "detailedSteps": [
-      {
-        "step": "Recherche et inspiration",
-        "description": "Analyser la concurrence et collecter des references visuelles",
-        "prompt": "Analysez la concurrence dans le secteur ${productType} et proposez 5 references visuelles inspirantes pour l'identite de marque. Documentez les tendances actuelles et justifiez vos choix.",
-        "deliverables": ["Planche d'inspiration", "Analyse concurrentielle", "Moodboard"],
-        "duration": "3-5 jours"
-      },
-      {
-        "step": "Definition de la palette",
-        "description": "Creer une palette de couleurs coherente avec la strategie de marque",
-        "prompt": "Creez une palette de couleurs complete pour ${productType} incluant : couleurs primaires (3), secondaires (3-5), neutres (5-7). Justifiez chaque choix par la psychologie des couleurs et l'adequation au secteur.",
-        "deliverables": ["Palette de couleurs", "Codes couleurs (HEX, RGB, CMYK, HSL)", "Guide d'usage et contrastes"],
-        "duration": "2-3 jours"
-      },
-      {
-        "step": "Selection typographique",
-        "description": "Choisir et associer les polices pour creer une hierarchie visuelle",
-        "prompt": "Selectionnez 2-3 polices complementaires pour ${productType}. Creez un systeme typographique complet avec hierarchie (H1-H6, body, caption, labels) et justifiez vos choix selon la lisibilite et la personnalite de marque.",
-        "deliverables": ["Systeme typographique", "Exemples d'application", "Licences des polices", "Guide de bonnes pratiques"],
-        "duration": "2-3 jours"
-      },
-      {
-        "step": "Creation du logo",
-        "description": "Concevoir le logo principal et ses declinaisons",
-        "prompt": "Concevez 3 variations de logo pour ${productType} : version principale, version simplifiee, version monochrome. Explorez differents concepts (wordmark, pictogramme, combine) et testez la scalabilite.",
-        "deliverables": ["3 concepts de logo", "Declinaisons (couleur, N&B, monochrome)", "Versions responsive", "Fichiers vectoriels"],
-        "duration": "5-7 jours"
-      },
-      {
-        "step": "Applications visuelles",
-        "description": "Decliner l'identite sur differents supports",
-        "prompt": "Appliquez l'identite visuelle de ${productType} sur tous les supports : carte de visite, en-tete de lettre, signature email, favicon, merchandise. Montrez la coherence et l'adaptabilite du systeme.",
-        "deliverables": ["Mockups des applications", "Templates editables", "Guide d'utilisation complet", "Assets finaux"],
-        "duration": "4-6 jours"
-      },
-      {
-        "step": "Systeme de design digital",
-        "description": "Creer le design system pour les interfaces digitales",
-        "prompt": "Developpez un design system complet pour ${productType} incluant : composants UI, etats d'interaction, grilles, espacements, animations. Assurez-vous de la coherence sur tous les ecrans.",
-        "deliverables": ["Design tokens", "Bibliotheque de composants", "Guidelines UI/UX", "Prototypes interactifs"],
-        "duration": "7-10 jours"
-      }
-    ],
-    "colorSystem": {
-      "primaryColors": {
-        "main": "#000000",
-        "description": "## Couleur principale\\n\\n### Utilisation\\n- Couleur dominante pour les CTA et elements importants\\n- Psychologie de la couleur adaptee au produit\\n- Variantes (light, dark, muted)\\n\\n### Applications\\n- Headers et navigation\\n- Boutons d'action principaux\\n- Highlights et accents visuels",
-        "variants": ["#1a1a1a", "#333333", "#4d4d4d"]
-      },
-      "secondaryColors": {
-        "main": "#666666",
-        "description": "## Couleurs secondaires\\n\\n### Palette harmonieuse\\n- Couleurs complementaires basees sur la theorie des couleurs\\n- Adaptation selon le type de produit (tech, creative, business, etc.)\\n- Contraste et accessibilite WCAG",
-        "variants": ["#808080", "#999999", "#b3b3b3"]
-      },
-      "accent": "#FF6B35",
-      "semantic": {
-        "success": "#10B981",
+    "marketSize": "## Taille du marche\\n\\nAnalyse TAM, SAM, SOM",
+    "competitiveAnalysis": "## Analyse concurrentielle\\n\\nConcurrents directs et indirects",
+    "targetSegments": "## Segments de marche\\n\\nPersonas detailles",
+    "marketTrends": "## Tendances du marche\\n\\nEvolution et projections",
+    "entryBarriers": "## Barrieres a l'entree\\n\\nDefis techniques et financiers"
+  }
         "warning": "#F59E0B", 
         "error": "#EF4444",
         "info": "#3B82F6"

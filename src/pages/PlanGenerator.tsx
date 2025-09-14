@@ -13,6 +13,7 @@ import { MindmapModal } from '@/components/MindmapModal';
 import { PlanSummaryCard } from '@/components/PlanSummaryCard';
 import { PlanMindmapVisualization } from '@/components/PlanMindmapVisualization';
 import { PlanTableView } from '@/components/PlanTableView';
+import PlanDetailedView from '@/components/PlanDetailedView';
 import { Component as RaycastBackground } from '@/components/ui/raycast-animated-background';
 
 interface ProjectPlan {
@@ -83,7 +84,7 @@ const PlanGenerator = () => {
   const [isExecuting, setIsExecuting] = useState(false);
   const [showMindmapModal, setShowMindmapModal] = useState(false);
   const [selectedMindmapData, setSelectedMindmapData] = useState<any>(null);
-  const [viewMode, setViewMode] = useState<'chat' | 'table'>('chat');
+  const [viewMode, setViewMode] = useState<'chat' | 'table' | 'detailed'>('chat');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   const { user } = useAuth();
@@ -150,7 +151,6 @@ const PlanGenerator = () => {
         p_role: message.role,
         p_content: message.content,
         p_message_type: message.type || 'standard',
-        p_plan_data: message.plan ? JSON.stringify(message.plan) : null,
         p_questions: message.questions || null
       });
     } catch (error) {
@@ -585,6 +585,20 @@ const PlanGenerator = () => {
             <PlanTableView 
               plan={currentPlan} 
               onExecuteFeature={(feature) => executeFeatureFromMindmap(feature)}
+            />
+          </div>
+        </div>
+      ) : viewMode === 'detailed' && currentPlan ? (
+        /* Detailed view */
+        <div className="flex-1 overflow-auto">
+          <div className="px-6 py-8">
+            <PlanDetailedView 
+              plan={currentPlan}
+              onUpdatePlan={(updatedPlan) => setCurrentPlan(updatedPlan)}
+              onExecutePrompt={(prompt, context) => {
+                console.log('Execute prompt:', prompt, context);
+                // Ici on pourrait appeler une fonction pour générer le contenu spécifique
+              }}
             />
           </div>
         </div>
