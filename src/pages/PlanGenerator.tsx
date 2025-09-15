@@ -14,7 +14,7 @@ import { PlanSummaryCard } from '@/components/PlanSummaryCard';
 import { PlanMindmapVisualization } from '@/components/PlanMindmapVisualization';
 import { PlanTableView } from '@/components/PlanTableView';
 import PlanDetailedView from '@/components/PlanDetailedView';
-import { Component as RaycastBackground } from '@/components/ui/raycast-animated-background';
+
 
 interface ProjectPlan {
   id: string;
@@ -99,6 +99,14 @@ const PlanGenerator = () => {
     scrollToBottom();
   }, [chatMessages]);
 
+  // Sélection automatique du dernier plan avec données après rechargement
+  useEffect(() => {
+    if (!currentPlan && chatMessages.length > 0) {
+      const lastWithPlan = [...chatMessages].reverse().find((m) => m.plan);
+      if (lastWithPlan?.plan) setCurrentPlan(lastWithPlan.plan as ProjectPlan);
+    }
+  }, [chatMessages, currentPlan]);
+
   useEffect(() => {
     if (selectedProject) {
       // Load conversation history
@@ -169,7 +177,11 @@ const PlanGenerator = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setPlans((data as unknown as ProjectPlan[]) || []);
+      const loadedPlans = (data as unknown as ProjectPlan[]) || [];
+      setPlans(loadedPlans);
+      if (!currentPlan && loadedPlans.length > 0) {
+        setCurrentPlan(loadedPlans[0]);
+      }
     } catch (error: any) {
       toast({
         title: "Erreur",
@@ -526,10 +538,6 @@ const PlanGenerator = () => {
 
   return (
     <div className="w-full h-screen flex flex-col relative overflow-hidden">
-      {/* Raycast Animated Background */}
-      <div className="absolute inset-0 w-full h-full">
-        <RaycastBackground />
-      </div>
 
       {/* Header with view toggle */}
       {currentPlan && (
