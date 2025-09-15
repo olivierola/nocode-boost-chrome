@@ -252,27 +252,56 @@ const PlanDetailedView: React.FC<PlanDetailedViewProps> = ({
               <div key={key} className="space-y-4">
                 <h4 className="font-medium text-foreground">Pages de l'application</h4>
                 {value.map((page: any, pageIndex: number) => (
-                  <div key={pageIndex} className="border border-border rounded-lg p-4">
-                    {renderField(section.id, `pages.${pageIndex}.name`, page.name, 'Nom de la page')}
-                    {renderField(section.id, `pages.${pageIndex}.description`, page.description, 'Description')}
-                    {renderField(section.id, `pages.${pageIndex}.prompt`, page.prompt, 'Prompt pour l\'IA', true)}
+                  <div key={pageIndex} className="border border-border rounded-lg p-4 space-y-4">
+                    <div className="bg-primary/5 p-3 rounded">
+                      <h5 className="font-semibold text-foreground mb-2">📄 Page : {page.name}</h5>
+                      {renderField(section.id, `pages.${pageIndex}.name`, page.name, 'Nom de la page')}
+                      {renderField(section.id, `pages.${pageIndex}.description`, page.description, 'Description de la page')}
+                      {renderField(section.id, `pages.${pageIndex}.prompt`, page.prompt, 'Prompt pour l\'IA', true)}
+                    </div>
                     
                     {page.sections && (
-                      <div className="mt-4">
-                        <h5 className="font-medium text-foreground mb-2">Sections</h5>
+                      <div className="space-y-4">
+                        <h6 className="font-medium text-foreground">🔹 Sections</h6>
                         {page.sections.map((sect: any, sectIndex: number) => (
-                          <div key={sectIndex} className="border-l-2 border-primary/20 pl-4 mb-4">
-                            {renderField(section.id, `pages.${pageIndex}.sections.${sectIndex}.name`, sect.name, 'Nom de la section')}
-                            {renderField(section.id, `pages.${pageIndex}.sections.${sectIndex}.description`, sect.description, 'Description')}
+                          <div key={sectIndex} className="border-l-4 border-primary/30 pl-6 space-y-3">
+                            <div className="bg-secondary/20 p-3 rounded">
+                              <h6 className="font-medium text-foreground mb-2">Section : {sect.name}</h6>
+                              {renderField(section.id, `pages.${pageIndex}.sections.${sectIndex}.name`, sect.name, 'Nom de la section')}
+                              {renderField(section.id, `pages.${pageIndex}.sections.${sectIndex}.description`, sect.description, 'Description de la section')}
+                              {renderField(section.id, `pages.${pageIndex}.sections.${sectIndex}.prompt`, sect.prompt, 'Prompt pour l\'IA', true)}
+                            </div>
                             
                             {sect.modules && (
-                              <div className="mt-2">
-                                <h6 className="text-sm font-medium text-foreground mb-2">Modules</h6>
+                              <div className="space-y-2">
+                                <h6 className="text-sm font-medium text-foreground">Modules</h6>
                                 {sect.modules.map((module: any, moduleIndex: number) => (
-                                  <div key={moduleIndex} className="bg-background/50 p-3 rounded border">
+                                  <div key={moduleIndex} className="bg-muted/30 p-3 rounded border-l-2 border-accent/50">
+                                    <p className="text-xs font-medium text-muted-foreground mb-2">Module : {module.name}</p>
                                     {renderField(section.id, `pages.${pageIndex}.sections.${sectIndex}.modules.${moduleIndex}.name`, module.name, 'Nom du module')}
-                                    {renderField(section.id, `pages.${pageIndex}.sections.${sectIndex}.modules.${moduleIndex}.description`, module.description, 'Description')}
+                                    {renderField(section.id, `pages.${pageIndex}.sections.${sectIndex}.modules.${moduleIndex}.description`, module.description, 'Description du module')}
                                     {renderField(section.id, `pages.${pageIndex}.sections.${sectIndex}.modules.${moduleIndex}.prompt`, module.prompt, 'Prompt pour l\'IA', true)}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+
+                            {sect.design && (
+                              <div className="bg-accent/10 p-3 rounded">
+                                <h6 className="text-sm font-medium text-foreground mb-2">🎨 Design</h6>
+                                {renderField(section.id, `pages.${pageIndex}.sections.${sectIndex}.design.typographie`, sect.design.typographie, 'Typographie (description textuelle)')}
+                                {renderField(section.id, `pages.${pageIndex}.sections.${sectIndex}.design.composants_reutilisables`, 
+                                  Array.isArray(sect.design.composants_reutilisables) ? sect.design.composants_reutilisables.join(', ') : sect.design.composants_reutilisables, 
+                                  'Composants réutilisables (liste)')}
+                              </div>
+                            )}
+
+                            {sect.contenus && (
+                              <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded">
+                                <h6 className="text-sm font-medium text-foreground mb-2">💬 Contenus (clé-valeur)</h6>
+                                {Object.entries(sect.contenus).map(([contentKey, contentValue]: [string, any]) => (
+                                  <div key={contentKey} className="mb-2">
+                                    {renderField(section.id, `pages.${pageIndex}.sections.${sectIndex}.contenus.${contentKey}`, contentValue, `${contentKey} →`)}
                                   </div>
                                 ))}
                               </div>

@@ -232,31 +232,145 @@ Structure universelle attendue (TOUS LES CHAMPS OBLIGATOIRES):
       {
         "id": "page-1",
         "name": "Accueil",
-        "description": "## Page d'accueil\\n\\nLanding page principale",
+        "description": "## Page d'accueil\\n\\nLanding page principale avec header, sections populaires et footer optimisé conversion",
+        "prompt": "Créez la page d'accueil complète responsive avec React, TypeScript et Tailwind CSS incluant toutes les sections définies",
         "sections": [
           {
             "id": "section-1",
             "name": "Header",
-            "description": "## Section Header\\n\\nNavigation principale",
+            "description": "## Section Header\\n\\nNavigation principale avec logo, recherche et CTA de commande",
+            "prompt": "Créez un header moderne et responsive avec navigation sticky, barre de recherche intelligente et bouton CTA proéminent",
             "modules": [
               {
                 "id": "module-1",
                 "name": "Logo",
-                "description": "## Module Logo\\n\\nLogo de l'application",
-                "design": {
-                  "typography": "## Typographie\\n\\nPolice: Inter, 18px, semi-bold",
-                  "components": ["LogoImage", "LogoText"],
-                  "content": {
-                    "logo_text": "Nom de l'application",
-                    "logo_alt": "Logo de l'application"
-                  }
-                },
-                "prompt": "Créez un composant Logo avec React et Tailwind CSS"
+                "description": "## Module Logo\\n\\nLogo de l'application cliquable vers accueil",
+                "prompt": "Créez un composant Logo responsive avec variantes (couleur/monochrome) et animations hover"
+              },
+              {
+                "id": "module-2",
+                "name": "Barre de recherche",
+                "description": "## Module Recherche\\n\\nInput de recherche avec suggestions temps réel",
+                "prompt": "Créez une barre de recherche avec auto-complétion, filtres rapides et raccourcis clavier"
+              },
+              {
+                "id": "module-3",
+                "name": "Bouton Commander",
+                "description": "## Module CTA\\n\\nCall-to-action principal pour initier commande",
+                "prompt": "Créez un bouton CTA attractif avec animations et compteur panier dynamique"
               }
-            ]
+            ],
+            "design": {
+              "typographie": "Titres grands (H1: 32px Inter Bold), sous-titres (18px Inter Medium), texte navigation (16px Inter Regular), hiérarchie claire avec contrastes optimisés",
+              "composants_reutilisables": ["bouton primaire", "input texte avec icône", "logo responsive", "dropdown menu", "badge compteur"]
+            },
+            "contenus": {
+              "title": "Bienvenue chez PizzaExpress",
+              "subtitle": "Les meilleures pizzas artisanales livrées en 30min",
+              "cta": "Commander maintenant",
+              "search_placeholder": "Rechercher une pizza, ingrédient...",
+              "nav_menu": "Menu, Promotions, À propos, Contact"
+            }
+          },
+          {
+            "id": "section-2", 
+            "name": "Liste de pizzas populaires",
+            "description": "## Section Pizzas Populaires\\n\\nShowcase des pizzas les plus commandées avec visuels appétissants",
+            "prompt": "Créez une section grid responsive présentant les pizzas populaires avec lazy loading et animations d'apparition",
+            "modules": [
+              {
+                "id": "module-4",
+                "name": "Carte pizza",
+                "description": "## Module Carte Pizza\\n\\nCarte produit interactive avec image, détails et actions rapides",
+                "prompt": "Créez une carte pizza avec image hover, détails nutritionnels, bouton ajout panier et notation étoiles"
+              },
+              {
+                "id": "module-5",
+                "name": "Filtre rapide",
+                "description": "## Module Filtres\\n\\nFiltres rapides par catégorie (végé, épicée, etc.)",
+                "prompt": "Créez des filtres visuels avec badges cliquables et compteurs de résultats"
+              }
+            ],
+            "design": {
+              "typographie": "Noms pizzas (20px Inter Bold), prix (18px Inter SemiBold couleur accent), descriptions (14px Inter Regular), badges (12px Inter Medium)",
+              "composants_reutilisables": ["carte produit", "bouton secondaire", "badge prix", "rating étoiles", "image avec placeholder", "tooltip ingrédients"]
+            },
+            "contenus": {
+              "section_title": "Nos pizzas populaires",
+              "section_subtitle": "Les préférées de nos clients",
+              "pizza_name": "Margherita Artisanale",
+              "price": "12,90 €",
+              "description": "Tomate San Marzano, mozzarella di bufala, basilic frais, huile d'olive extra vierge",
+              "rating": "4.8/5 (127 avis)",
+              "filter_categories": "Toutes, Classiques, Végétariennes, Épicées, Spécialités"
+            }
           }
-        ],
-        "prompt": "Créez la page d'accueil complète avec toutes ses sections"
+        ]
+      },
+      {
+        "id": "page-2",
+        "name": "Catalogue pizzas", 
+        "description": "## Page Catalogue\\n\\nCatalogue complet avec système de filtrage avancé et pagination",
+        "prompt": "Créez une page catalogue complète avec filtres multiples, tri personnalisable, recherche avancée et pagination infinie",
+        "sections": [
+          {
+            "id": "section-3",
+            "name": "Filtres et recherche",
+            "description": "## Section Filtres\\n\\nSystème de filtrage multicritères avec sidebar responsive",
+            "prompt": "Créez une sidebar de filtres collapsible avec recherche, catégories, prix, allergènes et ratings",
+            "modules": [
+              {
+                "id": "module-6",
+                "name": "Filtre catégorie",
+                "description": "## Module Filtres Catégories\\n\\nCheckboxes organisées par types de pizzas",
+                "prompt": "Créez des filtres par catégorie avec compteurs de résultats et reset rapide"
+              }
+            ],
+            "design": {
+              "typographie": "Titres filtres (16px Inter SemiBold), labels (14px Inter Regular), compteurs (12px Inter Regular gris)",
+              "composants_reutilisables": ["checkbox personnalisé", "slider prix", "dropdown catégories", "tag filtre actif", "bouton reset"]
+            },
+            "contenus": {
+              "filter_title": "Filtrer par",
+              "categories": "Classiques, Végétariennes, Vegan, Épicées, Spécialités, Sans gluten",
+              "price_range": "Prix : 8€ - 25€", 
+              "dietary": "Régimes : Végétarien, Vegan, Sans gluten, Sans lactose"
+            }
+          }
+        ]
+      },
+      {
+        "id": "page-3",
+        "name": "Personnalisation pizza",
+        "description": "## Page Personnalisation\\n\\nInterface step-by-step pour créer sa pizza sur mesure",
+        "prompt": "Créez un configurateur pizza interactif avec preview 3D, calcul prix temps réel et sauvegarde personnalisations",
+        "sections": [
+          {
+            "id": "section-4", 
+            "name": "Sélection base",
+            "description": "## Section Base Pizza\\n\\nChoix pâte, taille et sauce avec prix dynamique",
+            "prompt": "Créez une interface de sélection base avec preview visuel, informations nutritionnelles et prix impacts",
+            "modules": [
+              {
+                "id": "module-7",
+                "name": "Sélecteur pâte",
+                "description": "## Module Pâte\\n\\nSélection type de pâte avec preview et descriptions",
+                "prompt": "Créez un sélecteur pâte avec images, descriptions détaillées et impact nutritionnel"
+              }
+            ],
+            "design": {
+              "typographie": "Titres étapes (24px Inter Bold), options (16px Inter Medium), descriptions (14px Inter Regular), prix (16px Inter Bold couleur accent)",
+              "composants_reutilisables": ["radio button visuel", "card sélection", "badge prix impact", "tooltip informatif", "progress bar étapes"]
+            },
+            "contenus": {
+              "section_title": "Choisissez votre base",
+              "step_indicator": "Étape 1/4",
+              "pate_fine": "Pâte fine traditionnelle (+0€)",
+              "pate_epaisse": "Pâte épaisse américaine (+2€)",
+              "pate_wholefait": "Pâte complète (+1,5€)"
+            }
+          }
+        ]
       }
     ]
   },
