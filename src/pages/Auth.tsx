@@ -68,7 +68,7 @@ const Auth = () => {
       </div>
       <Card className="relative z-10 w-full max-w-sm backdrop-blur-sm bg-card/90 border-border/50 shadow-2xl">
         <CardHeader className="text-center pb-4">
-          <CardTitle className="text-xl font-bold">Super NoCode</CardTitle>
+          <CardTitle className="text-xl font-bold">SN</CardTitle>
           <CardDescription className="text-sm">
             Extension Chrome pour workflows nocode
           </CardDescription>
