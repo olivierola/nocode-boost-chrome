@@ -26,82 +26,42 @@ const PlanDetailedView: React.FC<PlanDetailedViewProps> = ({
   onUpdatePlan,
   onExecutePrompt
 }) => {
-  const [openSections, setOpenSections] = useState<string[]>(['section1']);
+  const [openSections, setOpenSections] = useState<string[]>(['documentation']);
   const [editingField, setEditingField] = useState<string | null>(null);
   const [tempValue, setTempValue] = useState<string>('');
   const [showPromptDialog, setShowPromptDialog] = useState<{ field: string; context: any } | null>(null);
 
+  if (!plan || !plan.plan_data) {
+    return (
+      <div className="p-8 text-center">
+        <p className="text-muted-foreground">Aucun plan sélectionné</p>
+      </div>
+    );
+  }
+
+  const planData = plan.plan_data;
+
   const sections: Section[] = [
     {
-      id: 'section1',
-      title: '📌 1. Vision & Objectifs',
-      data: plan.section1_vision_objectifs || {},
+      id: 'documentation',
+      title: '📌 1. Documentation générale',
+      data: planData.documentation || {},
     },
     {
-      id: 'section2',
-      title: '📌 2. Analyse & Recherche',
-      data: plan.section2_analyse_recherche || {},
-    },
-    {
-      id: 'section3',
-      title: '📌 3. Cahier des charges fonctionnel',
-      data: plan.section3_cahier_charges || {},
-    },
-    {
-      id: 'section4',
-      title: '📌 4. Architecture du produit',
-      data: plan.section4_architecture_produit || {},
-    },
-    {
-      id: 'section5',
-      title: '📌 5. Architecture de l\'application (pages & UI)',
-      data: plan.section5_architecture_application || {},
+      id: 'implementation_plan',
+      title: '📌 2. Plan d\'implémentation',
+      data: planData.implementation_plan || {},
       hasPrompts: true,
     },
     {
-      id: 'section6',
-      title: '📌 6. Design & Expérience utilisateur',
-      data: plan.section6_design_ux || {},
+      id: 'backend_database',
+      title: '📌 3. Backend & Base de données',
+      data: planData.backend_database || {},
     },
     {
-      id: 'section7',
-      title: '📌 7. Plan technique détaillé',
-      data: plan.section7_plan_technique || {},
-    },
-    {
-      id: 'section8',
-      title: '📌 8. Roadmap & Gestion de projet',
-      data: plan.section8_roadmap_gestion || {},
-    },
-    {
-      id: 'section9',
-      title: '📌 9. Tests & Qualité',
-      data: plan.section9_tests_qualite || {},
-    },
-    {
-      id: 'section10',
-      title: '📌 10. Déploiement & Infrastructure',
-      data: plan.section10_deploiement || {},
-    },
-    {
-      id: 'section11',
-      title: '📌 11. Business & Monétisation',
-      data: plan.section11_business_monetisation || {},
-    },
-    {
-      id: 'section12',
-      title: '📌 12. Sécurité & RGPD',
-      data: plan.section12_securite_rgpd || {},
-    },
-    {
-      id: 'section13',
-      title: '📌 13. Lancement & Growth',
-      data: plan.section13_lancement_growth || {},
-    },
-    {
-      id: 'section14',
-      title: '📌 14. Évolution & Maintenance',
-      data: plan.section14_evolution_maintenance || {},
+      id: 'security_plan',
+      title: '📌 4. Plan de sécurité',
+      data: planData.security_plan || {},
     }
   ];
 
@@ -121,12 +81,17 @@ const PlanDetailedView: React.FC<PlanDetailedViewProps> = ({
   const saveEdit = (sectionId: string, fieldKey: string) => {
     if (!onUpdatePlan) return;
     
-    const updatedPlan = {
-      ...plan,
+    const updatedPlanData = {
+      ...planData,
       [sectionId]: {
-        ...plan[sectionId],
+        ...planData[sectionId],
         [fieldKey]: tempValue
       }
+    };
+    
+    const updatedPlan = {
+      ...plan,
+      plan_data: updatedPlanData
     };
     
     onUpdatePlan(updatedPlan);
@@ -247,15 +212,16 @@ const PlanDetailedView: React.FC<PlanDetailedViewProps> = ({
         {Object.entries(section.data).map(([key, value]) => {
           const label = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
           
-          if (section.id === 'section5' && key === 'pages' && Array.isArray(value)) {
+          // Gestion spéciale pour les pages dans implementation_plan
+          if (section.id === 'implementation_plan' && key === 'pages' && Array.isArray(value)) {
             return (
               <div key={key} className="space-y-4">
                 <h4 className="font-medium text-foreground">Pages de l'application</h4>
                 {value.map((page: any, pageIndex: number) => (
                   <div key={pageIndex} className="border border-border rounded-lg p-4 space-y-4">
                     <div className="bg-primary/5 p-3 rounded">
-                      <h5 className="font-semibold text-foreground mb-2">📄 Page : {page.name}</h5>
-                      {renderField(section.id, `pages.${pageIndex}.name`, page.name, 'Nom de la page')}
+                      <h5 className="font-semibold text-foreground mb-2">📄 Page : {page.page_name}</h5>
+                      {renderField(section.id, `pages.${pageIndex}.page_name`, page.page_name, 'Nom de la page')}
                       {renderField(section.id, `pages.${pageIndex}.description`, page.description, 'Description de la page')}
                       {renderField(section.id, `pages.${pageIndex}.prompt`, page.prompt, 'Prompt pour l\'IA', true)}
                     </div>
@@ -266,8 +232,8 @@ const PlanDetailedView: React.FC<PlanDetailedViewProps> = ({
                         {page.sections.map((sect: any, sectIndex: number) => (
                           <div key={sectIndex} className="border-l-4 border-primary/30 pl-6 space-y-3">
                             <div className="bg-secondary/20 p-3 rounded">
-                              <h6 className="font-medium text-foreground mb-2">Section : {sect.name}</h6>
-                              {renderField(section.id, `pages.${pageIndex}.sections.${sectIndex}.name`, sect.name, 'Nom de la section')}
+                              <h6 className="font-medium text-foreground mb-2">Section : {sect.section_name}</h6>
+                              {renderField(section.id, `pages.${pageIndex}.sections.${sectIndex}.section_name`, sect.section_name, 'Nom de la section')}
                               {renderField(section.id, `pages.${pageIndex}.sections.${sectIndex}.description`, sect.description, 'Description de la section')}
                               {renderField(section.id, `pages.${pageIndex}.sections.${sectIndex}.prompt`, sect.prompt, 'Prompt pour l\'IA', true)}
                             </div>
@@ -277,8 +243,8 @@ const PlanDetailedView: React.FC<PlanDetailedViewProps> = ({
                                 <h6 className="text-sm font-medium text-foreground">Modules</h6>
                                 {sect.modules.map((module: any, moduleIndex: number) => (
                                   <div key={moduleIndex} className="bg-muted/30 p-3 rounded border-l-2 border-accent/50">
-                                    <p className="text-xs font-medium text-muted-foreground mb-2">Module : {module.name}</p>
-                                    {renderField(section.id, `pages.${pageIndex}.sections.${sectIndex}.modules.${moduleIndex}.name`, module.name, 'Nom du module')}
+                                    <p className="text-xs font-medium text-muted-foreground mb-2">Module : {module.module_name}</p>
+                                    {renderField(section.id, `pages.${pageIndex}.sections.${sectIndex}.modules.${moduleIndex}.module_name`, module.module_name, 'Nom du module')}
                                     {renderField(section.id, `pages.${pageIndex}.sections.${sectIndex}.modules.${moduleIndex}.description`, module.description, 'Description du module')}
                                     {renderField(section.id, `pages.${pageIndex}.sections.${sectIndex}.modules.${moduleIndex}.prompt`, module.prompt, 'Prompt pour l\'IA', true)}
                                   </div>
@@ -306,6 +272,19 @@ const PlanDetailedView: React.FC<PlanDetailedViewProps> = ({
                                 ))}
                               </div>
                             )}
+
+                            {sect.seo_content && (
+                              <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded">
+                                <h6 className="text-sm font-medium text-foreground mb-2">🔍 Contenu SEO</h6>
+                                {Object.entries(sect.seo_content).map(([seoKey, seoValue]: [string, any]) => (
+                                  <div key={seoKey} className="mb-2">
+                                    {renderField(section.id, `pages.${pageIndex}.sections.${sectIndex}.seo_content.${seoKey}`, 
+                                      Array.isArray(seoValue) ? seoValue.join(', ') : seoValue, 
+                                      `${seoKey.replace(/_/g, ' ')} →`)}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
                           </div>
                         ))}
                       </div>
@@ -325,8 +304,10 @@ const PlanDetailedView: React.FC<PlanDetailedViewProps> = ({
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-4">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-foreground mb-2">{plan.title || 'Plan détaillé'}</h1>
-        <p className="text-muted-foreground">{plan.description}</p>
+        <h1 className="text-2xl font-bold text-foreground mb-2">
+          {planData.documentation?.project_overview || 'Plan détaillé'}
+        </h1>
+        <p className="text-muted-foreground">Plan généré automatiquement</p>
       </div>
 
       <div className="space-y-2">

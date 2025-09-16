@@ -188,17 +188,203 @@ IMPORTANT: Si le contexte de conversation precedente contient deja ces informati
     }
 
     // Step 2: Generate comprehensive plan using new structure
-    const systemPrompt = `Vous etes un expert en planification de projets, architecture logicielle, etude de marche et design. Creez un plan ultra-detaille selon la structure universelle pour la creation d'un logiciel/SaaS/site web.
+    const systemPrompt = `🛠️ Prompt Système IA No-Code (version enrichie)
 
-IMPORTANT: Repondez uniquement avec un JSON valide, sans texte supplementaire. Tous les contenus textuels doivent etre en MARKDOWN avec syntaxe complete et des descriptions TRES DETAILLEES avec des prompts specifiques pour l'execution no-code.
+Tu es une IA experte en conception SaaS, spécialisée dans les environnements no-code / low-code comme Lovable.dev, Bolt, Replit, Base44.
+Ta mission est de produire un plan complet et structuré pour la création d'un logiciel SaaS.
 
-Structure universelle attendue (TOUS LES CHAMPS OBLIGATOIRES):
+Ce plan doit inclure :
+
+1. Documentation générale
+Résumé du projet SaaS (vision, mission, cible).
+Étude de marché :
+Taille du marché, tendances actuelles, croissance estimée.
+Profils types d'utilisateurs (personas).
+Opportunités et menaces.
+Analyse concurrentielle :
+Identification des concurrents directs et indirects.
+Analyse de leurs forces et faiblesses.
+Positionnement différenciateur de ton SaaS.
+Description globale du produit :
+Proposition de valeur unique (USP).
+Fonctionnalités clés et atouts.
+Cas d'usage principaux (use cases).
+Architecture générale : frontend, backend, API, DB, paiements, intégrations.
+Technologies par défaut : Supabase (DB & Edge Functions), Stripe (paiements), authentification OAuth + JWT.
+
+2. Plan d'implémentation
+Prompt de démarrage global à fournir à l'IA no-code.
+Liste des pages du SaaS (Landing Page, Dashboard, Profil utilisateur, Admin Panel, etc.).
+Pour chaque page :
+Prompt global de génération.
+Liste des sections.
+Pour chaque section :
+Modules fonctionnels.
+Contenu SEO optimisé (titres, metas, body).
+Prompt dédié à l'IA.
+Description fonctionnelle.
+
+3. Backend & Base de données
+Modèle de données complet (tables, colonnes, relations).
+Fonctions backend (auth, CRUD, analytics, notifications).
+Supabase Edge Functions par défaut.
+Paiements (Stripe) avec abonnements + webhooks.
+
+4. Plan de sécurité
+Règles RBAC (roles).
+Sécurisation API.
+Chiffrement.
+Défense XSS/CSRF/Injection.
+2FA optionnel.
+
+Pour chaque aspect, fournir un prompt IA + description technique.
+
+IMPORTANT: Repondez uniquement avec un JSON valide selon le format attendu ci-dessous, sans texte supplementaire.
+
+Format de réponse attendu (JSON)
+
 {
-  "title": "Titre du plan complet",
-  "description": "Description markdown du projet avec contexte detaille",
-  
-  "section1_vision_objectifs": {
-    "probleme_a_resoudre": "## Problème à résoudre\\n\\nPourquoi ce projet existe-t-il ?",
+"documentation": {
+"project_overview": "Résumé clair de la vision et des objectifs du SaaS.",
+"vision_objectives": {
+"vision": "Description de la vision long terme du produit.",
+"objectives": ["Objectif 1", "Objectif 2", "Objectif 3"]
+},
+"mvp": {
+"user_features": [
+"Inscription et authentification",
+"Recherche de véhicules par lieu/dates",
+"Réservation et paiement en ligne",
+"Tableau de bord réservations"
+],
+"admin_features": [
+"CRUD véhicules",
+"Gestion réservations",
+"Gestion utilisateurs",
+"Rapports simples"
+]
+},
+"advanced_features": [
+"Vérification d'identité / KYC",
+"Tarification dynamique",
+"Télématique (GPS, déverrouillage à distance)",
+"Programme fidélité & coupons",
+"Contrats électroniques signés",
+"Support chat IA intégré"
+],
+"market_study": {
+"market_size": "Estimation de la taille du marché et sa croissance.",
+"trends": ["Tendance 1", "Tendance 2"],
+"personas": [
+{
+"persona_name": "Nom du persona",
+"needs": "Besoins spécifiques",
+"pain_points": "Problèmes rencontrés"
+}
+],
+"opportunities": ["Opportunité 1", "Opportunité 2"],
+"threats": ["Menace 1", "Menace 2"]
+},
+"competitive_analysis": {
+"competitors": [
+{
+"name": "Nom du concurrent",
+"strengths": ["Atout 1", "Atout 2"],
+"weaknesses": ["Faiblesse 1", "Faiblesse 2"]
+}
+],
+"differentiation": "Facteurs différenciateurs de notre SaaS"
+},
+"product_description": {
+"unique_value_proposition": "Proposition de valeur unique (USP).",
+"key_features": ["Fonctionnalité 1", "Fonctionnalité 2"],
+"advantages": ["Avantage compétitif 1", "Avantage compétitif 2"],
+"use_cases": ["Cas d'usage 1", "Cas d'usage 2"]
+},
+"architecture": {
+"frontend": "React.js (Next.js) + React Native/Flutter pour mobile.",
+"backend": "Node.js (NestJS/Express) ou Python (FastAPI) avec Supabase Edge Functions.",
+"database": "PostgreSQL (relations, transactions), Redis (cache).",
+"payment_system": "Stripe (paiements, abonnements, webhooks).",
+"infra": "Docker/Kubernetes, CI/CD, monitoring (Grafana, Prometheus)."
+}
+},
+"implementation_plan": {
+"startup_prompt": "Prompt de démarrage global pour l'IA no-code.",
+"pages": [
+{
+"page_name": "Nom de la page",
+"description": "Description détaillée de la page et prompt",
+"prompt": "Prompt global pour générer cette page.",
+"sections": [
+{
+"section_name": "Nom de la section",
+"description": "Description fonctionnelle détaillée", 
+"prompt": "Prompt détaillé IA.",
+"modules": [
+{
+"module_name": "Nom du module",
+"description": "Description du module",
+"prompt": "Prompt pour ce module"
+}
+],
+"design": {
+"typographie": "Description de la typographie",
+"composants_reutilisables": ["Composant 1", "Composant 2"]
+},
+"seo_content": {
+"h1": "Titre principal optimisé",
+"h2": ["Sous-titre 1", "Sous-titre 2"],
+"meta_description": "Description meta optimisée",
+"body_text": "Texte SEO détaillé"
+},
+"contenus": {
+"cle1": "valeur1",
+"cle2": "valeur2"
+}
+}
+]
+}
+]
+},
+"backend_database": {
+"data_model": {
+"tables": [
+{
+"table_name": "nom_table",
+"columns": [
+{
+"name": "nom_colonne",
+"type": "type_donnée",
+"constraints": "contraintes"
+}
+],
+"relations": ["relation 1", "relation 2"]
+}
+]
+},
+"backend_functions": {
+"authentication": "Système d'auth avec Supabase",
+"crud_operations": ["Opération 1", "Opération 2"],
+"edge_functions": ["Function 1", "Function 2"]
+},
+"stripe_integration": {
+"subscriptions": "Gestion des abonnements",
+"webhooks": "Webhooks Stripe pour synchro"
+}
+},
+"security_plan": {
+"rbac": {
+"roles": ["Role 1", "Role 2"],
+"permissions": ["Permission 1", "Permission 2"]
+},
+"api_security": "Sécurisation des API",
+"data_protection": "Protection des données",
+"authentication": "2FA et sécurité auth"
+}
+}
+
+Génère un plan complet selon cette structure pour le projet demandé.
     "public_cible": "## Public cible (personas)\\n\\nPersonas détaillés avec démographie et comportements",
     "valeur_ajoutee": "## Valeur ajoutée\\n\\nPourquoi choisir ce produit ?",
     "objectifs_smart": "## Objectifs SMART\\n\\nObjectifs mesurables avec échéances"
@@ -554,24 +740,49 @@ RAPPEL: Retournez UNIQUEMENT le JSON valide, sans markdown, sans explication, sa
       throw new Error('Invalid plan format generated');
     }
 
-    // Save the plan to database
-    const { data: savedPlan, error: saveError } = await supabaseService
+    // Save or update the plan to database (upsert)
+    const { data: existingPlan } = await supabaseService
       .from('plans')
-      .insert({
-        user_id: userData.user.id,
-        project_id: projectId,
-        title: planData.title || 'Plan généré',
-        description: planData.description || '',
-        plan_data: planData,
-        status: 'draft'
-      })
-      .select()
+      .select('id')
+      .eq('project_id', projectId)
       .single();
 
-    if (saveError) {
-      console.error('Error saving plan:', saveError);
-      throw new Error('Failed to save plan');
+    let savedPlan;
+    if (existingPlan) {
+      // Update existing plan
+      const { data: updatedPlan, error: updateError } = await supabaseService
+        .from('plans')
+        .update({
+          plan_data: planData,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', existingPlan.id)
+        .select()
+        .single();
+
+      if (updateError) {
+        console.error('Error updating plan:', updateError);
+        throw new Error('Failed to update plan');
+      }
+      savedPlan = updatedPlan;
+    } else {
+      // Create new plan
+      const { data: newPlan, error: insertError } = await supabaseService
+        .from('plans')
+        .insert({
+          project_id: projectId,
+          plan_data: planData
+        })
+        .select()
+        .single();
+
+      if (insertError) {
+        console.error('Error creating plan:', insertError);
+        throw new Error('Failed to create plan');
+      }
+      savedPlan = newPlan;
     }
+
 
     // Record usage
     await supabaseService.rpc('record_usage', {

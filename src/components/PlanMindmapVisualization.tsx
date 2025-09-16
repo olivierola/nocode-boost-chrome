@@ -23,80 +23,47 @@ import ReactMarkdown from 'react-markdown';
 import '@xyflow/react/dist/style.css';
 
 interface MindmapPlanData {
-  title: string;
-  description: string;
-  mainIdea: {
-    concept: string;
-    vision: string;
-    mission: string;
-    valueProposition: string;
+  documentation?: {
+    project_overview: string;
+    vision_objectives?: any;
+    mvp?: any;
+    advanced_features?: any[];
+    market_study?: any;
+    competitive_analysis?: any;
+    product_description?: any;
+    architecture?: any;
   };
-  productSummary: {
-    overview: string;
-    targetAudience: string;
-    problemSolution: string;
-    businessModel: string;
-    mvpDefinition: string;
-  };
-  technicalDocumentation: {
-    architecture: string;
-    technologiesStack: any;
-    database: any;
-    apis: any[];
-  };
-  roadmap: {
-    totalDuration: string;
-    phases: any[];
-  };
-  features: Array<{
-    id: string;
-    title: string;
-    description: string;
-    priority: string;
-    complexity: string;
-    estimatedTime: string;
-    prompt: string;
-    subFeatures?: Array<{
-      id: string;
-      title: string;
+  implementation_plan?: {
+    startup_prompt: string;
+    pages: Array<{
+      page_name: string;
       description: string;
       prompt: string;
+      sections: Array<{
+        section_name: string;
+        description: string;
+        prompt: string;
+        modules: Array<{
+          module_name: string;
+          description: string;
+          prompt: string;
+        }>;
+        design?: any;
+        seo_content?: any;
+        contenus?: any;
+      }>;
     }>;
-    acceptanceCriteria: string[];
-  }>;
-  pages: Array<{
-    id: string;
-    name: string;
-    description: string;
-    sections: Array<{
-      id: string;
-      name: string;
-      description: string;
-      components: string[];
-    }>;
-    visualIdentity: any;
-  }>;
-  marketStudy: {
-    marketSize: string;
-    competitiveAnalysis: string;
-    targetSegments: string;
-    marketTrends: string;
-    entryBarriers: string;
   };
-  visualIdentity: any;
-  security: {
-    authentication: string;
-    dataProtection: string;
-    accessControl: string;
-    compliance: string;
-    bestPractices: string[];
+  backend_database?: {
+    data_model?: any;
+    backend_functions?: any;
+    stripe_integration?: any;
   };
-  startupPrompt: {
-    title: string;
-    initialSetup: string;
-    firstSteps: string;
-    developmentWorkflow: string;
-    deploymentGuide: string;
+  security_plan?: {
+    rbac?: any;
+    api_security?: string;
+    data_protection?: string;
+    authentication?: string;
   };
 }
 
@@ -259,26 +226,37 @@ export const PlanMindmapVisualization = ({ isOpen, onClose, data, onExecuteFeatu
       type: 'custom',
       position: { x: 0, y: 0 },
       data: {
-        title: data.title,
-        description: data.description,
+        title: data.documentation?.project_overview || 'Plan SaaS',
+        description: data.documentation?.project_overview || 'Plan de développement',
         type: 'main',
-        details: data.mainIdea
+        details: data.documentation
       }
     });
 
     // 2. Nœud startup prompt (première étape)
-    nodes.push({
-      id: 'startup',
-      type: 'custom',
-      position: { x: 0, y: -300 },
-      data: {
-        title: 'Prompt de Démarrage',
-        description: 'Initialisation du projet',
-        type: 'startup',
-        details: data.startupPrompt,
-        onExecute: () => onExecuteFeature?.(data.startupPrompt)
-      }
-    });
+    if (data.implementation_plan?.startup_prompt) {
+      nodes.push({
+        id: 'startup',
+        type: 'custom',
+        position: { x: 0, y: -300 },
+        data: {
+          title: 'Prompt de Démarrage',
+          description: 'Initialisation du projet',
+          type: 'startup',
+          details: { startup_prompt: data.implementation_plan.startup_prompt },
+          onExecute: () => onExecuteFeature?.(data.implementation_plan?.startup_prompt)
+        }
+      });
+
+      edges.push({
+        id: 'startup-main',
+        source: 'startup',
+        target: 'main',
+        type: 'smoothstep',
+        style: { stroke: '#10b981', strokeWidth: 3 },
+        label: 'Initialise'
+      });
+    }
 
     // Connexion startup -> main
     edges.push({
@@ -293,39 +271,18 @@ export const PlanMindmapVisualization = ({ isOpen, onClose, data, onExecuteFeatu
     // 3. Branches principales autour du centre
     const mainBranches = [
       { 
-        id: 'product', 
-        title: 'Résumé Produit', 
+        id: 'documentation', 
+        title: 'Documentation', 
         type: 'product', 
         position: { x: -400, y: -150 },
-        details: data.productSummary 
+        details: data.documentation 
       },
       { 
-        id: 'market', 
-        title: 'Étude de Marché', 
-        type: 'market', 
-        position: { x: 400, y: -150 },
-        details: data.marketStudy 
-      },
-      { 
-        id: 'technical', 
-        title: 'Documentation Technique', 
+        id: 'backend', 
+        title: 'Backend & DB', 
         type: 'technical', 
         position: { x: -400, y: 150 },
-        details: data.technicalDocumentation 
-      },
-      { 
-        id: 'roadmap', 
-        title: 'Roadmap', 
-        type: 'roadmap', 
-        position: { x: 400, y: 150 },
-        details: data.roadmap 
-      },
-      { 
-        id: 'features', 
-        title: 'Fonctionnalités', 
-        type: 'features', 
-        position: { x: -600, y: 0 },
-        details: { title: 'Fonctionnalités principales' } 
+        details: data.backend_database 
       },
       { 
         id: 'pages', 
@@ -335,18 +292,11 @@ export const PlanMindmapVisualization = ({ isOpen, onClose, data, onExecuteFeatu
         details: { title: 'Pages du site' } 
       },
       { 
-        id: 'visual', 
-        title: 'Identité Visuelle', 
-        type: 'visual', 
-        position: { x: 0, y: 300 },
-        details: data.visualIdentity 
-      },
-      { 
         id: 'security', 
         title: 'Sécurité', 
         type: 'security', 
         position: { x: 0, y: -600 },
-        details: data.security 
+        details: data.security_plan 
       }
     ];
 

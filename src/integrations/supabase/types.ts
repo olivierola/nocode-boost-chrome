@@ -266,84 +266,24 @@ export type Database = {
       plans: {
         Row: {
           created_at: string
-          description: string | null
           id: string
-          mindmap_data: Json | null
-          plan_data: Json | null
-          plan_type: string | null
+          plan_data: Json
           project_id: string
-          section1_vision_objectifs: Json | null
-          section10_deploiement: Json | null
-          section11_business_monetisation: Json | null
-          section12_securite_rgpd: Json | null
-          section13_lancement_growth: Json | null
-          section14_evolution_maintenance: Json | null
-          section2_analyse_recherche: Json | null
-          section3_cahier_charges: Json | null
-          section4_architecture_produit: Json | null
-          section5_architecture_application: Json | null
-          section6_design_ux: Json | null
-          section7_plan_technique: Json | null
-          section8_roadmap_gestion: Json | null
-          section9_tests_qualite: Json | null
-          status: string | null
-          title: string | null
           updated_at: string
-          user_id: string | null
         }
         Insert: {
           created_at?: string
-          description?: string | null
           id?: string
-          mindmap_data?: Json | null
-          plan_data?: Json | null
-          plan_type?: string | null
+          plan_data?: Json
           project_id: string
-          section1_vision_objectifs?: Json | null
-          section10_deploiement?: Json | null
-          section11_business_monetisation?: Json | null
-          section12_securite_rgpd?: Json | null
-          section13_lancement_growth?: Json | null
-          section14_evolution_maintenance?: Json | null
-          section2_analyse_recherche?: Json | null
-          section3_cahier_charges?: Json | null
-          section4_architecture_produit?: Json | null
-          section5_architecture_application?: Json | null
-          section6_design_ux?: Json | null
-          section7_plan_technique?: Json | null
-          section8_roadmap_gestion?: Json | null
-          section9_tests_qualite?: Json | null
-          status?: string | null
-          title?: string | null
           updated_at?: string
-          user_id?: string | null
         }
         Update: {
           created_at?: string
-          description?: string | null
           id?: string
-          mindmap_data?: Json | null
-          plan_data?: Json | null
-          plan_type?: string | null
+          plan_data?: Json
           project_id?: string
-          section1_vision_objectifs?: Json | null
-          section10_deploiement?: Json | null
-          section11_business_monetisation?: Json | null
-          section12_securite_rgpd?: Json | null
-          section13_lancement_growth?: Json | null
-          section14_evolution_maintenance?: Json | null
-          section2_analyse_recherche?: Json | null
-          section3_cahier_charges?: Json | null
-          section4_architecture_produit?: Json | null
-          section5_architecture_application?: Json | null
-          section6_design_ux?: Json | null
-          section7_plan_technique?: Json | null
-          section8_roadmap_gestion?: Json | null
-          section9_tests_qualite?: Json | null
-          status?: string | null
-          title?: string | null
           updated_at?: string
-          user_id?: string | null
         }
         Relationships: [
           {
