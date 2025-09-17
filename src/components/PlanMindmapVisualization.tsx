@@ -23,6 +23,26 @@ import ReactMarkdown from 'react-markdown';
 import '@xyflow/react/dist/style.css';
 
 interface MindmapPlanData {
+  title?: string;
+  description?: string;
+  features?: Array<{
+    id: string;
+    title: string;
+    description: string;
+    priority?: string;
+    complexity?: string;
+    estimatedTime?: string;
+    subFeatures?: Array<{
+      id: string;
+      title: string;
+      description: string;
+    }>;
+  }>;
+  pages?: Array<{
+    id: string;
+    name: string;
+    description: string;
+  }>;
   documentation?: {
     project_overview: string;
     vision_objectives?: any;
@@ -215,6 +235,16 @@ const nodeTypes = {
 export const PlanMindmapVisualization = ({ isOpen, onClose, data, onExecuteFeature }: PlanMindmapVisualizationProps) => {
   const [selectedNode, setSelectedNode] = useState<any>(null);
 
+  // Extract data with fallbacks
+  const title = data.title || data.documentation?.project_overview || 'Plan SaaS';
+  const description = data.description || 'Plan de développement';
+  const features = data.features || [];
+  const pages = data.pages || data.implementation_plan?.pages?.map(p => ({
+    id: p.page_name.toLowerCase().replace(/\s+/g, '-'),
+    name: p.page_name,
+    description: p.description
+  })) || [];
+
   // Génération intelligente des nœuds et arêtes avec hiérarchie améliorée
   const { initialNodes, initialEdges } = useMemo(() => {
     const nodes: Node[] = [];
@@ -226,8 +256,8 @@ export const PlanMindmapVisualization = ({ isOpen, onClose, data, onExecuteFeatu
       type: 'custom',
       position: { x: 0, y: 0 },
       data: {
-        title: data.documentation?.project_overview || 'Plan SaaS',
-        description: data.documentation?.project_overview || 'Plan de développement',
+        title,
+        description,
         type: 'main',
         details: data.documentation
       }
@@ -322,8 +352,8 @@ export const PlanMindmapVisualization = ({ isOpen, onClose, data, onExecuteFeatu
     });
 
     // 4. Features individuelles avec sous-features
-    data.features.forEach((feature, index) => {
-      const angle = ((index * (360 / data.features.length)) - 90) * (Math.PI / 180);
+    features.forEach((feature, index) => {
+      const angle = ((index * (360 / features.length)) - 90) * (Math.PI / 180);
       const radius = 300;
       const x = -600 + Math.cos(angle) * radius;
       const y = 0 + Math.sin(angle) * radius;
@@ -388,8 +418,8 @@ export const PlanMindmapVisualization = ({ isOpen, onClose, data, onExecuteFeatu
     });
 
     // 5. Pages avec leurs sections
-    data.pages.forEach((page, index) => {
-      const angle = ((index * (360 / data.pages.length)) - 90) * (Math.PI / 180);
+    pages.forEach((page, index) => {
+      const angle = ((index * (360 / pages.length)) - 90) * (Math.PI / 180);
       const radius = 250;
       const x = 600 + Math.cos(angle) * radius;
       const y = 0 + Math.sin(angle) * radius;
@@ -468,15 +498,15 @@ export const PlanMindmapVisualization = ({ isOpen, onClose, data, onExecuteFeatu
             <div className="absolute top-4 left-4 right-4 flex items-center justify-between bg-white/95 backdrop-blur-sm rounded-lg p-4 shadow-lg border">
               <div>
                 <h2 className="text-xl font-bold flex items-center gap-2">
-                  🧠 {data.title}
+                  🧠 {title}
                 </h2>
-                <p className="text-sm text-muted-foreground">{data.description}</p>
+                <p className="text-sm text-muted-foreground">{description}</p>
                 <div className="flex gap-2 mt-2">
                   <Badge variant="outline">
-                    {data.features.length} features
+                    {features.length} features
                   </Badge>
                   <Badge variant="outline">
-                    {data.pages.length} pages
+                    {pages.length} pages
                   </Badge>
                 </div>
               </div>
