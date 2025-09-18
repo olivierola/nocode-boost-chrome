@@ -4,9 +4,12 @@ import { Card } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { supabase } from '@/integrations/supabase/client';
+import { useProjectContext } from '@/hooks/useProjectContext';
 import { 
   Play, 
   Download, 
@@ -15,7 +18,10 @@ import {
   Bot, 
   MessageSquare,
   Code,
-  Zap
+  Zap,
+  CheckCircle,
+  AlertCircle,
+  Clock
 } from 'lucide-react';
 
 interface PlatformConfig {
@@ -27,6 +33,21 @@ interface PlatformConfig {
   inputSelector: string;
 }
 
+interface PlanStep {
+  id: string;
+  title: string;
+  prompt: string;
+  completed: boolean;
+  details?: string;
+}
+
+interface Plan {
+  id: string;
+  title: string;
+  description: string;
+  steps: PlanStep[];
+}
+
 interface AutomationResponse {
   id: string;
   platform: string;
@@ -34,6 +55,13 @@ interface AutomationResponse {
   response: string;
   timestamp: Date;
   status: 'pending' | 'completed' | 'error';
+  stepId?: string;
+  analysisResult?: {
+    shouldContinue: boolean;
+    needsCorrection: boolean;
+    correctionPrompt?: string;
+    suggestion: string;
+  };
 }
 
 const SUPPORTED_PLATFORMS: PlatformConfig[] = [
@@ -81,18 +109,170 @@ const SUPPORTED_PLATFORMS: PlatformConfig[] = [
 
 export const AutomationScript = () => {
   const { toast } = useToast();
+  const { selectedProject } = useProjectContext();
   const [isActive, setIsActive] = useState(false);
   const [currentPlatform, setCurrentPlatform] = useState<string>('');
-  const [predefinedPrompts, setPredefinedPrompts] = useState<string[]>([
-    'Crée une landing page moderne avec un design épuré',
-    'Développe un dashboard administrateur avec des graphiques',
-    'Génère un système d\'authentification complet',
-    'Crée une API REST avec documentation Swagger'
-  ]);
-  const [newPrompt, setNewPrompt] = useState('');
+  const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
+  const [plans, setPlans] = useState<Plan[]>([]);
+  const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [responses, setResponses] = useState<AutomationResponse[]>([]);
-  const [isInjecting, setIsInjecting] = useState(false);
+  const [isExecuting, setIsExecuting] = useState(false);
   const [autoMode, setAutoMode] = useState(false);
+
+  // Chargement des plans depuis Supabase
+  useEffect(() => {
+    const loadPlans = async () => {
+      if (!selectedProject?.id) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('plans')
+          .select('*')
+          .eq('project_id', selectedProject.id)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        const formattedPlans: Plan[] = data?.map(plan => {
+          const planData = plan.plan_data as any;
+          return {
+            id: plan.id,
+            title: planData?.title || 'Plan sans titre',
+            description: planData?.description || '',
+            steps: planData?.steps?.map((step: any, index: number) => ({
+              id: `${plan.id}-${index}`,
+              title: step.title || step.nom || `Étape ${index + 1}`,
+              prompt: step.prompt || step.description || step.details || '',
+              completed: false,
+              details: step.details || step.description
+            })) || []
+          };
+        }) || [];
+
+        setPlans(formattedPlans);
+      } catch (error) {
+        console.error('Erreur lors du chargement des plans:', error);
+        toast({
+          title: "Erreur",
+          description: "Impossible de charger les plans",
+          variant: "destructive",
+        });
+      }
+    };
+
+    loadPlans();
+  }, [selectedProject?.id]);
+
+  // Analyse de la réponse IA et décision de progression
+  const analyzeResponse = async (response: string, stepIndex: number) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('analyze-response', {
+        body: {
+          response,
+          context: 'response_analysis',
+          stepIndex
+        }
+      });
+
+      if (error) throw error;
+
+      return data;
+    } catch (error) {
+      console.error('Erreur lors de l\'analyse:', error);
+      return {
+        shouldContinue: true,
+        needsCorrection: false,
+        suggestion: 'Analyse automatique échouée, progression manuelle requise'
+      };
+    }
+  };
+
+  // Exécution automatique du plan
+  const executeNextStep = async () => {
+    if (!selectedPlan || currentStepIndex >= selectedPlan.steps.length) return;
+
+    const currentStep = selectedPlan.steps[currentStepIndex];
+    setIsExecuting(true);
+
+    try {
+      // Injection du prompt de l'étape actuelle
+      const response = await new Promise((resolve, reject) => {
+        // Communication avec le script injecté
+        if (typeof window !== 'undefined' && (window as any).automationScript) {
+          (window as any).automationScript.automate(currentStep.prompt, (result: any) => {
+            if (result.success) {
+              resolve(result.response);
+            } else {
+              reject(new Error(result.error));
+            }
+          });
+        } else {
+          reject(new Error('Script d\'automatisation non actif'));
+        }
+      });
+
+      // Créer une réponse d'automatisation
+      const automationResponse: AutomationResponse = {
+        id: Date.now().toString(),
+        platform: currentPlatform || 'Unknown',
+        prompt: currentStep.prompt,
+        response: response as string,
+        timestamp: new Date(),
+        status: 'completed',
+        stepId: currentStep.id
+      };
+
+      // Analyser la réponse
+      const analysis = await analyzeResponse(response as string, currentStepIndex);
+      automationResponse.analysisResult = analysis;
+
+      setResponses(prev => [...prev, automationResponse]);
+
+      // Décider de la suite
+      if (analysis.shouldContinue) {
+        // Marquer l'étape comme terminée
+        setSelectedPlan(prev => {
+          if (!prev) return null;
+          const updatedSteps = [...prev.steps];
+          updatedSteps[currentStepIndex].completed = true;
+          return { ...prev, steps: updatedSteps };
+        });
+
+        // Passer à l'étape suivante
+        if (currentStepIndex + 1 < selectedPlan.steps.length) {
+          setCurrentStepIndex(prev => prev + 1);
+          
+          if (autoMode) {
+            // Continuer automatiquement après un délai
+            setTimeout(() => executeNextStep(), 3000);
+          }
+        } else {
+          // Plan terminé
+          toast({
+            title: "Plan terminé",
+            description: "Toutes les étapes ont été exécutées avec succès",
+          });
+        }
+      } else if (analysis.needsCorrection && analysis.correctionPrompt) {
+        // Réessayer avec le prompt de correction
+        toast({
+          title: "Correction nécessaire",
+          description: analysis.suggestion,
+          variant: "destructive",
+        });
+      }
+
+    } catch (error) {
+      console.error('Erreur lors de l\'exécution:', error);
+      toast({
+        title: "Erreur d'exécution",
+        description: error instanceof Error ? error.message : "Erreur inconnue",
+        variant: "destructive",
+      });
+    } finally {
+      setIsExecuting(false);
+    }
+  };
 
   // Génération du script d'injection
   const generateInjectionScript = () => {
@@ -340,13 +520,6 @@ export const AutomationScript = () => {
     }
   };
 
-  // Ajout d'un prompt prédéfini
-  const addPredefinedPrompt = () => {
-    if (newPrompt.trim()) {
-      setPredefinedPrompts([...predefinedPrompts, newPrompt]);
-      setNewPrompt('');
-    }
-  };
 
   // Téléchargement du script en tant que bookmarklet
   const downloadBookmarklet = () => {
@@ -373,7 +546,7 @@ export const AutomationScript = () => {
             <div>
               <h2 className="text-2xl font-bold">Automation Script</h2>
               <p className="text-muted-foreground">
-                Automatisation pour outils no-code (Bolt, Replit, V0, etc.)
+                Automatisation intelligente pour outils no-code
               </p>
             </div>
           </div>
@@ -399,13 +572,223 @@ export const AutomationScript = () => {
           </div>
         </div>
 
-        <Tabs defaultValue="platforms" className="w-full">
+        <Tabs defaultValue="plans" className="w-full">
           <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="platforms">Plateformes</TabsTrigger>
-            <TabsTrigger value="prompts">Prompts</TabsTrigger>
+            <TabsTrigger value="plans">Plans</TabsTrigger>
+            <TabsTrigger value="execution">Exécution</TabsTrigger>
             <TabsTrigger value="responses">Réponses</TabsTrigger>
-            <TabsTrigger value="config">Config</TabsTrigger>
+            <TabsTrigger value="platforms">Plateformes</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="plans" className="space-y-4">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">Sélectionner un plan</h3>
+                <Badge variant="outline">
+                  {plans.length} plan(s) disponible(s)
+                </Badge>
+              </div>
+              
+              <Select
+                value={selectedPlan?.id || ''}
+                onValueChange={(value) => {
+                  const plan = plans.find(p => p.id === value);
+                  setSelectedPlan(plan || null);
+                  setCurrentStepIndex(0);
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Choisir un plan à automatiser..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {plans.map((plan) => (
+                    <SelectItem key={plan.id} value={plan.id}>
+                      {plan.title} ({plan.steps.length} étapes)
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {selectedPlan && (
+                <Card className="p-4">
+                  <h4 className="font-semibold mb-2">{selectedPlan.title}</h4>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    {selectedPlan.description}
+                  </p>
+                  
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">Étapes du plan:</p>
+                    {selectedPlan.steps.map((step, index) => (
+                      <div key={step.id} className="flex items-center gap-2 p-2 bg-muted rounded">
+                        {step.completed ? (
+                          <CheckCircle className="w-4 h-4 text-green-500" />
+                        ) : index === currentStepIndex ? (
+                          <Clock className="w-4 h-4 text-blue-500" />
+                        ) : (
+                          <div className="w-4 h-4 rounded-full border-2 border-muted-foreground" />
+                        )}
+                        <span className="text-sm">{step.title}</span>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="execution" className="space-y-4">
+            {selectedPlan ? (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold">Exécution du plan</h3>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={executeNextStep}
+                      disabled={isExecuting || currentStepIndex >= selectedPlan.steps.length}
+                      className="flex items-center gap-2"
+                    >
+                      <Play className="w-4 h-4" />
+                      {isExecuting ? 'En cours...' : 'Exécuter étape'}
+                    </Button>
+                    
+                    <Button
+                      variant="outline"
+                      onClick={() => setAutoMode(!autoMode)}
+                      className="flex items-center gap-2"
+                    >
+                      <Settings className="w-4 h-4" />
+                      {autoMode ? 'Mode auto ON' : 'Mode auto OFF'}
+                    </Button>
+                  </div>
+                </div>
+
+                <Card className="p-4">
+                  <div className="mb-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-sm font-medium">Progression:</span>
+                      <Badge variant="outline">
+                        {currentStepIndex + 1} / {selectedPlan.steps.length}
+                      </Badge>
+                    </div>
+                    <div className="w-full bg-muted rounded-full h-2">
+                      <div 
+                        className="bg-primary h-2 rounded-full transition-all duration-300"
+                        style={{ 
+                          width: `${((currentStepIndex) / selectedPlan.steps.length) * 100}%` 
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  {currentStepIndex < selectedPlan.steps.length && (
+                    <div className="space-y-3">
+                      <h4 className="font-semibold">
+                        Étape actuelle: {selectedPlan.steps[currentStepIndex].title}
+                      </h4>
+                      <div className="bg-muted p-3 rounded">
+                        <p className="text-sm">
+                          <strong>Prompt:</strong> {selectedPlan.steps[currentStepIndex].prompt}
+                        </p>
+                      </div>
+                      {selectedPlan.steps[currentStepIndex].details && (
+                        <div className="bg-blue-50 p-3 rounded border border-blue-200">
+                          <p className="text-sm text-blue-800">
+                            <strong>Détails:</strong> {selectedPlan.steps[currentStepIndex].details}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {currentStepIndex >= selectedPlan.steps.length && (
+                    <div className="text-center py-8">
+                      <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-4" />
+                      <h4 className="font-semibold text-green-700">Plan terminé!</h4>
+                      <p className="text-sm text-muted-foreground">
+                        Toutes les étapes ont été exécutées avec succès.
+                      </p>
+                    </div>
+                  )}
+                </Card>
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <Bot className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                <p>Sélectionnez un plan dans l'onglet "Plans" pour commencer l'automatisation</p>
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="responses" className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold">Réponses d'automatisation</h3>
+              <Badge variant="outline">
+                {responses.length} réponse(s)
+              </Badge>
+            </div>
+
+            <ScrollArea className="h-96">
+              <div className="space-y-4">
+                {responses.map((response) => (
+                  <Card key={response.id} className="p-4">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <MessageSquare className="w-4 h-4" />
+                        <span className="font-medium">{response.platform}</span>
+                        <Badge 
+                          variant={
+                            response.status === 'completed' ? 'default' :
+                            response.status === 'error' ? 'destructive' : 'secondary'
+                          }
+                        >
+                          {response.status}
+                        </Badge>
+                        {response.analysisResult && (
+                          <Badge 
+                            variant={response.analysisResult.shouldContinue ? 'default' : 'destructive'}
+                          >
+                            {response.analysisResult.shouldContinue ? 'Continuer' : 'Arrêter'}
+                          </Badge>
+                        )}
+                      </div>
+                      <span className="text-xs text-muted-foreground">
+                        {response.timestamp.toLocaleTimeString()}
+                      </span>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <div>
+                        <p className="text-xs font-medium text-muted-foreground">Prompt:</p>
+                        <p className="text-sm">{response.prompt}</p>
+                      </div>
+                      {response.response && (
+                        <div>
+                          <p className="text-xs font-medium text-muted-foreground">Réponse:</p>
+                          <p className="text-sm bg-muted p-2 rounded">
+                            {response.response.substring(0, 300)}
+                            {response.response.length > 300 && '...'}
+                          </p>
+                        </div>
+                      )}
+                      {response.analysisResult && (
+                        <div className="bg-blue-50 p-2 rounded border border-blue-200">
+                          <p className="text-xs font-medium text-blue-800">Analyse IA:</p>
+                          <p className="text-xs text-blue-700">{response.analysisResult.suggestion}</p>
+                        </div>
+                      )}
+                    </div>
+                  </Card>
+                ))}
+                
+                {responses.length === 0 && (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <MessageSquare className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <p>Aucune réponse récupérée pour le moment</p>
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
+          </TabsContent>
 
           <TabsContent value="platforms" className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -429,147 +812,6 @@ export const AutomationScript = () => {
                 </Card>
               ))}
             </div>
-          </TabsContent>
-
-          <TabsContent value="prompts" className="space-y-4">
-            <div className="flex gap-2">
-              <Input
-                placeholder="Nouveau prompt prédéfini..."
-                value={newPrompt}
-                onChange={(e) => setNewPrompt(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && addPredefinedPrompt()}
-              />
-              <Button onClick={addPredefinedPrompt}>
-                Ajouter
-              </Button>
-            </div>
-
-            <ScrollArea className="h-96">
-              <div className="space-y-3">
-                {predefinedPrompts.map((prompt, index) => (
-                  <Card key={index} className="p-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <p className="text-sm flex-1">{prompt}</p>
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => {
-                            // Injection automatique du prompt
-                            if (isActive) {
-                              setIsInjecting(true);
-                              // Simulation de l'injection
-                              setTimeout(() => setIsInjecting(false), 2000);
-                            }
-                          }}
-                        >
-                          <Play className="w-3 h-3" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => {
-                            const newPrompts = predefinedPrompts.filter((_, i) => i !== index);
-                            setPredefinedPrompts(newPrompts);
-                          }}
-                        >
-                          ✕
-                        </Button>
-                      </div>
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            </ScrollArea>
-          </TabsContent>
-
-          <TabsContent value="responses" className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">Réponses récupérées</h3>
-              <Badge variant="outline">
-                {responses.length} réponses
-              </Badge>
-            </div>
-
-            <ScrollArea className="h-96">
-              <div className="space-y-4">
-                {responses.map((response) => (
-                  <Card key={response.id} className="p-4">
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-center gap-2">
-                        <MessageSquare className="w-4 h-4" />
-                        <span className="font-medium">{response.platform}</span>
-                        <Badge 
-                          variant={
-                            response.status === 'completed' ? 'default' :
-                            response.status === 'error' ? 'destructive' : 'secondary'
-                          }
-                        >
-                          {response.status}
-                        </Badge>
-                      </div>
-                      <span className="text-xs text-muted-foreground">
-                        {response.timestamp.toLocaleTimeString()}
-                      </span>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <div>
-                        <p className="text-xs font-medium text-muted-foreground">Prompt:</p>
-                        <p className="text-sm">{response.prompt}</p>
-                      </div>
-                      {response.response && (
-                        <div>
-                          <p className="text-xs font-medium text-muted-foreground">Réponse:</p>
-                          <p className="text-sm bg-muted p-2 rounded">
-                            {response.response.substring(0, 200)}...
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  </Card>
-                ))}
-                
-                {responses.length === 0 && (
-                  <div className="text-center py-8 text-muted-foreground">
-                    Aucune réponse récupérée pour le moment
-                  </div>
-                )}
-              </div>
-            </ScrollArea>
-          </TabsContent>
-
-          <TabsContent value="config" className="space-y-4">
-            <Card className="p-4">
-              <h3 className="font-semibold mb-4">Configuration</h3>
-              
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Mode automatique</p>
-                    <p className="text-sm text-muted-foreground">
-                      Récupération automatique des réponses
-                    </p>
-                  </div>
-                  <Button
-                    variant={autoMode ? "default" : "outline"}
-                    onClick={() => setAutoMode(!autoMode)}
-                  >
-                    {autoMode ? "Activé" : "Désactivé"}
-                  </Button>
-                </div>
-                
-                <div className="space-y-2">
-                  <p className="font-medium">Instructions d'installation</p>
-                  <div className="bg-muted p-3 rounded text-sm">
-                    <p className="mb-2">1. Cliquez sur "Activer" ou téléchargez le bookmarklet</p>
-                    <p className="mb-2">2. Naviguez vers Bolt.new, Replit, V0, etc.</p>
-                    <p className="mb-2">3. Le script détectera automatiquement la plateforme</p>
-                    <p>4. Utilisez les prompts prédéfinis ou injectez vos propres prompts</p>
-                  </div>
-                </div>
-              </div>
-            </Card>
           </TabsContent>
         </Tabs>
       </Card>
