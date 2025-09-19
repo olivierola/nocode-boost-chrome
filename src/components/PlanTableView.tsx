@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import PlanStepCards from '@/components/ui/plan-step-cards';
+import EditStepDialog from '@/components/ui/edit-step-dialog';
 
 interface ProjectPlan {
   id: string;
@@ -51,6 +53,9 @@ interface PlanTableViewProps {
 }
 
 export const PlanTableView: React.FC<PlanTableViewProps> = ({ plan, onExecuteFeature }) => {
+  const [editingStep, setEditingStep] = useState<any>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'completed': return 'bg-green-500/20 text-green-700 dark:text-green-400';
@@ -69,6 +74,89 @@ export const PlanTableView: React.FC<PlanTableViewProps> = ({ plan, onExecuteFea
     }
   };
 
+  // Convert plan data to step format
+  const convertPlanToSteps = () => {
+    const steps: any[] = [];
+    
+    // Add features as implementation steps
+    if (plan.features) {
+      plan.features.forEach((feature, index) => {
+        steps.push({
+          id: `feature-${index}`,
+          title: feature.name,
+          description: feature.description,
+          prompt: feature.prompt || '',
+          type: 'implementation',
+          status: 'pending'
+        });
+
+        // Add sub-features
+        if (feature.sub_features) {
+          feature.sub_features.forEach((subFeature, subIndex) => {
+            steps.push({
+              id: `subfeature-${index}-${subIndex}`,
+              title: subFeature.name,
+              description: subFeature.description,
+              prompt: subFeature.prompt || '',
+              type: 'implementation',
+              status: 'pending'
+            });
+          });
+        }
+      });
+    }
+
+    // Add pages as documentation steps
+    if (plan.pages) {
+      plan.pages.forEach((page, index) => {
+        steps.push({
+          id: `page-${index}`,
+          title: page.name,
+          description: page.description,
+          prompt: page.prompt || '',
+          type: 'documentation',
+          status: 'pending'
+        });
+      });
+    }
+
+    // Add plan steps
+    if (plan.steps) {
+      plan.steps.forEach((step, index) => {
+        steps.push({
+          id: step.id || `step-${index}`,
+          title: step.title,
+          description: step.description,
+          prompt: '',
+          type: 'implementation',
+          status: step.status
+        });
+      });
+    }
+
+    return steps;
+  };
+
+  const handleEditStep = (step: any) => {
+    setEditingStep(step);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleSaveStep = (updatedStep: any) => {
+    // Here you would typically update the plan in your state/database
+    console.log('Saving step:', updatedStep);
+    setIsEditDialogOpen(false);
+    setEditingStep(null);
+  };
+
+  const handleExecuteStep = (step: any) => {
+    if (onExecuteFeature) {
+      onExecuteFeature(step);
+    }
+  };
+
+  const steps = convertPlanToSteps();
+
   return (
     <div className="space-y-6">
       {/* Plan Header */}
@@ -83,6 +171,18 @@ export const PlanTableView: React.FC<PlanTableViewProps> = ({ plan, onExecuteFea
           )}
         </CardHeader>
       </Card>
+
+      {/* Plan Steps as Shader Cards */}
+      {steps.length > 0 && (
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold">Étapes du plan</h3>
+          <PlanStepCards 
+            steps={steps}
+            onEditStep={handleEditStep}
+            onExecuteStep={handleExecuteStep}
+          />
+        </div>
+      )}
 
       {/* Features Cards */}
       {plan.features && plan.features.length > 0 && (
@@ -228,6 +328,14 @@ export const PlanTableView: React.FC<PlanTableViewProps> = ({ plan, onExecuteFea
           </Card>
         </div>
       )}
+
+      {/* Edit Step Dialog */}
+      <EditStepDialog
+        open={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
+        step={editingStep}
+        onSave={handleSaveStep}
+      />
     </div>
   );
 };
