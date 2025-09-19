@@ -133,21 +133,21 @@ export const AutomationScript = () => {
 
         if (error) throw error;
 
-        const formattedPlans: Plan[] = data?.map(plan => {
-          const planData = plan.plan_data as any;
+        const formattedPlans: Plan[] = data && Array.isArray(data) ? data.map(plan => {
+          const planData = plan?.plan_data as any;
           return {
-            id: plan.id,
+            id: plan?.id || '',
             title: planData?.title || 'Plan sans titre',
             description: planData?.description || '',
-            steps: planData?.steps?.map((step: any, index: number) => ({
-              id: `${plan.id}-${index}`,
-              title: step.title || step.nom || `Étape ${index + 1}`,
-              prompt: step.prompt || step.description || step.details || '',
+            steps: planData?.steps && Array.isArray(planData.steps) ? planData.steps.map((step: any, index: number) => ({
+              id: `${plan?.id || 'unknown'}-${index}`,
+              title: step?.title || step?.nom || `Étape ${index + 1}`,
+              prompt: step?.prompt || step?.description || step?.details || '',
               completed: false,
-              details: step.details || step.description
-            })) || []
+              details: step?.details || step?.description
+            })) : []
           };
-        }) || [];
+        }) : [];
 
         setPlans(formattedPlans);
       } catch (error) {
@@ -900,11 +900,11 @@ export const AutomationScript = () => {
                   <SelectValue placeholder="Choisir un plan à automatiser..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {plans.map((plan) => (
-                    <SelectItem key={plan.id} value={plan.id}>
-                      {plan.title} ({plan.steps.length} étapes)
+                  {Array.isArray(plans) ? plans.map((plan) => (
+                    <SelectItem key={plan?.id || 'unknown'} value={plan?.id || ''}>
+                      {plan?.title || 'Plan sans nom'} ({plan?.steps?.length || 0} étapes)
                     </SelectItem>
-                  ))}
+                  )) : []}
                 </SelectContent>
               </Select>
 
@@ -917,18 +917,18 @@ export const AutomationScript = () => {
                   
                   <div className="space-y-2">
                     <p className="text-sm font-medium">Étapes du plan:</p>
-                    {selectedPlan.steps.map((step, index) => (
-                      <div key={step.id} className="flex items-center gap-2 p-2 bg-muted rounded">
-                        {step.completed ? (
+                    {Array.isArray(selectedPlan?.steps) ? selectedPlan.steps.map((step, index) => (
+                      <div key={step?.id || `step-${index}`} className="flex items-center gap-2 p-2 bg-muted rounded">
+                        {step?.completed ? (
                           <CheckCircle className="w-4 h-4 text-green-500" />
                         ) : index === currentStepIndex ? (
                           <Clock className="w-4 h-4 text-blue-500" />
                         ) : (
                           <div className="w-4 h-4 rounded-full border-2 border-muted-foreground" />
                         )}
-                        <span className="text-sm">{step.title}</span>
+                        <span className="text-sm">{step?.title || `Étape ${index + 1}`}</span>
                       </div>
-                    ))}
+                    )) : []}
                   </div>
                 </Card>
               )}
@@ -1028,7 +1028,7 @@ export const AutomationScript = () => {
 
             <ScrollArea className="h-96">
               <div className="space-y-4">
-                {responses.map((response) => (
+                {Array.isArray(responses) ? responses.map((response) => (
                   <Card key={response.id} className="p-4">
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center gap-2">
@@ -1077,9 +1077,9 @@ export const AutomationScript = () => {
                       )}
                     </div>
                   </Card>
-                ))}
+                )) : []}
                 
-                {responses.length === 0 && (
+                {(!responses || responses.length === 0) && (
                   <div className="text-center py-8 text-muted-foreground">
                     <MessageSquare className="w-12 h-12 mx-auto mb-4 opacity-50" />
                     <p>Aucune réponse récupérée pour le moment</p>
@@ -1091,7 +1091,7 @@ export const AutomationScript = () => {
 
           <TabsContent value="platforms" className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {SUPPORTED_PLATFORMS.map((platform) => (
+              {Array.isArray(SUPPORTED_PLATFORMS) ? SUPPORTED_PLATFORMS.map((platform) => (
                 <Card key={platform.domain} className="p-4">
                   <div className="flex items-center gap-3 mb-3">
                     <Code className="w-5 h-5 text-primary" />
@@ -1109,7 +1109,7 @@ export const AutomationScript = () => {
                     </Badge>
                   </div>
                 </Card>
-              ))}
+              )) : []}
             </div>
           </TabsContent>
         </Tabs>
