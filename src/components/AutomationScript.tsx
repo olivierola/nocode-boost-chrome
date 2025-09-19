@@ -274,11 +274,18 @@ export const AutomationScript = () => {
     }
   };
 
-  // Génération du script d'injection
+  // Génération du script d'injection avancé avec surveillance en arrière-plan
   const generateInjectionScript = () => {
     return `
 (function() {
   const PLATFORMS = ${JSON.stringify(SUPPORTED_PLATFORMS)};
+  
+  // Variables globales pour le fonctionnement en arrière-plan
+  let isBackgroundMode = false;
+  let backgroundWorker = null;
+  let domObserver = null;
+  let errorObserver = null;
+  let sidebarObserver = null;
   
   // Détection de la plateforme actuelle
   function detectPlatform() {
@@ -286,47 +293,203 @@ export const AutomationScript = () => {
     return PLATFORMS.find(p => hostname.includes(p.domain));
   }
   
-  // Injection de prompt
+  // Surveillance des erreurs et boutons "try to fix"
+  function setupErrorDetection() {
+    if (errorObserver) errorObserver.disconnect();
+    
+    errorObserver = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        mutation.addedNodes.forEach((node) => {
+          if (node.nodeType === 1) { // Element node
+            // Recherche des boutons "try to fix" ou équivalents
+            const fixButtons = node.querySelectorAll ? 
+              node.querySelectorAll('button[title*="fix"], button[aria-label*="fix"], button:contains("Fix"), button:contains("Retry"), button:contains("Try again")') : [];
+            
+            if (fixButtons.length > 0 || (node.tagName === 'BUTTON' && 
+                (node.textContent.toLowerCase().includes('fix') || 
+                 node.textContent.toLowerCase().includes('retry') ||
+                 node.textContent.toLowerCase().includes('try again')))) {
+              
+              const buttonToClick = fixButtons[0] || node;
+              console.log('🔧 Bouton de correction détecté:', buttonToClick);
+              
+              // Attendre un peu puis cliquer automatiquement
+              setTimeout(() => {
+                if (buttonToClick && !buttonToClick.disabled) {
+                  buttonToClick.click();
+                  logToSidebar('✅ Correction automatique appliquée');
+                }
+              }, 1000);
+            }
+            
+            // Détection des erreurs générales
+            const errorElements = node.querySelectorAll ? 
+              node.querySelectorAll('.error, .error-message, [role="alert"], .alert-error') : [];
+            
+            errorElements.forEach(errorEl => {
+              if (errorEl.textContent.trim()) {
+                console.log('⚠️ Erreur détectée:', errorEl.textContent);
+                logToSidebar('⚠️ Erreur: ' + errorEl.textContent.substring(0, 100));
+              }
+            });
+          }
+        });
+      });
+    });
+    
+    errorObserver.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: false,
+      characterData: false
+    });
+  }
+  
+  // Surveillance de la sidebar pour détecter les actions utilisateur requises
+  function setupSidebarDetection() {
+    if (sidebarObserver) sidebarObserver.disconnect();
+    
+    sidebarObserver = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        mutation.addedNodes.forEach((node) => {
+          if (node.nodeType === 1) {
+            // Recherche des éléments de notification ou d'action requise
+            const actionElements = node.querySelectorAll ? 
+              node.querySelectorAll('[data-testid*="notification"], .notification, .toast, .alert, .banner, [role="status"]') : [];
+            
+            actionElements.forEach(element => {
+              const text = element.textContent.toLowerCase();
+              if (text.includes('action required') || 
+                  text.includes('user input') || 
+                  text.includes('confirm') || 
+                  text.includes('approve') ||
+                  text.includes('action requise') ||
+                  text.includes('confirmation')) {
+                
+                console.log('👤 Action utilisateur requise détectée:', element.textContent);
+                logToSidebar('👤 Action requise: ' + element.textContent.substring(0, 100));
+                
+                // Pause de l'automatisation si elle est active
+                if (window.automationScript && window.automationScript.pauseAutomation) {
+                  window.automationScript.pauseAutomation();
+                }
+              }
+            });
+          }
+        });
+      });
+    });
+    
+    // Observer toute la page pour les changements de sidebar
+    sidebarObserver.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['class', 'style']
+    });
+  }
+  
+  // Worker en arrière-plan pour maintenir l'activité
+  function createBackgroundWorker() {
+    if (backgroundWorker) return;
+    
+    backgroundWorker = setInterval(() => {
+      // Maintenir l'activité de la page
+      if (document.hidden) {
+        // Page en arrière-plan, maintenir l'activité
+        console.log('🔄 Maintien de l\\'activité en arrière-plan');
+      }
+      
+      // Vérifier si l'automatisation doit continuer
+      if (window.automationScript && window.automationScript.shouldContinue) {
+        window.automationScript.checkAndContinue();
+      }
+    }, 5000); // Vérification toutes les 5 secondes
+  }
+  
+  // Gestion des changements de visibilité
+  function handleVisibilityChange() {
+    if (document.hidden) {
+      console.log('📱 Page masquée - activation du mode arrière-plan');
+      isBackgroundMode = true;
+      createBackgroundWorker();
+    } else {
+      console.log('📱 Page visible - désactivation du mode arrière-plan');
+      isBackgroundMode = false;
+      if (backgroundWorker) {
+        clearInterval(backgroundWorker);
+        backgroundWorker = null;
+      }
+    }
+  }
+  
+  // Injection de prompt améliorée
   function injectPrompt(prompt, platform) {
     const inputElement = document.querySelector(platform.inputSelector) || 
                         document.querySelector(platform.chatSelector);
     
     if (inputElement) {
+      // Focus sur l'élément d'abord
+      inputElement.focus();
+      
       // Pour les textarea normales
       if (inputElement.tagName === 'TEXTAREA') {
         inputElement.value = prompt;
         inputElement.dispatchEvent(new Event('input', { bubbles: true }));
+        inputElement.dispatchEvent(new Event('change', { bubbles: true }));
       }
       // Pour les div contenteditable
       else if (inputElement.contentEditable === 'true') {
         inputElement.textContent = prompt;
         inputElement.dispatchEvent(new Event('input', { bubbles: true }));
+        inputElement.dispatchEvent(new Event('change', { bubbles: true }));
       }
       // Pour les éditeurs de code
       else {
         inputElement.innerText = prompt;
         inputElement.dispatchEvent(new Event('input', { bubbles: true }));
+        inputElement.dispatchEvent(new Event('change', { bubbles: true }));
       }
+      
+      // Déclencher les événements clavier pour s'assurer que l'interface réagit
+      inputElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
       
       return true;
     }
     return false;
   }
   
-  // Soumission automatique
+  // Soumission automatique améliorée
   function submitPrompt(platform) {
     const submitButton = document.querySelector(platform.submitSelector);
     if (submitButton && !submitButton.disabled) {
-      submitButton.click();
+      // Vérifier si le bouton est visible et cliquable
+      const rect = submitButton.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) {
+        submitButton.click();
+        return true;
+      }
+    }
+    
+    // Fallback: essayer d'appuyer sur Entrée
+    const inputElement = document.querySelector(platform.inputSelector);
+    if (inputElement) {
+      inputElement.dispatchEvent(new KeyboardEvent('keydown', { 
+        key: 'Enter', 
+        ctrlKey: true, 
+        bubbles: true 
+      }));
       return true;
     }
+    
     return false;
   }
   
-  // Récupération de la réponse
+  // Récupération de la réponse améliorée
   function waitForResponse(platform, callback) {
     let attempts = 0;
-    const maxAttempts = 60; // 1 minute
+    const maxAttempts = 120; // 2 minutes
+    let lastResponseLength = 0;
     
     const checkResponse = () => {
       attempts++;
@@ -334,22 +497,54 @@ export const AutomationScript = () => {
       const lastResponse = responseElements[responseElements.length - 1];
       
       if (lastResponse && lastResponse.textContent.trim()) {
-        callback({
-          success: true,
-          response: lastResponse.textContent.trim(),
-          html: lastResponse.innerHTML
-        });
-      } else if (attempts < maxAttempts) {
+        const currentLength = lastResponse.textContent.length;
+        
+        // Attendre que la réponse soit stable (pas de changement pendant 2 secondes)
+        if (currentLength === lastResponseLength) {
+          callback({
+            success: true,
+            response: lastResponse.textContent.trim(),
+            html: lastResponse.innerHTML
+          });
+          return;
+        }
+        
+        lastResponseLength = currentLength;
+      }
+      
+      if (attempts < maxAttempts) {
         setTimeout(checkResponse, 1000);
       } else {
         callback({
           success: false,
-          error: 'Timeout: Aucune réponse détectée'
+          error: 'Timeout: Aucune réponse détectée ou réponse incomplète'
         });
       }
     };
     
-    setTimeout(checkResponse, 2000); // Attendre 2s avant de commencer à vérifier
+    setTimeout(checkResponse, 3000); // Attendre 3s avant de commencer à vérifier
+  }
+  
+  // Logging vers la sidebar
+  function logToSidebar(message) {
+    const responsesDiv = document.getElementById('automation-responses');
+    if (responsesDiv) {
+      const logEntry = document.createElement('div');
+      logEntry.style.cssText = \`
+        margin: 5px 0;
+        padding: 8px;
+        background: rgba(255,255,255,0.1);
+        border-radius: 5px;
+        font-size: 12px;
+        border-left: 3px solid #4CAF50;
+      \`;
+      logEntry.innerHTML = \`
+        <span style="opacity: 0.7;">\${new Date().toLocaleTimeString()}</span><br>
+        \${message}
+      \`;
+      responsesDiv.appendChild(logEntry);
+      responsesDiv.scrollTop = responsesDiv.scrollHeight;
+    }
   }
   
   // Interface de communication avec l'extension
@@ -358,20 +553,51 @@ export const AutomationScript = () => {
     injectPrompt,
     submitPrompt,
     waitForResponse,
+    isBackgroundMode: () => isBackgroundMode,
+    isPaused: false,
+    shouldContinue: false,
     
-    // Fonction principale d'automatisation
+    // Pause/reprise de l'automatisation
+    pauseAutomation: function() {
+      this.isPaused = true;
+      logToSidebar('⏸️ Automatisation mise en pause');
+    },
+    
+    resumeAutomation: function() {
+      this.isPaused = false;
+      logToSidebar('▶️ Automatisation reprise');
+    },
+    
+    // Vérification et continuation automatique
+    checkAndContinue: function() {
+      if (!this.isPaused && this.shouldContinue) {
+        // Logic de continuation automatique
+        logToSidebar('🔄 Vérification de continuation...');
+      }
+    },
+    
+    // Fonction principale d'automatisation améliorée
     automate: function(prompt, callback) {
+      if (this.isPaused) {
+        callback({ success: false, error: 'Automatisation en pause' });
+        return;
+      }
+      
       const platform = detectPlatform();
       if (!platform) {
         callback({ success: false, error: 'Plateforme non supportée' });
         return;
       }
       
+      logToSidebar('🚀 Démarrage automatisation: ' + prompt.substring(0, 50) + '...');
+      
       // 1. Injection du prompt
       if (!injectPrompt(prompt, platform)) {
         callback({ success: false, error: 'Impossible d\\'injecter le prompt' });
         return;
       }
+      
+      logToSidebar('✅ Prompt injecté');
       
       // 2. Soumission
       setTimeout(() => {
@@ -380,15 +606,26 @@ export const AutomationScript = () => {
           return;
         }
         
+        logToSidebar('✅ Prompt soumis, attente de la réponse...');
+        
         // 3. Attente de la réponse
-        waitForResponse(platform, callback);
-      }, 1000);
+        waitForResponse(platform, (result) => {
+          if (result.success) {
+            logToSidebar('✅ Réponse reçue: ' + result.response.substring(0, 100) + '...');
+          } else {
+            logToSidebar('❌ Erreur: ' + result.error);
+          }
+          callback(result);
+        });
+      }, 1500);
     }
   };
   
-  // Injection de la sidebar
+  // Injection de la sidebar améliorée
   function createSidebar() {
     if (document.getElementById('automation-sidebar')) return;
+    
+    const platform = detectPlatform();
     
     const sidebar = document.createElement('div');
     sidebar.id = 'automation-sidebar';
@@ -410,7 +647,7 @@ export const AutomationScript = () => {
     \`;
     
     sidebar.innerHTML = \`
-      <div style="display: flex; justify-content: between; align-items: center; margin-bottom: 20px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
         <h3 style="margin: 0; font-size: 18px;">🤖 Automation Script</h3>
         <button onclick="this.parentElement.parentElement.style.transform='translateX(-100%)'" 
                 style="background: rgba(255,255,255,0.2); border: none; color: white; padding: 5px 10px; border-radius: 5px; cursor: pointer;">
@@ -419,10 +656,23 @@ export const AutomationScript = () => {
       </div>
       <div id="automation-content">
         <p style="margin: 10px 0; font-size: 14px; opacity: 0.9;">
-          Plateforme détectée: <strong>\${platform ? platform.name : 'Non supportée'}</strong>
+          Plateforme: <strong>\${platform ? platform.name : 'Non supportée'}</strong>
         </p>
-        <div id="automation-responses" style="max-height: 400px; overflow-y: auto; margin-top: 20px;">
-          <!-- Les réponses s'afficheront ici -->
+        <p style="margin: 10px 0; font-size: 12px; opacity: 0.8;">
+          Mode arrière-plan: <span id="background-status">🟢 Actif</span>
+        </p>
+        <div style="display: flex; gap: 10px; margin: 15px 0;">
+          <button onclick="window.automationScript.pauseAutomation()" 
+                  style="flex: 1; background: rgba(255,255,255,0.2); border: none; color: white; padding: 8px; border-radius: 5px; cursor: pointer;">
+            ⏸️ Pause
+          </button>
+          <button onclick="window.automationScript.resumeAutomation()" 
+                  style="flex: 1; background: rgba(255,255,255,0.2); border: none; color: white; padding: 8px; border-radius: 5px; cursor: pointer;">
+            ▶️ Reprise
+          </button>
+        </div>
+        <div id="automation-responses" style="max-height: 400px; overflow-y: auto; margin-top: 20px; border: 1px solid rgba(255,255,255,0.2); border-radius: 5px; padding: 10px;">
+          <div style="text-align: center; opacity: 0.7; font-size: 12px;">Logs d'automatisation</div>
         </div>
       </div>
     \`;
@@ -433,6 +683,14 @@ export const AutomationScript = () => {
     setTimeout(() => {
       sidebar.style.transform = 'translateX(0)';
     }, 100);
+    
+    // Mise à jour du statut arrière-plan
+    setInterval(() => {
+      const statusEl = document.getElementById('background-status');
+      if (statusEl) {
+        statusEl.innerHTML = isBackgroundMode ? '🟢 Actif' : '🟡 Inactif';
+      }
+    }, 1000);
   }
   
   // Ajout d'un bouton flottant pour ouvrir la sidebar
@@ -474,9 +732,50 @@ export const AutomationScript = () => {
     document.body.appendChild(button);
   }
   
-  // Initialisation
-  createFloatingButton();
-  console.log('🤖 Automation Script chargé! Plateforme:', detectPlatform()?.name || 'Non supportée');
+  // Initialisation complète
+  function initialize() {
+    createFloatingButton();
+    setupErrorDetection();
+    setupSidebarDetection();
+    
+    // Gestion des changements de visibilité
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    // Gestion des changements de focus de fenêtre
+    window.addEventListener('blur', () => {
+      console.log('🔄 Fenêtre en arrière-plan');
+      isBackgroundMode = true;
+      createBackgroundWorker();
+    });
+    
+    window.addEventListener('focus', () => {
+      console.log('🔄 Fenêtre en premier plan');
+      isBackgroundMode = false;
+      if (backgroundWorker) {
+        clearInterval(backgroundWorker);
+        backgroundWorker = null;
+      }
+    });
+    
+    console.log('🤖 Automation Script avancé chargé!');
+    console.log('📱 Plateforme:', detectPlatform()?.name || 'Non supportée');
+    console.log('🔧 Surveillance des erreurs: Active');
+    console.log('👁️ Surveillance sidebar: Active');
+  }
+  
+  // Nettoyage lors du déchargement
+  window.addEventListener('beforeunload', () => {
+    if (errorObserver) errorObserver.disconnect();
+    if (sidebarObserver) sidebarObserver.disconnect();
+    if (backgroundWorker) clearInterval(backgroundWorker);
+  });
+  
+  // Démarrage
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initialize);
+  } else {
+    initialize();
+  }
 })();
 `;
   };
