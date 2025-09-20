@@ -25,7 +25,7 @@ interface AutoExecutionDialogProps {
   children: React.ReactNode;
 }
 
-const AutoExecutionDialog = ({ steps, onExecute, isExecuting, currentStep = 0, children }: AutoExecutionDialogProps) => {
+const AutoExecutionDialog = ({ steps = [], onExecute, isExecuting, currentStep = 0, children }: AutoExecutionDialogProps) => {
   const [executionMode, setExecutionMode] = useState<'manual' | 'auto' | 'full-auto'>('manual');
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
@@ -52,9 +52,9 @@ const AutoExecutionDialog = ({ steps, onExecute, isExecuting, currentStep = 0, c
     }
   };
 
-  const completedSteps = steps.filter(s => s.status === 'completed').length;
-  const totalSteps = steps.length;
-  const progress = Math.round((completedSteps / totalSteps) * 100);
+  const completedSteps = Array.isArray(steps) ? steps.filter(s => s.status === 'completed').length : 0;
+  const totalSteps = Array.isArray(steps) ? steps.length : 0;
+  const progress = totalSteps > 0 ? Math.round((completedSteps / totalSteps) * 100) : 0;
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>

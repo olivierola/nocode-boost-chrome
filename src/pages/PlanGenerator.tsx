@@ -800,13 +800,13 @@ const PlanGenerator = () => {
             
             // 3. Fallback pour les plans standards
             if (allSteps.length === 0) {
-              return currentPlan.steps.map(step => ({
+              return Array.isArray(currentPlan?.steps) ? currentPlan.steps.map(step => ({
                 id: step.id,
                 titre: step.title,
                 description: step.description,
                 prompt: `Implémentez l'étape: ${step.title}. ${step.description}`,
                 status: step.status
-              }));
+              })) : [];
             }
             
             return allSteps;
