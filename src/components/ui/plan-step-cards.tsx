@@ -21,7 +21,7 @@ interface PlanStepCardsProps {
   onExecuteStep?: (step: PlanStep) => void
 }
 
-export default function PlanStepCards({ steps, onEditStep, onExecuteStep }: PlanStepCardsProps) {
+export default function PlanStepCards({ steps = [], onEditStep, onExecuteStep }: PlanStepCardsProps) {
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set())
 
   const toggleCard = (stepId: string) => {
@@ -113,7 +113,7 @@ export default function PlanStepCards({ steps, onEditStep, onExecuteStep }: Plan
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
-      {steps.map((step, index) => {
+      {Array.isArray(steps) && steps.map((step, index) => {
         const shaderConfig = getShaderConfig(step.type, index)
         const isExpanded = expandedCards.has(step.id)
         const isDocumentation = step.type === 'documentation'

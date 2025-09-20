@@ -79,7 +79,7 @@ export const PlanTableView: React.FC<PlanTableViewProps> = ({ plan, onExecuteFea
     const steps: any[] = [];
     
     // Add features as implementation steps
-    if (plan.features) {
+    if (plan?.features && Array.isArray(plan.features)) {
       plan.features.forEach((feature, index) => {
         steps.push({
           id: `feature-${index}`,
@@ -91,7 +91,7 @@ export const PlanTableView: React.FC<PlanTableViewProps> = ({ plan, onExecuteFea
         });
 
         // Add sub-features
-        if (feature.sub_features) {
+        if (feature.sub_features && Array.isArray(feature.sub_features)) {
           feature.sub_features.forEach((subFeature, subIndex) => {
             steps.push({
               id: `subfeature-${index}-${subIndex}`,
@@ -107,7 +107,7 @@ export const PlanTableView: React.FC<PlanTableViewProps> = ({ plan, onExecuteFea
     }
 
     // Add pages as documentation steps
-    if (plan.pages) {
+    if (plan?.pages && Array.isArray(plan.pages)) {
       plan.pages.forEach((page, index) => {
         steps.push({
           id: `page-${index}`,
@@ -121,7 +121,7 @@ export const PlanTableView: React.FC<PlanTableViewProps> = ({ plan, onExecuteFea
     }
 
     // Add plan steps
-    if (plan.steps) {
+    if (plan?.steps && Array.isArray(plan.steps)) {
       plan.steps.forEach((step, index) => {
         steps.push({
           id: step.id || `step-${index}`,
@@ -185,7 +185,7 @@ export const PlanTableView: React.FC<PlanTableViewProps> = ({ plan, onExecuteFea
       )}
 
       {/* Features Cards */}
-      {plan.features && plan.features.length > 0 && (
+      {plan?.features && Array.isArray(plan.features) && plan.features.length > 0 && (
         <div className="space-y-4">
           <h3 className="text-lg font-semibold">Fonctionnalités</h3>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -206,7 +206,7 @@ export const PlanTableView: React.FC<PlanTableViewProps> = ({ plan, onExecuteFea
                     {feature.description}
                   </p>
                   
-                  {feature.sub_features && feature.sub_features.length > 0 && (
+                  {feature.sub_features && Array.isArray(feature.sub_features) && feature.sub_features.length > 0 && (
                     <div className="space-y-2">
                       <h5 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
                         Sous-fonctionnalités
@@ -245,7 +245,7 @@ export const PlanTableView: React.FC<PlanTableViewProps> = ({ plan, onExecuteFea
       )}
 
       {/* Pages Table */}
-      {plan.pages && plan.pages.length > 0 && (
+      {plan?.pages && Array.isArray(plan.pages) && plan.pages.length > 0 && (
         <div className="space-y-4">
           <h3 className="text-lg font-semibold">Pages</h3>
           <Card>
@@ -292,7 +292,7 @@ export const PlanTableView: React.FC<PlanTableViewProps> = ({ plan, onExecuteFea
       )}
 
       {/* Steps Table */}
-      {plan.steps && plan.steps.length > 0 && (
+      {plan?.steps && Array.isArray(plan.steps) && plan.steps.length > 0 && (
         <div className="space-y-4">
           <h3 className="text-lg font-semibold">Étapes de développement</h3>
           <Card>
