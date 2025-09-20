@@ -686,13 +686,13 @@ const PlanGenerator = () => {
                           <div className="font-semibold text-lg border-b border-current/20 pb-2 flex items-center justify-between">
                             <span>📋 Plan généré: {message.plan.title}</span>
                             <AutoExecutionDialog
-                              steps={message.plan.steps.map(step => ({
+                              steps={Array.isArray(message.plan.steps) ? message.plan.steps.map(step => ({
                                 id: step.id,
                                 titre: step.title,
                                 description: step.description,
                                 prompt: `Implémentez l'étape: ${step.title}. ${step.description}`,
                                 status: step.status
-                              }))}
+                              })) : []}
                               onExecute={startExecution}
                               isExecuting={isExecuting}
                               currentStep={0}
