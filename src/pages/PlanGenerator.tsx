@@ -62,6 +62,8 @@ interface ProjectPlan {
   }>;
   created_at: string;
   updated_at: string;
+  // Raw plan data for detailed view
+  plan_data?: any;
 }
 
 interface ChatMessage {
@@ -126,21 +128,66 @@ const PlanGenerator = () => {
       if (error) throw error;
 
       if (data && data.length > 0) {
-        const messages: ChatMessage[] = data.map((msg: any) => ({
-          id: msg.id,
-          role: msg.role,
-          content: msg.content,
-          timestamp: new Date(msg.created_at),
-          type: msg.message_type as 'clarification_needed' | 'mindmap_plan' | 'standard',
-          questions: msg.questions || [],
-          plan: msg.plan_data ? {
-            ...msg.plan_data,
-            id: msg.plan_data.id || msg.id,
-            project_id: selectedProject.id,
-            created_at: msg.created_at,
-            updated_at: msg.created_at
-          } : undefined
-        }));
+        // Get all plan IDs from chat history
+        const planIds = data.filter((msg: any) => msg.plan_id).map((msg: any) => msg.plan_id);
+        
+        // Fetch actual plan data from plans table
+        let plansData: any[] = [];
+        if (planIds.length > 0) {
+          const { data: plansResponse, error: plansError } = await supabase
+            .from('plans')
+            .select('*')
+            .in('id', planIds);
+          
+          if (!plansError && plansResponse) {
+            plansData = plansResponse;
+          }
+        }
+
+        const messages: ChatMessage[] = data.map((msg: any) => {
+          let planData = null;
+          
+          // Find corresponding plan data if plan_id exists
+          if (msg.plan_id) {
+            const foundPlan = plansData.find(p => p.id === msg.plan_id);
+            if (foundPlan && foundPlan.plan_data) {
+              const rawPlanData = foundPlan.plan_data;
+              
+              // Convert plan_data to ProjectPlan format
+              planData = {
+                id: foundPlan.id,
+                project_id: selectedProject.id,
+                title: rawPlanData.documentation?.project_overview || 'Plan généré',
+                description: rawPlanData.documentation?.vision_objectives?.vision || '',
+                steps: Array.isArray(rawPlanData.implementation_plan?.pages) 
+                  ? rawPlanData.implementation_plan.pages.map((page: any, index: number) => ({
+                      id: `page-${index}`,
+                      title: page.page_name || page.name || `Page ${index + 1}`,
+                      description: page.description || '',
+                      status: 'pending' as const
+                    }))
+                  : [],
+                plan_type: 'standard',
+                features: rawPlanData.implementation_plan?.pages || [],
+                status: 'draft',
+                created_at: foundPlan.created_at,
+                updated_at: foundPlan.updated_at,
+                // Keep raw plan data for detailed view
+                plan_data: rawPlanData
+              };
+            }
+          }
+
+          return {
+            id: msg.id,
+            role: msg.role,
+            content: msg.content,
+            timestamp: new Date(msg.created_at),
+            type: msg.message_type as 'clarification_needed' | 'mindmap_plan' | 'standard',
+            questions: msg.questions || [],
+            plan: planData
+          };
+        });
         
         setChatMessages(messages);
       }
@@ -149,7 +196,7 @@ const PlanGenerator = () => {
     }
   };
 
-  const saveConversationMessage = async (message: ChatMessage) => {
+  const saveConversationMessage = async (message: ChatMessage, planId?: string) => {
     if (!selectedProject || !user) return;
 
     try {
@@ -158,6 +205,7 @@ const PlanGenerator = () => {
         p_user_id: user.id,
         p_role: message.role,
         p_content: message.content,
+        p_plan_id: planId || null,
         p_message_type: message.type || 'standard',
         p_questions: message.questions || null
       });
@@ -177,12 +225,40 @@ const PlanGenerator = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      const loadedPlans = (data as unknown as ProjectPlan[]) || [];
+      
+      // Parse and format plan data correctly
+      const loadedPlans: ProjectPlan[] = (data || []).map((plan: any) => {
+        const rawPlanData = plan.plan_data || {};
+        
+        return {
+          id: plan.id,
+          project_id: plan.project_id,
+          title: rawPlanData.documentation?.project_overview || 'Plan généré',
+          description: rawPlanData.documentation?.vision_objectives?.vision || '',
+          steps: Array.isArray(rawPlanData.implementation_plan?.pages) 
+            ? rawPlanData.implementation_plan.pages.map((page: any, index: number) => ({
+                id: `page-${index}`,
+                title: page.page_name || page.name || `Page ${index + 1}`,
+                description: page.description || '',
+                status: 'pending' as const
+              }))
+            : [],
+          plan_type: 'standard',
+          features: rawPlanData.implementation_plan?.pages || [],
+          status: 'draft',
+          created_at: plan.created_at,
+          updated_at: plan.updated_at,
+          // Keep raw plan data for detailed view
+          plan_data: rawPlanData
+        };
+      });
+      
       setPlans(loadedPlans);
       if (!currentPlan && loadedPlans.length > 0) {
         setCurrentPlan(loadedPlans[0]);
       }
     } catch (error: any) {
+      console.error('Error fetching plans:', error);
       toast({
         title: "Erreur",
         description: "Impossible de charger les plans",
@@ -272,7 +348,44 @@ const PlanGenerator = () => {
           type: 'mindmap_plan'
         };
         setChatMessages(prev => [...prev, aiMessage]);
-        await saveConversationMessage(aiMessage);
+        await saveConversationMessage(aiMessage, data.id);
+        fetchPlans(); // Rafraîchir la liste des plans
+        return;
+      }
+
+      // Handle new plan_generated type
+      if (data.type === 'plan_generated') {
+        const planData = data.plan;
+        const planForMessage: ProjectPlan = {
+          id: data.planId,
+          project_id: selectedProject.id,
+          title: planData.documentation?.project_overview || 'Plan généré',
+          description: planData.documentation?.vision_objectives?.vision || '',
+          steps: Array.isArray(planData.implementation_plan?.pages) 
+            ? planData.implementation_plan.pages.map((page: any, index: number) => ({
+                id: `page-${index}`,
+                title: page.page_name || page.name || `Page ${index + 1}`,
+                description: page.description || '',
+                status: 'pending' as const
+              }))
+            : [],
+          plan_type: 'standard',
+          features: planData.implementation_plan?.pages || [],
+          status: 'draft',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+
+        const stepsCount = planForMessage.steps.length;
+        const aiMessage: ChatMessage = {
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          content: `J'ai généré un plan détaillé pour votre projet ! Le plan comprend ${stepsCount} étapes principales avec une documentation complète, une analyse de marché et un plan d'implémentation.`,
+          timestamp: new Date(),
+          plan: planForMessage
+        };
+        setChatMessages(prev => [...prev, aiMessage]);
+        await saveConversationMessage(aiMessage, data.planId);
         fetchPlans(); // Rafraîchir la liste des plans
         return;
       }
