@@ -817,6 +817,7 @@ const PlanGenerator = () => {
             setIsExecuting(false);
           }}
           mode={executionMode}
+          planData={currentPlan}
           onUpdateSteps={updatePlanSteps}
         />
       )}

@@ -12,6 +12,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { ClaudeChatInput } from '@/components/ui/claude-style-ai-input';
 import { supabase } from '@/integrations/supabase/client';
 import { createNotification } from '@/utils/notificationHelper';
+import AIMonitor from './AIMonitor';
 
 interface ExecutionStep {
   id: string;
@@ -35,6 +36,7 @@ interface PlanAutoExecutorProps {
   onClose: () => void;
   mode: 'manual' | 'auto' | 'full-auto';
   onUpdateSteps: (steps: ExecutionStep[]) => void;
+  planData?: any;
 }
 
 interface ExecutionLog {
@@ -43,7 +45,7 @@ interface ExecutionLog {
   type: 'info' | 'success' | 'error' | 'warning';
 }
 
-const PlanAutoExecutor = ({ steps, isOpen, onClose, mode, onUpdateSteps }: PlanAutoExecutorProps) => {
+const PlanAutoExecutor = ({ steps, isOpen, onClose, mode, onUpdateSteps, planData }: PlanAutoExecutorProps) => {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [isExecuting, setIsExecuting] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
@@ -52,6 +54,7 @@ const PlanAutoExecutor = ({ steps, isOpen, onClose, mode, onUpdateSteps }: PlanA
   const [userActionData, setUserActionData] = useState<any>(null);
   const [chatMessages, setChatMessages] = useState<string[]>([]);
   const [isAnalyzingResponse, setIsAnalyzingResponse] = useState(false);
+  const [aiMonitorActive, setAiMonitorActive] = useState(true);
   
   const { toast } = useToast();
   const { user } = useAuth();
@@ -439,8 +442,38 @@ const PlanAutoExecutor = ({ steps, isOpen, onClose, mode, onUpdateSteps }: PlanA
     setUserActionData(null);
   };
 
+  const handleAISuggestion = (suggestion: any) => {
+    addLog(`IA suggère: ${suggestion.message}`, 'info');
+    
+    if (suggestion.prompt) {
+      // Exécuter le prompt suggéré par l'IA
+      const executeAISuggestion = async () => {
+        addLog('Exécution de la suggestion IA...', 'info');
+        const toolResponse = await sendPromptToAI(suggestion.prompt, currentStepIndex);
+        setChatMessages(prev => [...prev, `IA Suggestion: ${suggestion.prompt}`, `Réponse: ${toolResponse.response}`]);
+        
+        if (toolResponse.success) {
+          addLog('Suggestion IA exécutée avec succès', 'success');
+        } else {
+          addLog(`Échec de la suggestion IA: ${toolResponse.response}`, 'error');
+        }
+      };
+      
+      executeAISuggestion();
+    }
+  };
+
   const progress = steps.length > 0 ? Math.round((currentStepIndex / steps.length) * 100) : 0;
   const completedSteps = steps.filter(s => s.status === 'completed').length;
+  
+  const projectStatus = {
+    currentStep: currentStepIndex + 1,
+    totalSteps: steps.length,
+    completedSteps,
+    projectState: isExecuting ? 'running' : isPaused ? 'paused' : 'idle',
+    lastActivity: logs.length > 0 ? logs[logs.length - 1].timestamp : '',
+    errors: logs.filter(log => log.type === 'error').map(log => log.message)
+  };
 
   return (
     <>
@@ -457,47 +490,61 @@ const PlanAutoExecutor = ({ steps, isOpen, onClose, mode, onUpdateSteps }: PlanA
           </DialogHeader>
 
           <div className="space-y-4">
-            {/* Progress Overview */}
-            <Card>
-              <CardContent className="p-4">
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="font-medium">Progression globale</span>
-                    <Badge variant="outline">{completedSteps}/{steps.length} étapes</Badge>
-                  </div>
-                  <Progress value={progress} className="h-2" />
-                  <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      {isExecuting && !isPaused ? (
-                        <>
-                          <RefreshCw className="h-3 w-3 animate-spin" />
-                          Exécution en cours...
-                        </>
-                      ) : isPaused ? (
-                        <>
-                          <Pause className="h-3 w-3" />
-                          En pause
-                        </>
-                      ) : (
-                        <>
-                          <Clock className="h-3 w-3" />
-                          En attente
-                        </>
-                      )}
-                    </span>
-                    {isAnalyzingResponse && (
-                      <span className="flex items-center gap-1">
-                        <Bot className="h-3 w-3 animate-pulse" />
-                        Analyse de la réponse IA...
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            {/* AI Monitor */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              <div className="lg:col-span-2">
+                {/* Progress Overview */}
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="font-medium">Progression globale</span>
+                        <Badge variant="outline">{completedSteps}/{steps.length} étapes</Badge>
+                      </div>
+                      <Progress value={progress} className="h-2" />
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          {isExecuting && !isPaused ? (
+                            <>
+                              <RefreshCw className="h-3 w-3 animate-spin" />
+                              Exécution en cours...
+                            </>
+                          ) : isPaused ? (
+                            <>
+                              <Pause className="h-3 w-3" />
+                              En pause
+                            </>
+                          ) : (
+                            <>
+                              <Clock className="h-3 w-3" />
+                              En attente
+                            </>
+                          )}
+                        </span>
+                        {isAnalyzingResponse && (
+                          <span className="flex items-center gap-1">
+                            <Bot className="h-3 w-3 animate-pulse" />
+                            Analyse de la réponse IA...
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+              
+              <div className="lg:col-span-1">
+                <AIMonitor
+                  planData={planData}
+                  projectStatus={projectStatus}
+                  isActive={aiMonitorActive && isExecuting}
+                  onSuggestionAction={handleAISuggestion}
+                />
+              </div>
+            </div>
 
             {/* Controls */}
-            <div className="flex gap-2">
+            <div className="flex gap-2 items-center">
               {!isExecuting && !isPaused ? (
                 <Button onClick={startExecution} size="sm">
                   <Play className="h-4 w-4 mr-2" />
@@ -527,6 +574,18 @@ const PlanAutoExecutor = ({ steps, isOpen, onClose, mode, onUpdateSteps }: PlanA
                   </Button>
                 </>
               )}
+              
+              <div className="ml-auto flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setAiMonitorActive(!aiMonitorActive)}
+                  className={aiMonitorActive ? 'text-blue-600' : 'text-gray-400'}
+                >
+                  <Bot className="h-4 w-4 mr-1" />
+                  IA {aiMonitorActive ? 'Activée' : 'Désactivée'}
+                </Button>
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
