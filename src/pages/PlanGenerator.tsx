@@ -5,11 +5,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { SendHorizontal, MessageSquare, Bot, User, Clock, Plus, BookOpen, Database, Shield } from 'lucide-react';
+import { SendHorizontal, Bot, User, Clock, Plus, BookOpen, Database, Shield, Play } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface ChatMessage {
@@ -34,21 +32,20 @@ interface PlanSection {
   title: string;
   content: any;
   icon: React.ComponentType<{ className?: string }>;
+  key: string;
 }
 
 const PlanGenerator = () => {
   const { user } = useAuth();
   const { selectedProject } = useProjectContext();
   
-  // États principaux
   const [prompt, setPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [plans, setPlans] = useState<Plan[]>([]);
-  const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
+  const [currentPlan, setCurrentPlan] = useState<Plan | null>(null);
   const [loading, setLoading] = useState(true);
+  const [selectedSection, setSelectedSection] = useState<string | null>(null);
 
-  // Charger les données initiales
   useEffect(() => {
     if (selectedProject && user) {
       loadInitialData();
@@ -60,7 +57,7 @@ const PlanGenerator = () => {
       setLoading(true);
       await Promise.all([
         loadChatHistory(),
-        loadPlans()
+        loadCurrentPlan()
       ]);
     } catch (error) {
       console.error('Erreur lors du chargement:', error);
@@ -82,7 +79,6 @@ const PlanGenerator = () => {
 
       if (error) throw error;
       
-      // Transformer les données pour correspondre à l'interface ChatMessage
       const transformedMessages: ChatMessage[] = (data || []).map((msg: any) => ({
         id: msg.id,
         role: msg.role as 'user' | 'assistant',
@@ -99,7 +95,7 @@ const PlanGenerator = () => {
     }
   };
 
-  const loadPlans = async () => {
+  const loadCurrentPlan = async () => {
     if (!selectedProject) return;
 
     try {
@@ -107,17 +103,14 @@ const PlanGenerator = () => {
         .from('plans')
         .select('*')
         .eq('project_id', selectedProject.id)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
 
-      if (error) throw error;
-      setPlans(data || []);
-      
-      // Sélectionner le plan le plus récent
-      if (data && data.length > 0) {
-        setSelectedPlan(data[0]);
-      }
+      if (error && error.code !== 'PGRST116') throw error;
+      setCurrentPlan(data || null);
     } catch (error) {
-      console.error('Erreur chargement plans:', error);
+      console.error('Erreur chargement plan:', error);
     }
   };
 
@@ -130,10 +123,8 @@ const PlanGenerator = () => {
     setIsGenerating(true);
 
     try {
-      // Sauvegarder le message utilisateur
       await saveMessage('user', userMessage);
       
-      // Actualiser l'historique pour inclure le nouveau message
       const updatedMessages = [...messages, {
         id: crypto.randomUUID(),
         role: 'user' as const,
@@ -143,7 +134,6 @@ const PlanGenerator = () => {
       }];
       setMessages(updatedMessages);
 
-      // Appeler l'edge function
       const { data, error } = await supabase.functions.invoke('generate-plan', {
         body: {
           prompt: userMessage,
@@ -154,7 +144,6 @@ const PlanGenerator = () => {
 
       if (error) throw error;
 
-      // Traiter la réponse
       if (data.type === 'clarification_needed') {
         const clarificationMessage = {
           id: crypto.randomUUID(),
@@ -171,7 +160,7 @@ const PlanGenerator = () => {
         const planMessage = {
           id: crypto.randomUUID(),
           role: 'assistant' as const,
-          content: 'Plan généré avec succès ! Vous pouvez le consulter dans l\'onglet "Plans".',
+          content: 'Plan généré avec succès !',
           message_type: 'plan_generated',
           created_at: new Date().toISOString(),
         };
@@ -179,10 +168,8 @@ const PlanGenerator = () => {
         await saveMessage('assistant', planMessage.content, 'plan_generated');
         setMessages(prev => [...prev, planMessage]);
         await savePlan(data.plan);
-        await loadPlans();
+        await loadCurrentPlan();
         toast.success('Plan généré avec succès !');
-      } else {
-        throw new Error('Réponse inattendue du serveur');
       }
 
     } catch (error) {
@@ -249,7 +236,7 @@ const PlanGenerator = () => {
     });
   };
 
-  const renderPlanSections = (planData: any): PlanSection[] => {
+  const getPlanSections = (planData: any): PlanSection[] => {
     if (!planData) return [];
 
     const sections: PlanSection[] = [];
@@ -258,7 +245,8 @@ const PlanGenerator = () => {
       sections.push({
         title: 'Documentation',
         content: planData.documentation,
-        icon: BookOpen
+        icon: BookOpen,
+        key: 'documentation'
       });
     }
 
@@ -266,7 +254,8 @@ const PlanGenerator = () => {
       sections.push({
         title: 'Plan d\'implémentation',
         content: planData.implementation_plan,
-        icon: Plus
+        icon: Plus,
+        key: 'implementation'
       });
     }
 
@@ -274,7 +263,8 @@ const PlanGenerator = () => {
       sections.push({
         title: 'Backend & Base de données',
         content: planData.backend_database,
-        icon: Database
+        icon: Database,
+        key: 'backend'
       });
     }
 
@@ -282,7 +272,8 @@ const PlanGenerator = () => {
       sections.push({
         title: 'Plan de sécurité',
         content: planData.security_plan,
-        icon: Shield
+        icon: Shield,
+        key: 'security'
       });
     }
 
@@ -330,197 +321,203 @@ const PlanGenerator = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-96">
+      <div className="flex items-center justify-center h-screen">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
     );
   }
 
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Générateur de Plans IA</h1>
-          <p className="text-muted-foreground">
-            Créez des plans de projet détaillés avec l'aide de l'IA
-          </p>
+  // Vue quand il n'y a pas de plan
+  if (!currentPlan) {
+    return (
+      <div className="min-h-screen relative overflow-hidden bg-white">
+        {/* Background avec effets blur colorés */}
+        <div className="absolute inset-0">
+          <div className="absolute top-20 left-20 w-72 h-72 bg-primary/20 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-20 right-20 w-96 h-96 bg-secondary/20 rounded-full blur-3xl"></div>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-accent/20 rounded-full blur-3xl"></div>
         </div>
-        <Badge variant="secondary">
-          {plans.length} plan{plans.length !== 1 ? 's' : ''}
-        </Badge>
-      </div>
 
-      <Tabs defaultValue="chat" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="chat" className="flex items-center gap-2">
-            <MessageSquare className="h-4 w-4" />
-            Chat
-          </TabsTrigger>
-          <TabsTrigger value="plans" className="flex items-center gap-2">
-            <BookOpen className="h-4 w-4" />
-            Plans générés
-          </TabsTrigger>
-        </TabsList>
+        {/* Contenu principal */}
+        <div className="relative z-10 flex flex-col items-center justify-center min-h-screen p-8">
+          <div className="max-w-2xl w-full space-y-8">
+            {/* Titre et description */}
+            <div className="text-center space-y-4">
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                Générateur de Plans IA
+              </h1>
+              <p className="text-lg text-muted-foreground">
+                Décrivez votre projet et laissez l'IA créer un plan détaillé pour vous guider dans sa réalisation
+              </p>
+            </div>
 
-        <TabsContent value="chat" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Bot className="h-5 w-5" />
-                Assistant IA
-              </CardTitle>
-              <CardDescription>
-                Décrivez votre projet pour générer un plan détaillé
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <ScrollArea className="h-96 w-full rounded-md border p-4">
-                <div className="space-y-4">
-                  {messages.length === 0 ? (
-                    <div className="text-center text-muted-foreground py-8">
-                      <Bot className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <p>Commencez une conversation pour générer votre plan</p>
-                    </div>
-                  ) : (
-                    messages.map((message) => (
-                      <div key={message.id} className="space-y-2">
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          {message.role === 'user' ? (
-                            <User className="h-4 w-4" />
-                          ) : (
-                            <Bot className="h-4 w-4" />
-                          )}
-                          <span className="capitalize">{message.role}</span>
-                          <Clock className="h-3 w-3" />
-                          <span>{formatTime(message.created_at)}</span>
-                          {message.message_type !== 'standard' && (
-                            <Badge variant="outline" className="text-xs">
-                              {message.message_type}
-                            </Badge>
-                          )}
-                        </div>
-                        <div className={`p-3 rounded-lg ${
-                          message.role === 'user' 
-                            ? 'bg-primary text-primary-foreground ml-12' 
-                            : 'bg-muted mr-12'
-                        }`}>
-                          <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                          {message.questions && message.questions.length > 0 && (
-                            <div className="mt-3 space-y-2">
-                              <p className="text-xs font-medium">Questions à répondre :</p>
-                              <ul className="space-y-1">
-                                {message.questions.map((question, index) => (
-                                  <li key={index} className="text-xs p-2 bg-background/50 rounded border-l-2 border-primary">
-                                    {question}
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-                          )}
-                        </div>
+            {/* Interface de chat */}
+            <Card className="backdrop-blur-sm bg-white/80 border-white/20 shadow-xl">
+              <CardContent className="space-y-6 p-6">
+                <ScrollArea className="h-96 w-full rounded-md border border-white/20 p-4 bg-white/50">
+                  <div className="space-y-4">
+                    {messages.length === 0 ? (
+                      <div className="text-center text-muted-foreground py-8">
+                        <Bot className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                        <p>Commencez par décrire votre projet...</p>
                       </div>
-                    ))
-                  )}
-                  {isGenerating && (
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Bot className="h-4 w-4" />
-                      <div className="flex items-center gap-1">
-                        <div className="animate-bounce w-2 h-2 bg-primary rounded-full"></div>
-                        <div className="animate-bounce w-2 h-2 bg-primary rounded-full delay-100"></div>
-                        <div className="animate-bounce w-2 h-2 bg-primary rounded-full delay-200"></div>
+                    ) : (
+                      messages.map((message) => (
+                        <div key={message.id} className="space-y-2">
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            {message.role === 'user' ? (
+                              <User className="h-4 w-4" />
+                            ) : (
+                              <Bot className="h-4 w-4" />
+                            )}
+                            <span className="capitalize">{message.role}</span>
+                            <Clock className="h-3 w-3" />
+                            <span>{formatTime(message.created_at)}</span>
+                          </div>
+                          <div className={`p-3 rounded-lg ${
+                            message.role === 'user' 
+                              ? 'bg-primary text-primary-foreground ml-12' 
+                              : 'bg-muted mr-12'
+                          }`}>
+                            <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                            {message.questions && message.questions.length > 0 && (
+                              <div className="mt-3 space-y-2">
+                                <p className="text-xs font-medium">Questions à répondre :</p>
+                                <ul className="space-y-1">
+                                  {message.questions.map((question, index) => (
+                                    <li key={index} className="text-xs p-2 bg-background/50 rounded border-l-2 border-primary">
+                                      {question}
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))
+                    )}
+                    {isGenerating && (
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Bot className="h-4 w-4" />
+                        <div className="flex items-center gap-1">
+                          <div className="animate-bounce w-2 h-2 bg-primary rounded-full"></div>
+                          <div className="animate-bounce w-2 h-2 bg-primary rounded-full delay-100"></div>
+                          <div className="animate-bounce w-2 h-2 bg-primary rounded-full delay-200"></div>
+                        </div>
+                        <span className="text-sm">IA réfléchit...</span>
                       </div>
-                      <span className="text-sm">IA réfléchit...</span>
-                    </div>
-                  )}
-                </div>
-              </ScrollArea>
+                    )}
+                  </div>
+                </ScrollArea>
 
-              <form onSubmit={handleSubmit} className="flex gap-2">
-                <Textarea
-                  value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
-                  placeholder="Décrivez votre projet (ex: application de livraison de nourriture)..."
-                  className="flex-1 min-h-[60px] resize-none"
-                  disabled={isGenerating}
-                />
-                <Button
-                  type="submit"
-                  disabled={!prompt.trim() || isGenerating}
-                  className="px-6"
-                >
-                  <SendHorizontal className="h-4 w-4" />
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="plans" className="space-y-6">
-          {plans.length === 0 ? (
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <BookOpen className="h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-medium mb-2">Aucun plan généré</h3>
-                <p className="text-muted-foreground text-center mb-4">
-                  Utilisez le chat pour générer votre premier plan de projet
-                </p>
-                <Button 
-                  onClick={() => {
-                    const chatTab = document.querySelector('[value="chat"]') as HTMLElement;
-                    if (chatTab) chatTab.click();
-                  }}
-                  variant="outline"
-                >
-                  Commencer dans le chat
-                </Button>
+                <form onSubmit={handleSubmit} className="flex gap-2">
+                  <Textarea
+                    value={prompt}
+                    onChange={(e) => setPrompt(e.target.value)}
+                    placeholder="Décrivez votre projet (ex: application de livraison de nourriture)..."
+                    className="flex-1 min-h-[60px] resize-none bg-white/60"
+                    disabled={isGenerating}
+                  />
+                  <Button
+                    type="submit"
+                    disabled={!prompt.trim() || isGenerating}
+                    className="px-6"
+                  >
+                    <SendHorizontal className="h-4 w-4" />
+                  </Button>
+                </form>
               </CardContent>
             </Card>
-          ) : (
-            <div className="grid gap-6">
-              <div className="flex gap-2 flex-wrap">
-                {plans.map((plan) => (
-                  <Button
-                    key={plan.id}
-                    variant={selectedPlan?.id === plan.id ? "default" : "outline"}
-                    onClick={() => setSelectedPlan(plan)}
-                    className="text-xs"
-                  >
-                    Plan du {new Date(plan.created_at).toLocaleDateString('fr-FR')}
-                  </Button>
-                ))}
-              </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-              {selectedPlan && (
+  // Vue avec plan généré
+  const planSections = getPlanSections(currentPlan.plan_data);
+
+  return (
+    <div className="min-h-screen bg-background flex">
+      {/* Sidebar flottante */}
+      <div className="fixed left-4 top-1/2 transform -translate-y-1/2 z-50">
+        <div className="bg-card border rounded-lg shadow-lg p-2 space-y-2">
+          {planSections.map((section) => (
+            <Button
+              key={section.key}
+              variant={selectedSection === section.key ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setSelectedSection(selectedSection === section.key ? null : section.key)}
+              className="w-12 h-12 p-0"
+              title={section.title}
+            >
+              <section.icon className="h-5 w-5" />
+            </Button>
+          ))}
+          <div className="border-t pt-2">
+            <Button
+              variant="default"
+              size="sm"
+              className="w-12 h-12 p-0 bg-green-600 hover:bg-green-700"
+              title="Exécuter le plan"
+            >
+              <Play className="h-5 w-5" />
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Contenu principal */}
+      <div className="flex-1 p-8">
+        {selectedSection ? (
+          <div className="max-w-4xl mx-auto">
+            {(() => {
+              const section = planSections.find(s => s.key === selectedSection);
+              if (!section) return null;
+              
+              return (
                 <Card>
-                  <CardHeader>
-                    <CardTitle>
-                      Plan généré le {new Date(selectedPlan.created_at).toLocaleDateString('fr-FR')}
-                    </CardTitle>
-                    <CardDescription>
-                      Dernière mise à jour: {new Date(selectedPlan.updated_at).toLocaleString('fr-FR')}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <Accordion type="single" collapsible className="w-full">
-                      {renderPlanSections(selectedPlan.plan_data).map((section, index) => (
-                        <AccordionItem key={index} value={`section-${index}`}>
-                          <AccordionTrigger className="flex items-center gap-2">
-                            <section.icon className="h-4 w-4" />
-                            {section.title}
-                          </AccordionTrigger>
-                          <AccordionContent className="space-y-4">
-                            {renderSectionContent(section.content)}
-                          </AccordionContent>
-                        </AccordionItem>
-                      ))}
-                    </Accordion>
+                  <CardContent className="p-6">
+                    <div className="flex items-center gap-3 mb-6">
+                      <section.icon className="h-6 w-6 text-primary" />
+                      <h2 className="text-2xl font-bold">{section.title}</h2>
+                    </div>
+                    <div className="prose max-w-none">
+                      {renderSectionContent(section.content)}
+                    </div>
                   </CardContent>
                 </Card>
-              )}
+              );
+            })()}
+          </div>
+        ) : (
+          <div className="max-w-4xl mx-auto text-center space-y-6">
+            <div className="space-y-3">
+              <h1 className="text-3xl font-bold">Plan de projet généré</h1>
+              <p className="text-muted-foreground">
+                Utilisez la barre latérale pour naviguer entre les différentes sections de votre plan
+              </p>
             </div>
-          )}
-        </TabsContent>
-      </Tabs>
+            <Card className="p-8">
+              <CardContent>
+                <Accordion type="single" collapsible className="w-full">
+                  {planSections.map((section, index) => (
+                    <AccordionItem key={section.key} value={section.key}>
+                      <AccordionTrigger className="flex items-center gap-2">
+                        <section.icon className="h-4 w-4" />
+                        {section.title}
+                      </AccordionTrigger>
+                      <AccordionContent className="space-y-4">
+                        {renderSectionContent(section.content)}
+                      </AccordionContent>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
