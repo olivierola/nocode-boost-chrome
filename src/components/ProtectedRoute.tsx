@@ -10,7 +10,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
 
   if (loading) {
     return (
-      <div className="w-[700px] h-[600px] flex items-center justify-center bg-background">
+      <div className="w-[750px] h-[600px] flex items-center justify-center bg-background">
         <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
       </div>
     );
