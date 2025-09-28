@@ -296,26 +296,58 @@ const PlanGenerator = () => {
 
     // Si c'est un objet avec des étapes
     if (typeof content === 'object' && !Array.isArray(content)) {
-      return Object.entries(content).map(([key, value], index) => ({
-        id: `${sectionType}-${index}-${key}`,
-        title: key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-        description: typeof value === 'string' ? value : JSON.stringify(value),
-        prompt: `Implémenter: ${key}`,
-        type: sectionType,
-        status: 'pending' as const
-      }));
+      return Object.entries(content).map(([key, value], index) => {
+        // Si la valeur est un objet avec nom, description et prompt
+        if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+          const stepData = value as any;
+          return {
+            id: `${sectionType}-${index}-${key}`,
+            title: stepData.nom || stepData.name || key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+            description: stepData.description || stepData.etape || 'Description non disponible',
+            prompt: stepData.prompt || `Implémenter: ${key}`,
+            type: sectionType,
+            status: 'pending' as const
+          };
+        }
+        
+        // Sinon, traitement par défaut
+        return {
+          id: `${sectionType}-${index}-${key}`,
+          title: key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+          description: typeof value === 'string' ? value : 'Description non disponible',
+          prompt: `Implémenter: ${key}`,
+          type: sectionType,
+          status: 'pending' as const
+        };
+      });
     }
 
     // Si c'est un tableau
     if (Array.isArray(content)) {
-      return content.map((item, index) => ({
-        id: `${sectionType}-${index}`,
-        title: `Étape ${index + 1}`,
-        description: typeof item === 'string' ? item : JSON.stringify(item),
-        prompt: `Implémenter l'étape ${index + 1}`,
-        type: sectionType,
-        status: 'pending' as const
-      }));
+      return content.map((item, index) => {
+        // Si l'item est un objet avec nom, description et prompt
+        if (typeof item === 'object' && item !== null) {
+          const stepData = item as any;
+          return {
+            id: `${sectionType}-${index}`,
+            title: stepData.nom || stepData.name || `Étape ${index + 1}`,
+            description: stepData.description || stepData.etape || 'Description non disponible',
+            prompt: stepData.prompt || `Implémenter l'étape ${index + 1}`,
+            type: sectionType,
+            status: 'pending' as const
+          };
+        }
+        
+        // Sinon, traitement par défaut
+        return {
+          id: `${sectionType}-${index}`,
+          title: `Étape ${index + 1}`,
+          description: typeof item === 'string' ? item : 'Description non disponible',
+          prompt: `Implémenter l'étape ${index + 1}`,
+          type: sectionType,
+          status: 'pending' as const
+        };
+      });
     }
 
     // Si c'est une string simple
