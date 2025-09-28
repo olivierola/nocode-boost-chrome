@@ -292,26 +292,32 @@ const PlanGenerator = () => {
   };
 
   const convertSectionToSteps = (content: any, sectionType: 'documentation' | 'implementation' | 'backend' | 'security'): PlanStep[] => {
+    console.log('convertSectionToSteps - input:', { content, sectionType });
+    
     if (!content) return [];
 
     // Si c'est un objet avec des étapes
     if (typeof content === 'object' && !Array.isArray(content)) {
-      return Object.entries(content).map(([key, value], index) => {
+      const steps = Object.entries(content).map(([key, value], index) => {
+        console.log('Processing object entry:', { key, value });
+        
         // Si la valeur est un objet avec nom, description et prompt
         if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
           const stepData = value as any;
-          return {
+          const step = {
             id: `${sectionType}-${index}-${key}`,
-            title: stepData.nom || stepData.name || key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-            description: stepData.description || stepData.etape || 'Description non disponible',
-            prompt: stepData.prompt || `Implémenter: ${key}`,
+            title: stepData.nom || stepData.name || stepData.title || key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+            description: stepData.description || stepData.etape || stepData.desc || 'Description non disponible',
+            prompt: stepData.prompt || stepData.prompts || `Implémenter: ${key}`,
             type: sectionType,
             status: 'pending' as const
           };
+          console.log('Created step from object:', step);
+          return step;
         }
         
         // Sinon, traitement par défaut
-        return {
+        const step = {
           id: `${sectionType}-${index}-${key}`,
           title: key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
           description: typeof value === 'string' ? value : 'Description non disponible',
@@ -319,27 +325,35 @@ const PlanGenerator = () => {
           type: sectionType,
           status: 'pending' as const
         };
+        console.log('Created default step:', step);
+        return step;
       });
+      console.log('Final steps from object:', steps);
+      return steps;
     }
 
     // Si c'est un tableau
     if (Array.isArray(content)) {
-      return content.map((item, index) => {
+      const steps = content.map((item, index) => {
+        console.log('Processing array item:', { item, index });
+        
         // Si l'item est un objet avec nom, description et prompt
         if (typeof item === 'object' && item !== null) {
           const stepData = item as any;
-          return {
+          const step = {
             id: `${sectionType}-${index}`,
-            title: stepData.nom || stepData.name || `Étape ${index + 1}`,
-            description: stepData.description || stepData.etape || 'Description non disponible',
-            prompt: stepData.prompt || `Implémenter l'étape ${index + 1}`,
+            title: stepData.nom || stepData.name || stepData.title || `Étape ${index + 1}`,
+            description: stepData.description || stepData.etape || stepData.desc || 'Description non disponible',
+            prompt: stepData.prompt || stepData.prompts || `Implémenter l'étape ${index + 1}`,
             type: sectionType,
             status: 'pending' as const
           };
+          console.log('Created step from array object:', step);
+          return step;
         }
         
         // Sinon, traitement par défaut
-        return {
+        const step = {
           id: `${sectionType}-${index}`,
           title: `Étape ${index + 1}`,
           description: typeof item === 'string' ? item : 'Description non disponible',
@@ -347,23 +361,24 @@ const PlanGenerator = () => {
           type: sectionType,
           status: 'pending' as const
         };
+        console.log('Created default array step:', step);
+        return step;
       });
+      console.log('Final steps from array:', steps);
+      return steps;
     }
 
-    // Si c'est une string simple
-    if (typeof content === 'string') {
-      return [{
-        id: `${sectionType}-0`,
-        title: `${sectionType.charAt(0).toUpperCase() + sectionType.slice(1)}`,
-        description: content,
-        prompt: `Implémenter ${sectionType}`,
-        type: sectionType,
-        status: 'pending' as const
-      }];
-    }
-
-    return [];
+    // Fallback pour les chaînes de caractères
+    return [{
+      id: `${sectionType}-0`,
+      title: 'Étape unique',
+      description: typeof content === 'string' ? content : 'Description non disponible',
+      prompt: 'Implémenter cette étape',
+      type: sectionType,
+      status: 'pending' as const
+    }];
   };
+
 
   const handleEditStep = async (step: PlanStep) => {
     if (!currentPlan) return;
