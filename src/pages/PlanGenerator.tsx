@@ -7,10 +7,11 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { SendHorizontal, Bot, User, Clock, Plus, BookOpen, Database, Shield, Play } from 'lucide-react';
+import { SendHorizontal, Bot, User, Clock, Plus, BookOpen, Database, Shield, Play, MessageCircle } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import ReactMarkdown from 'react-markdown';
 import PlanStepCards from '@/components/ui/plan-step-cards';
+import PlanChatDialog from '@/components/PlanChatDialog';
 
 interface ChatMessage {
   id: string;
@@ -56,6 +57,7 @@ const PlanGenerator = () => {
   const [currentPlan, setCurrentPlan] = useState<Plan | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedSection, setSelectedSection] = useState<string | null>(null);
+  const [chatDialogOpen, setChatDialogOpen] = useState(false);
 
   useEffect(() => {
     if (selectedProject && user) {
@@ -551,104 +553,90 @@ const PlanGenerator = () => {
   // Vue quand il n'y a pas de plan
   if (!currentPlan) {
     return (
-      <div className="min-h-screen relative overflow-hidden bg-white">
+      <div className="min-h-screen relative overflow-hidden">
         {/* Background avec effets blur colorés */}
-        <div className="absolute inset-0">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-secondary/10 to-accent/10">
           <div className="absolute top-20 left-20 w-72 h-72 bg-primary/20 rounded-full blur-3xl"></div>
           <div className="absolute bottom-20 right-20 w-96 h-96 bg-secondary/20 rounded-full blur-3xl"></div>
           <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-accent/20 rounded-full blur-3xl"></div>
         </div>
 
-        {/* Contenu principal */}
+        {/* Interface de chat plein écran */}
         <div className="relative z-10 flex flex-col items-center justify-center min-h-screen p-8">
-          <div className="max-w-2xl w-full space-y-8">
-            {/* Titre et description */}
-            <div className="text-center space-y-4">
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                Générateur de Plans IA
-              </h1>
-              <p className="text-lg text-muted-foreground">
-                Décrivez votre projet et laissez l'IA créer un plan détaillé pour vous guider dans sa réalisation
-              </p>
-            </div>
-
-            {/* Interface de chat */}
-            <Card className="backdrop-blur-sm bg-white/80 border-white/20 shadow-xl">
-              <CardContent className="space-y-6 p-6">
-                <ScrollArea className="h-96 w-full rounded-md border border-white/20 p-4 bg-white/50">
-                  <div className="space-y-4">
-                    {messages.length === 0 ? (
-                      <div className="text-center text-muted-foreground py-8">
-                        <Bot className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                        <p>Commencez par décrire votre projet...</p>
-                      </div>
-                    ) : (
-                      messages.map((message) => (
-                        <div key={message.id} className="space-y-2">
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            {message.role === 'user' ? (
-                              <User className="h-4 w-4" />
-                            ) : (
-                              <Bot className="h-4 w-4" />
-                            )}
-                            <span className="capitalize">{message.role}</span>
-                            <Clock className="h-3 w-3" />
-                            <span>{formatTime(message.created_at)}</span>
-                          </div>
-                          <div className={`p-3 rounded-lg ${
-                            message.role === 'user' 
-                              ? 'bg-primary text-primary-foreground ml-12' 
-                              : 'bg-muted mr-12'
-                          }`}>
-                            <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                            {message.questions && message.questions.length > 0 && (
-                              <div className="mt-3 space-y-2">
-                                <p className="text-xs font-medium">Questions à répondre :</p>
-                                <ul className="space-y-1">
-                                  {message.questions.map((question, index) => (
-                                    <li key={index} className="text-xs p-2 bg-background/50 rounded border-l-2 border-primary">
-                                      {question}
-                                    </li>
-                                  ))}
-                                </ul>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      ))
-                    )}
-                    {isGenerating && (
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <Bot className="h-4 w-4" />
-                        <div className="flex items-center gap-1">
-                          <div className="animate-bounce w-2 h-2 bg-primary rounded-full"></div>
-                          <div className="animate-bounce w-2 h-2 bg-primary rounded-full delay-100"></div>
-                          <div className="animate-bounce w-2 h-2 bg-primary rounded-full delay-200"></div>
-                        </div>
-                        <span className="text-sm">IA réfléchit...</span>
-                      </div>
-                    )}
+          <div className="max-w-4xl w-full h-[80vh] flex flex-col">
+            <ScrollArea className="flex-1 w-full rounded-lg border border-white/20 p-6 bg-white/10 backdrop-blur-sm mb-4">
+              <div className="space-y-4">
+                {messages.length === 0 ? (
+                  <div className="text-center text-muted-foreground py-8">
+                    <Bot className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>Commencez par décrire votre projet...</p>
                   </div>
-                </ScrollArea>
+                ) : (
+                  messages.map((message) => (
+                    <div key={message.id} className="space-y-2">
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        {message.role === 'user' ? (
+                          <User className="h-4 w-4" />
+                        ) : (
+                          <Bot className="h-4 w-4" />
+                        )}
+                        <span className="capitalize">{message.role}</span>
+                        <Clock className="h-3 w-3" />
+                        <span>{formatTime(message.created_at)}</span>
+                      </div>
+                      <div className={`p-3 rounded-lg ${
+                        message.role === 'user' 
+                          ? 'bg-primary text-primary-foreground ml-12' 
+                          : 'bg-muted mr-12'
+                      }`}>
+                        <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                        {message.questions && message.questions.length > 0 && (
+                          <div className="mt-3 space-y-2">
+                            <p className="text-xs font-medium">Questions à répondre :</p>
+                            <ul className="space-y-1">
+                              {message.questions.map((question, index) => (
+                                <li key={index} className="text-xs p-2 bg-background/50 rounded border-l-2 border-primary">
+                                  {question}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+                {isGenerating && (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Bot className="h-4 w-4" />
+                    <div className="flex items-center gap-1">
+                      <div className="animate-bounce w-2 h-2 bg-primary rounded-full"></div>
+                      <div className="animate-bounce w-2 h-2 bg-primary rounded-full delay-100"></div>
+                      <div className="animate-bounce w-2 h-2 bg-primary rounded-full delay-200"></div>
+                    </div>
+                    <span className="text-sm">IA réfléchit...</span>
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
 
-                <form onSubmit={handleSubmit} className="flex gap-2">
-                  <Textarea
-                    value={prompt}
-                    onChange={(e) => setPrompt(e.target.value)}
-                    placeholder="Décrivez votre projet (ex: application de livraison de nourriture)..."
-                    className="flex-1 min-h-[60px] resize-none bg-white/60"
-                    disabled={isGenerating}
-                  />
-                  <Button
-                    type="submit"
-                    disabled={!prompt.trim() || isGenerating}
-                    className="px-6"
-                  >
-                    <SendHorizontal className="h-4 w-4" />
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
+            <form onSubmit={handleSubmit} className="flex gap-4">
+              <Textarea
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                placeholder="Décrivez votre projet (ex: application de livraison de nourriture)..."
+                className="flex-1 min-h-[80px] resize-none bg-white/20 backdrop-blur-sm border-white/20"
+                disabled={isGenerating}
+              />
+              <Button
+                type="submit"
+                disabled={!prompt.trim() || isGenerating}
+                className="px-8 h-20"
+                size="lg"
+              >
+                <SendHorizontal className="h-5 w-5" />
+              </Button>
+            </form>
           </div>
         </div>
       </div>
@@ -675,7 +663,16 @@ const PlanGenerator = () => {
               <section.icon className="h-5 w-5" />
             </Button>
           ))}
-          <div className="border-t pt-3">
+          <div className="border-t pt-3 space-y-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setChatDialogOpen(true)}
+              className="w-12 h-12 p-0 rounded-lg hover:bg-primary/10"
+              title="Chat IA pour modifier le plan"
+            >
+              <MessageCircle className="h-5 w-5" />
+            </Button>
             <Button
               variant="default"
               size="sm"
@@ -756,6 +753,12 @@ const PlanGenerator = () => {
           </div>
         )}
       </div>
+
+      <PlanChatDialog
+        open={chatDialogOpen}
+        onOpenChange={setChatDialogOpen}
+        sectionTitle={selectedSection ? planSections.find(s => s.key === selectedSection)?.title : "Plan"}
+      />
     </div>
   );
 };
