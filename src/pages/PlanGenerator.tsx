@@ -438,35 +438,37 @@ const PlanGenerator = () => {
   const planSections = getPlanSections(currentPlan.plan_data);
 
   return (
-    <div className="min-h-screen bg-background flex">
-      {/* Sidebar verticale */}
-      <div className="w-20 bg-card border-r shadow-sm flex flex-col items-center py-6 space-y-4">
-        {planSections.map((section) => (
-          <Button
-            key={section.key}
-            variant={selectedSection === section.key ? "default" : "ghost"}
-            size="sm"
-            onClick={() => setSelectedSection(selectedSection === section.key ? null : section.key)}
-            className="w-12 h-12 p-0"
-            title={section.title}
-          >
-            <section.icon className="h-5 w-5" />
-          </Button>
-        ))}
-        <div className="border-t w-8 pt-4">
-          <Button
-            variant="default"
-            size="sm"
-            className="w-12 h-12 p-0 bg-green-600 hover:bg-green-700"
-            title="Exécuter le plan"
-          >
-            <Play className="h-5 w-5" />
-          </Button>
+    <div className="min-h-screen bg-background">
+      {/* Sidebar verticale flottante */}
+      <div className="fixed left-4 top-1/2 transform -translate-y-1/2 z-50">
+        <div className="bg-card border rounded-xl shadow-lg p-3 space-y-3">
+          {planSections.map((section) => (
+            <Button
+              key={section.key}
+              variant={selectedSection === section.key ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setSelectedSection(selectedSection === section.key ? null : section.key)}
+              className="w-12 h-12 p-0 rounded-lg"
+              title={section.title}
+            >
+              <section.icon className="h-5 w-5" />
+            </Button>
+          ))}
+          <div className="border-t pt-3">
+            <Button
+              variant="default"
+              size="sm"
+              className="w-12 h-12 p-0 bg-green-600 hover:bg-green-700 rounded-lg"
+              title="Exécuter le plan"
+            >
+              <Play className="h-5 w-5" />
+            </Button>
+          </div>
         </div>
       </div>
 
       {/* Contenu principal */}
-      <div className="flex-1 p-8">
+      <div className="p-8">
         {selectedSection ? (
           <div className="max-w-4xl mx-auto">
             {(() => {
