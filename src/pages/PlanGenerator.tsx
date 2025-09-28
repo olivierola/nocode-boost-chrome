@@ -296,7 +296,46 @@ const PlanGenerator = () => {
     
     if (!content) return [];
 
-    // Si c'est un objet avec des étapes
+    // Nouveau format: plan_implementation est un tableau d'étapes
+    if (sectionType === 'implementation' && Array.isArray(content)) {
+      return content.map((item, index) => {
+        console.log('Processing implementation step:', { item, index });
+        
+        if (typeof item === 'object' && item !== null) {
+          return {
+            id: `${sectionType}-${index}`,
+            title: item.titre || `Étape ${index + 1}`,
+            description: item.description || 'Description non disponible',
+            prompt: item.prompt_optimise || `Implémenter l'étape ${index + 1}`,
+            type: sectionType,
+            status: 'pending' as const
+          };
+        }
+        
+        return {
+          id: `${sectionType}-${index}`,
+          title: `Étape ${index + 1}`,
+          description: typeof item === 'string' ? item : 'Description non disponible',
+          prompt: `Implémenter l'étape ${index + 1}`,
+          type: sectionType,
+          status: 'pending' as const
+        };
+      });
+    }
+
+    // Pour etude_saas (documentation): traiter comme une seule étape avec markdown
+    if (sectionType === 'documentation' && typeof content === 'object' && content.documentation_markdown) {
+      return [{
+        id: `${sectionType}-0`,
+        title: 'Étude SaaS Complète',
+        description: content.documentation_markdown,
+        prompt: 'Analyser et valider cette étude SaaS',
+        type: sectionType,
+        status: 'pending' as const
+      }];
+    }
+
+    // Legacy: Si c'est un objet avec des étapes
     if (typeof content === 'object' && !Array.isArray(content)) {
       const steps = Object.entries(content).map(([key, value], index) => {
         console.log('Processing object entry:', { key, value });
@@ -306,9 +345,9 @@ const PlanGenerator = () => {
           const stepData = value as any;
           const step = {
             id: `${sectionType}-${index}-${key}`,
-            title: stepData.nom || stepData.name || stepData.title || key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+            title: stepData.nom || stepData.name || stepData.title || stepData.titre || key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
             description: stepData.description || stepData.etape || stepData.desc || 'Description non disponible',
-            prompt: stepData.prompt || stepData.prompts || `Implémenter: ${key}`,
+            prompt: stepData.prompt || stepData.prompt_optimise || stepData.prompts || `Implémenter: ${key}`,
             type: sectionType,
             status: 'pending' as const
           };
@@ -332,7 +371,7 @@ const PlanGenerator = () => {
       return steps;
     }
 
-    // Si c'est un tableau
+    // Si c'est un tableau (format legacy)
     if (Array.isArray(content)) {
       const steps = content.map((item, index) => {
         console.log('Processing array item:', { item, index });
@@ -342,9 +381,9 @@ const PlanGenerator = () => {
           const stepData = item as any;
           const step = {
             id: `${sectionType}-${index}`,
-            title: stepData.nom || stepData.name || stepData.title || `Étape ${index + 1}`,
+            title: stepData.nom || stepData.name || stepData.title || stepData.titre || `Étape ${index + 1}`,
             description: stepData.description || stepData.etape || stepData.desc || 'Description non disponible',
-            prompt: stepData.prompt || stepData.prompts || `Implémenter l'étape ${index + 1}`,
+            prompt: stepData.prompt || stepData.prompt_optimise || stepData.prompts || `Implémenter l'étape ${index + 1}`,
             type: sectionType,
             status: 'pending' as const
           };
