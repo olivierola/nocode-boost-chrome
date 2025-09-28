@@ -442,6 +442,7 @@ export type Database = {
           monthly_plan_generations: number | null
           monthly_visual_identity: number | null
           name: string
+          storage_limit_mb: number | null
         }
         Insert: {
           collaboration_enabled?: boolean | null
@@ -451,6 +452,7 @@ export type Database = {
           monthly_plan_generations?: number | null
           monthly_visual_identity?: number | null
           name: string
+          storage_limit_mb?: number | null
         }
         Update: {
           collaboration_enabled?: boolean | null
@@ -460,6 +462,7 @@ export type Database = {
           monthly_plan_generations?: number | null
           monthly_visual_identity?: number | null
           name?: string
+          storage_limit_mb?: number | null
         }
         Relationships: []
       }
@@ -638,6 +641,7 @@ export type Database = {
           monthly_post_generations: number
           monthly_visual_identity: number
           plan_name: string
+          storage_limit_mb: number
         }[]
       }
       notify_plan_completion: {

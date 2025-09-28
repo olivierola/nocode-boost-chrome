@@ -38,8 +38,8 @@ serve(async (req) => {
     try {
       event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
     } catch (err) {
-      logStep("Webhook signature verification failed", { error: err.message });
-      return new Response(`Webhook Error: ${err.message}`, { status: 400 });
+      logStep("Webhook signature verification failed", { error: err instanceof Error ? err.message : 'Unknown error' });
+      return new Response(`Webhook Error: ${err instanceof Error ? err.message : 'Unknown error'}`, { status: 400 });
     }
 
     logStep("Webhook event type", { type: event.type });
@@ -171,7 +171,7 @@ async function getCustomerEmail(customerId: string, supabaseClient: any) {
       user_id: profile?.user_id || null
     };
   } catch (error) {
-    logStep("Error retrieving customer", { customerId, error: error.message });
+    logStep("Error retrieving customer", { customerId, error: error instanceof Error ? error.message : 'Unknown error' });
     return null;
   }
 }

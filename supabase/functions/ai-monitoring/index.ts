@@ -139,7 +139,7 @@ Fournis une suggestion d'amélioration avec un prompt précis à exécuter.`;
   } catch (error) {
     console.error('Error in ai-monitoring function:', error);
     return new Response(JSON.stringify({ 
-      error: error.message,
+      error: error instanceof Error ? error.message : 'Unknown error',
       suggestion: 'Erreur de monitoring IA',
       type: 'error',
       priority: 'low'

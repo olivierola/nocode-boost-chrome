@@ -84,7 +84,7 @@ serve(async (req) => {
     console.error('Error in oauth-callback function:', error);
     
     const url = new URL(req.url);
-    const redirectUrl = `${url.origin}/?error=auth_failed&error_description=${encodeURIComponent(error.message)}`;
+    const redirectUrl = `${url.origin}/?error=auth_failed&error_description=${encodeURIComponent(error instanceof Error ? error.message : 'Unknown error')}`;
     
     return new Response(null, {
       status: 302,

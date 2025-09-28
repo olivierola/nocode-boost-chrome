@@ -224,18 +224,18 @@ Le JSON doit avoir la structure suivante :
 
 {
 "etude_saas": {
-"documentation_markdown": "## Étude SaaS Complète\\n\\n### Opportunité du marché\\n...\\n\\n### Analyse de la concurrence\\n...\\n\\n### Personas cibles\\n...\\n\\n### Proposition de valeur\\n...\\n\\n### Modèle économique\\n- **Pricing** : Freemium avec plans à 9€, 29€, 99€/mois\\n- **Croissance** : ...\\n- **Rétention** : ...\\n\\n### Tech stack recommandée\\n...\\n\\n### Risques & challenges\\n..."
+"documentation_markdown": "## Étude SaaS ... (contenu en markdown)"
 },
 "plan_implementation": [
 {
-"titre": "Configuration initiale du projet",
-"description": "### Description\\nMise en place de l'environnement de développement avec React, TypeScript et Supabase...",
-"prompt_optimise": "Créer un nouveau projet React avec TypeScript, configurer Supabase pour l'authentification et la base de données..."
+"titre": "Nom de l'étape",
+"description": "### Description\\nTexte en markdown expliquant cette étape...",
+"prompt_optimise": "Prompt très détaillé et opérationnel"
 },
 {
-"titre": "Système d'authentification",
-"description": "### Description\\nImplémentation du système d'authentification complet...",
-"prompt_optimise": "Implémenter l'authentification utilisateur avec Supabase Auth, incluant inscription, connexion, mot de passe oublié..."
+"titre": "Nom de l'étape suivante",
+"description": "### Description\\nTexte en markdown explicatif...",
+"prompt_optimise": "Prompt suivant"
 }
 ]
 }
@@ -337,7 +337,7 @@ Ton rôle est d'agir comme un consultant SaaS senior spécialisé dans le growth
   } catch (error) {
     console.error('Error in generate-plan function:', error);
     return new Response(JSON.stringify({ 
-      error: error.message || 'Erreur lors de la génération du plan' 
+      error: error instanceof Error ? error.message : 'Erreur lors de la génération du plan' 
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
