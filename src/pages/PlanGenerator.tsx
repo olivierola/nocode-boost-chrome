@@ -68,10 +68,11 @@ const PlanGenerator = () => {
   const loadInitialData = async () => {
     try {
       setLoading(true);
-      await Promise.all([
-        loadChatHistory(),
-        loadCurrentPlan()
-      ]);
+      // Load plan first, then chat history only if plan exists
+      await loadCurrentPlan();
+      if (currentPlan) {
+        await loadChatHistory();
+      }
     } catch (error) {
       console.error('Erreur lors du chargement:', error);
       toast.error('Erreur lors du chargement des données');
@@ -102,7 +103,10 @@ const PlanGenerator = () => {
         plan_id: msg.plan_id
       }));
       
-      setMessages(transformedMessages);
+      // Only set messages if there's a current plan
+      if (currentPlan) {
+        setMessages(transformedMessages);
+      }
     } catch (error) {
       console.error('Erreur chargement historique:', error);
     }
@@ -556,15 +560,15 @@ const PlanGenerator = () => {
       <div className="min-h-screen relative overflow-hidden">
         {/* Background avec effets blur colorés */}
         <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-secondary/10 to-accent/10">
-          <div className="absolute top-20 left-20 w-72 h-72 bg-primary/20 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-20 right-20 w-96 h-96 bg-secondary/20 rounded-full blur-3xl"></div>
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-accent/20 rounded-full blur-3xl"></div>
+          <div className="absolute top-20 left-20 w-72 h-72 bg-primary/20 rounded-full"></div>
+          <div className="absolute bottom-20 right-20 w-96 h-96 bg-secondary/20 rounded-full"></div>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-accent/20 rounded-full"></div>
         </div>
 
         {/* Interface de chat plein écran */}
         <div className="relative z-10 flex flex-col items-center justify-center min-h-screen p-8">
           <div className="max-w-4xl w-full h-[80vh] flex flex-col">
-            <ScrollArea className="flex-1 w-full rounded-lg border border-white/20 p-6 bg-white/10 backdrop-blur-sm mb-4">
+            <ScrollArea className="flex-1 w-full rounded-lg border border-white/20 p-6 bg-white/10 mb-4">
               <div className="space-y-4">
                 {messages.length === 0 ? (
                   <div className="text-center text-muted-foreground py-8">
@@ -625,7 +629,7 @@ const PlanGenerator = () => {
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
                 placeholder="Décrivez votre projet (ex: application de livraison de nourriture)..."
-                className="flex-1 min-h-[80px] resize-none bg-white/20 backdrop-blur-sm border-white/20"
+                className="flex-1 min-h-[80px] resize-none bg-white/20 border-white/20"
                 disabled={isGenerating}
               />
               <Button
