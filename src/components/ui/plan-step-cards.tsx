@@ -2,9 +2,11 @@
 
 import React, { useState } from 'react'
 import { Warp } from "@paper-design/shaders-react"
-import { ChevronDown, ChevronUp, Edit3, FileText, Code, Shield, Database } from 'lucide-react'
+import { ChevronDown, ChevronUp, Edit3, FileText, Code, Shield, Database, Plus, Trash2, Save } from 'lucide-react'
 import { Button } from './button'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './collapsible'
+import EditStepDialog from './edit-step-dialog'
+import { toast } from 'sonner'
 
 interface PlanStep {
   id: string
@@ -19,10 +21,26 @@ interface PlanStepCardsProps {
   steps: PlanStep[]
   onEditStep: (step: PlanStep) => void
   onExecuteStep?: (step: PlanStep) => void
+  onAddStep?: (sectionType: 'documentation' | 'implementation' | 'backend' | 'security') => void
+  onDeleteStep?: (stepId: string) => void
+  onSavePlan?: (steps: PlanStep[]) => void
+  sectionType?: 'documentation' | 'implementation' | 'backend' | 'security'
+  editable?: boolean
 }
 
-export default function PlanStepCards({ steps = [], onEditStep, onExecuteStep }: PlanStepCardsProps) {
+export default function PlanStepCards({ 
+  steps = [], 
+  onEditStep, 
+  onExecuteStep, 
+  onAddStep, 
+  onDeleteStep, 
+  onSavePlan, 
+  sectionType = 'implementation',
+  editable = false 
+}: PlanStepCardsProps) {
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set())
+  const [editingStep, setEditingStep] = useState<PlanStep | null>(null)
+  const [localSteps, setLocalSteps] = useState<PlanStep[]>(steps)
 
   const toggleCard = (stepId: string) => {
     setExpandedCards(prev => {
@@ -111,9 +129,60 @@ export default function PlanStepCards({ steps = [], onEditStep, onExecuteStep }:
     }
   }
 
+  const handleAddStep = () => {
+    if (onAddStep) {
+      onAddStep(sectionType)
+    }
+  }
+
+  const handleDeleteStep = (stepId: string) => {
+    if (onDeleteStep) {
+      onDeleteStep(stepId)
+      setLocalSteps(prev => prev.filter(step => step.id !== stepId))
+    }
+  }
+
+  const handleEditStep = (step: PlanStep) => {
+    setEditingStep(step)
+  }
+
+  const handleSaveStep = (updatedStep: PlanStep) => {
+    setLocalSteps(prev => prev.map(step => 
+      step.id === updatedStep.id ? updatedStep : step
+    ))
+    onEditStep(updatedStep)
+    setEditingStep(null)
+    toast.success('Étape mise à jour avec succès')
+  }
+
+  const handleSavePlan = () => {
+    if (onSavePlan) {
+      onSavePlan(localSteps)
+      toast.success('Plan sauvegardé avec succès')
+    }
+  }
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
-      {Array.isArray(steps) && steps.map((step, index) => {
+    <div className="space-y-6">
+      {/* Header avec boutons d'action */}
+      {editable && (
+        <div className="flex justify-between items-center p-4 bg-muted rounded-lg">
+          <h3 className="text-lg font-semibold">Gestion des étapes</h3>
+          <div className="flex gap-2">
+            <Button onClick={handleAddStep} size="sm" className="flex items-center gap-2">
+              <Plus className="w-4 h-4" />
+              Ajouter une étape
+            </Button>
+            <Button onClick={handleSavePlan} size="sm" variant="outline" className="flex items-center gap-2">
+              <Save className="w-4 h-4" />
+              Sauvegarder
+            </Button>
+          </div>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {Array.isArray(localSteps) && localSteps.map((step, index) => {
         const shaderConfig = getShaderConfig(step.type, index)
         const isExpanded = expandedCards.has(step.id)
         const isDocumentation = step.type === 'documentation'
@@ -156,21 +225,40 @@ export default function PlanStepCards({ steps = [], onEditStep, onExecuteStep }:
                     {step.status && (
                       <div className={`w-2 h-2 rounded-full ${getStatusColor(step.status)}`} />
                     )}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        onEditStep(step)
-                      }}
-                      className={`${
-                        isDocumentation 
-                          ? 'text-gray-600 hover:text-gray-900 hover:bg-gray-100' 
-                          : 'text-gray-200 hover:text-white hover:bg-white/10'
-                      }`}
-                    >
-                      <Edit3 className="w-4 h-4" />
-                    </Button>
+                    {editable && (
+                      <>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleEditStep(step)
+                          }}
+                          className={`${
+                            isDocumentation 
+                              ? 'text-gray-600 hover:text-gray-900 hover:bg-gray-100' 
+                              : 'text-gray-200 hover:text-white hover:bg-white/10'
+                          }`}
+                        >
+                          <Edit3 className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleDeleteStep(step.id)
+                          }}
+                          className={`${
+                            isDocumentation 
+                              ? 'text-red-600 hover:text-red-900 hover:bg-red-100' 
+                              : 'text-red-200 hover:text-red-100 hover:bg-red-500/10'
+                          }`}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </>
+                    )}
                   </div>
                 </div>
 
@@ -246,7 +334,16 @@ export default function PlanStepCards({ steps = [], onEditStep, onExecuteStep }:
             </div>
           </Collapsible>
         )
-      })}
+        })}
+      </div>
+
+      {/* Dialog d'édition */}
+      <EditStepDialog
+        open={!!editingStep}
+        onOpenChange={(open) => !open && setEditingStep(null)}
+        step={editingStep}
+        onSave={handleSaveStep}
+      />
     </div>
   )
 }

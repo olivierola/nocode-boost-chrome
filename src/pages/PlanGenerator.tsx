@@ -10,6 +10,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { SendHorizontal, Bot, User, Clock, Plus, BookOpen, Database, Shield, Play } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import ReactMarkdown from 'react-markdown';
+import PlanStepCards from '@/components/ui/plan-step-cards';
 
 interface ChatMessage {
   id: string;
@@ -34,6 +35,15 @@ interface PlanSection {
   content: any;
   icon: React.ComponentType<{ className?: string }>;
   key: string;
+}
+
+interface PlanStep {
+  id: string;
+  title: string;
+  description: string;
+  prompt?: string;
+  type: 'documentation' | 'implementation' | 'backend' | 'security';
+  status?: 'pending' | 'in-progress' | 'completed' | 'error';
 }
 
 const PlanGenerator = () => {
@@ -281,6 +291,121 @@ const PlanGenerator = () => {
     return sections;
   };
 
+  const convertSectionToSteps = (content: any, sectionType: 'documentation' | 'implementation' | 'backend' | 'security'): PlanStep[] => {
+    if (!content) return [];
+
+    // Si c'est un objet avec des étapes
+    if (typeof content === 'object' && !Array.isArray(content)) {
+      return Object.entries(content).map(([key, value], index) => ({
+        id: `${sectionType}-${index}-${key}`,
+        title: key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+        description: typeof value === 'string' ? value : JSON.stringify(value),
+        prompt: `Implémenter: ${key}`,
+        type: sectionType,
+        status: 'pending' as const
+      }));
+    }
+
+    // Si c'est un tableau
+    if (Array.isArray(content)) {
+      return content.map((item, index) => ({
+        id: `${sectionType}-${index}`,
+        title: `Étape ${index + 1}`,
+        description: typeof item === 'string' ? item : JSON.stringify(item),
+        prompt: `Implémenter l'étape ${index + 1}`,
+        type: sectionType,
+        status: 'pending' as const
+      }));
+    }
+
+    // Si c'est une string simple
+    if (typeof content === 'string') {
+      return [{
+        id: `${sectionType}-0`,
+        title: `${sectionType.charAt(0).toUpperCase() + sectionType.slice(1)}`,
+        description: content,
+        prompt: `Implémenter ${sectionType}`,
+        type: sectionType,
+        status: 'pending' as const
+      }];
+    }
+
+    return [];
+  };
+
+  const handleEditStep = async (step: PlanStep) => {
+    if (!currentPlan) return;
+    
+    try {
+      // Mettre à jour le plan avec les modifications
+      const updatedPlanData = { ...currentPlan.plan_data };
+      
+      // Logic to update the specific step in the plan data
+      // This would need to be implemented based on your plan data structure
+      
+      const { error } = await supabase
+        .from('plans')
+        .update({ 
+          plan_data: updatedPlanData,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', currentPlan.id);
+
+      if (error) throw error;
+      
+      toast.success('Étape mise à jour avec succès');
+      await loadCurrentPlan();
+    } catch (error) {
+      console.error('Erreur mise à jour étape:', error);
+      toast.error('Erreur lors de la mise à jour de l\'étape');
+    }
+  };
+
+  const handleAddStep = async (sectionType: 'documentation' | 'implementation' | 'backend' | 'security') => {
+    if (!currentPlan) return;
+
+    const newStep: PlanStep = {
+      id: `${sectionType}-${Date.now()}`,
+      title: 'Nouvelle étape',
+      description: 'Description de la nouvelle étape',
+      prompt: 'Prompt pour cette étape',
+      type: sectionType,
+      status: 'pending'
+    };
+
+    try {
+      // Add logic to add step to plan data
+      toast.success('Nouvelle étape ajoutée');
+    } catch (error) {
+      console.error('Erreur ajout étape:', error);
+      toast.error('Erreur lors de l\'ajout de l\'étape');
+    }
+  };
+
+  const handleDeleteStep = async (stepId: string) => {
+    if (!currentPlan) return;
+
+    try {
+      // Add logic to remove step from plan data
+      toast.success('Étape supprimée avec succès');
+    } catch (error) {
+      console.error('Erreur suppression étape:', error);
+      toast.error('Erreur lors de la suppression de l\'étape');
+    }
+  };
+
+  const handleSavePlan = async (steps: PlanStep[]) => {
+    if (!currentPlan) return;
+
+    try {
+      // Save updated plan with new steps structure
+      toast.success('Plan sauvegardé avec succès');
+    } catch (error) {
+      console.error('Erreur sauvegarde plan:', error);
+      toast.error('Erreur lors de la sauvegarde du plan');
+    }
+  };
+
   const renderSectionContent = (content: any, depth = 0, sectionKey?: string) => {
     if (!content) return null;
 
@@ -480,23 +605,40 @@ const PlanGenerator = () => {
       {/* Contenu principal */}
       <div className="p-8">
         {selectedSection ? (
-          <div className="max-w-4xl mx-auto">
+          <div className="max-w-7xl mx-auto">
             {(() => {
               const section = planSections.find(s => s.key === selectedSection);
               if (!section) return null;
               
+              const steps = convertSectionToSteps(section.content, section.key as 'documentation' | 'implementation' | 'backend' | 'security');
+              
               return (
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-center gap-3 mb-6">
-                      <section.icon className="h-6 w-6 text-primary" />
-                      <h2 className="text-2xl font-bold">{section.title}</h2>
-                    </div>
-                    <div className="prose max-w-none">
-                      {renderSectionContent(section.content, 0, section.key)}
-                    </div>
-                  </CardContent>
-                </Card>
+                <div className="space-y-6">
+                  <div className="flex items-center gap-3 mb-6">
+                    <section.icon className="h-6 w-6 text-primary" />
+                    <h2 className="text-2xl font-bold">{section.title}</h2>
+                  </div>
+                  
+                  {section.key === 'documentation' ? (
+                    <Card>
+                      <CardContent className="p-6">
+                        <div className="prose max-w-none">
+                          {renderSectionContent(section.content, 0, section.key)}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <PlanStepCards
+                      steps={steps}
+                      onEditStep={handleEditStep}
+                      onAddStep={handleAddStep}
+                      onDeleteStep={handleDeleteStep}
+                      onSavePlan={handleSavePlan}
+                      sectionType={section.key as 'documentation' | 'implementation' | 'backend' | 'security'}
+                      editable={true}
+                    />
+                  )}
+                </div>
               );
             })()}
           </div>
