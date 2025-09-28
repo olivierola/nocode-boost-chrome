@@ -9,6 +9,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { SendHorizontal, Bot, User, Clock, Plus, BookOpen, Database, Shield, Play } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import ReactMarkdown from 'react-markdown';
 
 interface ChatMessage {
   id: string;
@@ -280,8 +281,17 @@ const PlanGenerator = () => {
     return sections;
   };
 
-  const renderSectionContent = (content: any, depth = 0) => {
+  const renderSectionContent = (content: any, depth = 0, sectionKey?: string) => {
     if (!content) return null;
+
+    // Si c'est la documentation, afficher avec le rendu markdown
+    if (sectionKey === 'documentation' && typeof content === 'string') {
+      return (
+        <div className="prose max-w-none prose-sm">
+          <ReactMarkdown>{content}</ReactMarkdown>
+        </div>
+      );
+    }
 
     if (typeof content === 'string') {
       return <p className="text-sm text-muted-foreground whitespace-pre-wrap">{content}</p>;
@@ -292,7 +302,7 @@ const PlanGenerator = () => {
         <ul className="list-disc list-inside space-y-1">
           {content.map((item, index) => (
             <li key={index} className="text-sm text-muted-foreground">
-              {typeof item === 'string' ? item : renderSectionContent(item, depth + 1)}
+              {typeof item === 'string' ? item : renderSectionContent(item, depth + 1, sectionKey)}
             </li>
           ))}
         </ul>
@@ -308,7 +318,7 @@ const PlanGenerator = () => {
                 {key.replace(/_/g, ' ')}
               </h4>
               <div className="pl-4 border-l-2 border-border">
-                {renderSectionContent(value, depth + 1)}
+                {renderSectionContent(value, depth + 1, sectionKey)}
               </div>
             </div>
           ))}
@@ -483,7 +493,7 @@ const PlanGenerator = () => {
                       <h2 className="text-2xl font-bold">{section.title}</h2>
                     </div>
                     <div className="prose max-w-none">
-                      {renderSectionContent(section.content)}
+                      {renderSectionContent(section.content, 0, section.key)}
                     </div>
                   </CardContent>
                 </Card>
