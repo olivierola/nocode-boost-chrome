@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useProjectContext } from '@/hooks/useProjectContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -7,12 +7,14 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { SendHorizontal, Bot, User, Clock, Plus, BookOpen, Database, Shield, Play, MessageCircle } from 'lucide-react';
+import { SendHorizontal, Bot, User, Clock, Plus, BookOpen, Database, Shield, Play, MessageCircle, Settings } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import ReactMarkdown from 'react-markdown';
 import PlanStepCards from '@/components/ui/plan-step-cards';
 import PlanChatDialog from '@/components/PlanChatDialog';
 import { FlickeringGrid } from '@/components/ui/flickering-grid';
+import PlanAgent from '@/components/PlanAgent';
+import AgentKnowledgeBase from '@/components/AgentKnowledgeBase';
 
 interface ChatMessage {
   id: string;
@@ -59,12 +61,52 @@ const PlanGenerator = () => {
   const [loading, setLoading] = useState(true);
   const [selectedSection, setSelectedSection] = useState<string | null>(null);
   const [chatDialogOpen, setChatDialogOpen] = useState(false);
+  const [agentActive, setAgentActive] = useState(false);
+  const [currentExecutionStep, setCurrentExecutionStep] = useState<any>(null);
+  const [executionContext, setExecutionContext] = useState<any>({});
+  const [showKnowledgeBase, setShowKnowledgeBase] = useState(false);
 
   useEffect(() => {
     if (selectedProject && user) {
       loadInitialData();
     }
   }, [selectedProject, user]);
+
+  // Fonctions de l'agent
+  const handlePromptOptimized = useCallback((optimizedPrompt: string, context: any) => {
+    setExecutionContext(prev => ({
+      ...prev,
+      lastOptimizedPrompt: optimizedPrompt,
+      optimizationContext: context
+    }));
+    toast.success('Prompt optimisé par l\'agent');
+  }, []);
+
+  const handleStepGenerated = useCallback((step: any) => {
+    setExecutionContext(prev => ({
+      ...prev,
+      generatedSteps: [...(prev.generatedSteps || []), step]
+    }));
+    toast.success('Nouvelle étape générée par l\'agent');
+  }, []);
+
+  const handleAnalysisResult = useCallback((analysis: any) => {
+    setExecutionContext(prev => ({
+      ...prev,
+      lastAnalysis: analysis,
+      analysisTimestamp: new Date()
+    }));
+  }, []);
+
+  const handleResourceSelect = useCallback((resource: any, type: 'component' | 'color' | 'font') => {
+    setExecutionContext(prev => ({
+      ...prev,
+      selectedResources: {
+        ...prev.selectedResources,
+        [type]: [...(prev.selectedResources?.[type] || []), resource]
+      }
+    }));
+  }, []);
 
   const loadInitialData = async () => {
     try {
