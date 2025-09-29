@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient } from "https://deno.land/x/supabase@1.0.0/mod.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -205,9 +205,9 @@ serve(async (req) => {
 Je veux que tu réalises une étude très complète pour un projet SaaS, puis que tu crées un plan d'implémentation détaillé avec un outil no-code.  
 
 ### Contexte du Projet
-- Type d'application: ${project.project_type || 'web'}
-- Stack technique: ${project.tech_stack || 'react'}
-- Framework details: ${JSON.stringify(project.framework_details || {})}
+- Type d'application: ${project?.project_type || 'web'}
+- Stack technique: ${project?.tech_stack || 'react'}
+- Framework details: ${JSON.stringify(project?.framework_details || {})}
 
 ### Instructions de génération
 - Prendre en compte le type d'application et la stack technique choisie
