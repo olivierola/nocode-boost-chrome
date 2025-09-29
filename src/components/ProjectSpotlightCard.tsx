@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { MoreHorizontal, Edit, Trash2, Users, Lock, Calendar, ExternalLink } from 'lucide-react';
+import { MoreHorizontal, Edit, Trash2, Users, Lock, Calendar, ExternalLink, Monitor, Smartphone, Tablet, Apple, Chrome } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Project, useProjects } from '@/hooks/useProjects';
@@ -11,6 +11,14 @@ import { useProjectContext } from '@/hooks/useProjectContext';
 import { CardSpotlight } from '@/components/ui/card-spotlight';
 import EditProjectDialog from './EditProjectDialog';
 import ProjectAccessDialog from './ProjectAccessDialog';
+
+const PROJECT_TYPE_CONFIG = {
+  web: { icon: Monitor, color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400', label: 'Web' },
+  mobile: { icon: Smartphone, color: 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400', label: 'Mobile' },
+  desktop: { icon: Tablet, color: 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400', label: 'Desktop' },
+  ios: { icon: Apple, color: 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400', label: 'iOS' },
+  'cross-platform': { icon: Chrome, color: 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400', label: 'Cross-Platform' }
+};
 
 interface ProjectSpotlightCardProps {
   project: Project;
@@ -53,6 +61,11 @@ const ProjectSpotlightCard = ({ project }: ProjectSpotlightCardProps) => {
     return format(new Date(dateString), 'dd MMM yyyy', { locale: fr });
   };
 
+  const projectType = (project as any).project_type || 'web';
+  const techStack = (project as any).tech_stack;
+  const typeConfig = PROJECT_TYPE_CONFIG[projectType as keyof typeof PROJECT_TYPE_CONFIG] || PROJECT_TYPE_CONFIG.web;
+  const TypeIcon = typeConfig.icon;
+
   return (
     <>
       <CardSpotlight 
@@ -67,6 +80,10 @@ const ProjectSpotlightCard = ({ project }: ProjectSpotlightCardProps) => {
                 <h3 className="text-lg font-semibold text-foreground truncate">
                   {project.name}
                 </h3>
+                <Badge variant="outline" className={`text-xs ${typeConfig.color}`}>
+                  <TypeIcon className="h-3 w-3 mr-1" />
+                  {typeConfig.label}
+                </Badge>
                 {hasPassword && !isOwner && (
                   <Lock className="h-4 w-4 text-muted-foreground" />
                 )}
@@ -112,9 +129,16 @@ const ProjectSpotlightCard = ({ project }: ProjectSpotlightCardProps) => {
 
           {/* Status and Collaborators */}
           <div className="flex items-center justify-between mb-4">
-            <Badge variant={isOwner ? "default" : "secondary"} className="text-xs">
-              {isOwner ? "Propriétaire" : "Collaborateur"}
-            </Badge>
+            <div className="flex items-center gap-2">
+              <Badge variant={isOwner ? "default" : "secondary"} className="text-xs">
+                {isOwner ? "Propriétaire" : "Collaborateur"}
+              </Badge>
+              {techStack && (
+                <Badge variant="secondary" className="text-xs">
+                  {techStack}
+                </Badge>
+              )}
+            </div>
             {project.collaborators && project.collaborators.length > 1 && (
               <div className="flex items-center text-xs text-muted-foreground">
                 <Users className="h-3 w-3 mr-1" />

@@ -12,6 +12,9 @@ export interface Project {
   password?: string | null;
   created_at: string;
   updated_at: string;
+  project_type?: string;
+  tech_stack?: string;
+  framework_details?: any;
   collaborators?: Array<{
     role: 'owner' | 'collaborator' | 'viewer';
     user_id: string;
@@ -52,10 +55,20 @@ export const useProjects = () => {
     }
   };
 
-  const createProject = async (name: string, description?: string, password?: string, url?: string) => {
+  const createProject = async (
+    name: string, 
+    description?: string, 
+    password?: string, 
+    url?: string,
+    projectType?: string,
+    techStack?: string,
+    frameworkDetails?: any
+  ) => {
     if (!user) return null;
 
-    console.log('Creating project with:', { name, description, url, password, owner_id: user.id });
+    console.log('Creating project with:', { 
+      name, description, url, password, projectType, techStack, frameworkDetails, owner_id: user.id 
+    });
 
     try {
       const { data, error } = await supabase
@@ -66,6 +79,9 @@ export const useProjects = () => {
           url: url || null,
           password: password || null,
           owner_id: user.id,
+          project_type: projectType || 'web',
+          tech_stack: techStack || 'react',
+          framework_details: frameworkDetails || {},
         })
         .select()
         .single();

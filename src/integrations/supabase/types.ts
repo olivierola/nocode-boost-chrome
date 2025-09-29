@@ -368,30 +368,39 @@ export type Database = {
         Row: {
           created_at: string
           description: string | null
+          framework_details: Json | null
           id: string
           name: string
           owner_id: string
           password: string | null
+          project_type: string | null
+          tech_stack: string | null
           updated_at: string
           url: string | null
         }
         Insert: {
           created_at?: string
           description?: string | null
+          framework_details?: Json | null
           id?: string
           name: string
           owner_id: string
           password?: string | null
+          project_type?: string | null
+          tech_stack?: string | null
           updated_at?: string
           url?: string | null
         }
         Update: {
           created_at?: string
           description?: string | null
+          framework_details?: Json | null
           id?: string
           name?: string
           owner_id?: string
           password?: string | null
+          project_type?: string | null
+          tech_stack?: string | null
           updated_at?: string
           url?: string | null
         }
