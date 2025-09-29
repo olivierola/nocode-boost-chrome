@@ -12,6 +12,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import ReactMarkdown from 'react-markdown';
 import PlanStepCards from '@/components/ui/plan-step-cards';
 import PlanChatDialog from '@/components/PlanChatDialog';
+import { FlickeringGrid } from '@/components/ui/flickering-grid';
 
 interface ChatMessage {
   id: string;
@@ -651,9 +652,18 @@ const PlanGenerator = () => {
   const planSections = getPlanSections(currentPlan.plan_data);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background relative">
+      {/* Background FlickeringGrid */}
+      <FlickeringGrid
+        className="fixed inset-0 z-0"
+        squareSize={4}
+        gridGap={6}
+        color="hsl(var(--primary))"
+        maxOpacity={0.1}
+        flickerChance={0.05}
+      />
       {/* Sidebar verticale flottante */}
-      <div className="fixed left-4 top-1/2 transform -translate-y-1/2 z-50">
+      <div className="fixed left-4 top-1/2 transform -translate-y-1/2 z-50 relative">
         <div className="bg-card border rounded-xl shadow-lg p-2 flex flex-col space-y-2">
           {planSections.map((section) => (
             <Button
