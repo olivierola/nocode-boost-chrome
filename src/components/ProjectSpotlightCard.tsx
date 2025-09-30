@@ -71,6 +71,7 @@ const ProjectSpotlightCard = ({ project }: ProjectSpotlightCardProps) => {
       <CardSpotlight 
         className="h-auto min-h-[200px] group cursor-pointer bg-background/50 border-border/50 backdrop-blur-sm" 
         color="hsl(var(--primary) / 0.05)"
+        onClick={handleProjectAccess}
       >
         <div className="relative z-20 h-full flex flex-col">
           {/* Header */}
@@ -98,17 +99,22 @@ const ProjectSpotlightCard = ({ project }: ProjectSpotlightCardProps) => {
             {isOwner && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <MoreHorizontal className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-32">
-                  <DropdownMenuItem onClick={() => setEditDialogOpen(true)}>
+                  <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setEditDialogOpen(true); }}>
                     <Edit className="h-4 w-4 mr-2" />
                     Modifier
                   </DropdownMenuItem>
                   <DropdownMenuItem 
-                    onClick={() => setDeleteDialogOpen(true)}
+                    onClick={(e) => { e.stopPropagation(); setDeleteDialogOpen(true); }}
                     className="text-destructive focus:text-destructive"
                   >
                     <Trash2 className="h-4 w-4 mr-2" />
@@ -148,23 +154,9 @@ const ProjectSpotlightCard = ({ project }: ProjectSpotlightCardProps) => {
           </div>
 
           {/* Date */}
-          <div className="flex items-center text-xs text-muted-foreground mb-4">
+          <div className="flex items-center text-xs text-muted-foreground">
             <Calendar className="h-3 w-3 mr-1" />
             Créé le {formatDate(project.created_at)}
-          </div>
-
-          {/* Action Button */}
-          <div className="mt-auto">
-            <Button size="sm" className="w-full" onClick={handleProjectAccess}>
-              {hasPassword && !isOwner ? (
-                <>
-                  <Lock className="h-3 w-3 mr-2" />
-                  Accéder au projet
-                </>
-              ) : (
-                'Ouvrir le projet'
-              )}
-            </Button>
           </div>
         </div>
       </CardSpotlight>
