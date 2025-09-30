@@ -603,17 +603,21 @@ const PlanGenerator = () => {
   if (!currentPlan) {
     return (
       <div className="min-h-screen relative overflow-hidden">
-        {/* Background avec effets blur colorés */}
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-secondary/10 to-accent/10">
-          <div className="absolute top-20 left-20 w-72 h-72 bg-primary/20 rounded-full"></div>
-          <div className="absolute bottom-20 right-20 w-96 h-96 bg-secondary/20 rounded-full"></div>
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-accent/20 rounded-full"></div>
-        </div>
+        <DottedSurface />
 
         {/* Interface de chat plein écran */}
         <div className="relative z-10 flex flex-col items-center justify-center min-h-screen p-8">
-          <div className="max-w-4xl w-full h-[80vh] flex flex-col">
-            <ScrollArea className="flex-1 w-full rounded-lg border border-white/20 p-6 bg-white/10 mb-4">
+          <div className="max-w-4xl w-full h-[85vh] flex flex-col gap-6">
+            <div className="text-center mb-6">
+              <h2 className="text-3xl font-bold text-foreground mb-2">
+                Créer un nouveau plan
+              </h2>
+              <p className="text-muted-foreground">
+                Décrivez votre projet et laissez l'IA générer un plan détaillé
+              </p>
+            </div>
+
+            <ScrollArea className="flex-1 w-full rounded-lg border p-6 bg-card/50 backdrop-blur-sm">
               <div className="space-y-4">
                 {messages.length === 0 ? (
                   <div className="text-center text-muted-foreground py-8">
@@ -669,8 +673,8 @@ const PlanGenerator = () => {
               </div>
             </ScrollArea>
 
-            <form onSubmit={handleSubmit} className="flex justify-center">
-              <div className="w-full max-w-xl">
+            <form onSubmit={handleSubmit} className="flex justify-center h-[200px]">
+              <div className="w-full h-full">
                 <PromptBox 
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
