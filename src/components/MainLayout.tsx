@@ -13,7 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { LogOut, Home, Code, Map, Search, Upload, Users, FolderOpen, X, CreditCard, Plus, MessageSquare, User } from 'lucide-react';
+import { LogOut, Home, Code, Sparkles, Scan, Image, Users, FolderOpen, X, CreditCard, BookmarkPlus, MessagesSquare, User } from 'lucide-react';
 
 // Import all components
 import Dashboard from '@/pages/Dashboard';
@@ -83,87 +83,87 @@ const MainLayout = () => {
 
           {/* Centered Tab Navigation */}
           {isProjectSelected && (
-            <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center gap-1 bg-muted/50 p-1 rounded-lg backdrop-blur-sm">
+            <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center gap-1 bg-white p-1.5 rounded-2xl border border-black/20">
               <Button 
-                variant={activeTab === 'dashboard' ? 'default' : 'ghost'} 
+                variant="ghost" 
                 size="sm" 
                 onClick={() => setActiveTab('dashboard')}
-                className={`h-7 w-7 p-0 rounded-md ${activeTab === 'dashboard' ? 'bg-background shadow-sm' : 'hover:bg-background/50'}`}
+                className={`h-7 w-7 p-0 rounded-xl hover:bg-transparent ${activeTab === 'dashboard' ? 'text-[#8B1538]' : 'text-muted-foreground'}`}
                 title="Dashboard"
               >
-                <Home className="h-3 w-3" />
+                <Home className="h-4 w-4" />
               </Button>
               <Button 
-                variant={activeTab === 'plans' ? 'default' : 'ghost'} 
+                variant="ghost" 
                 size="sm" 
                 onClick={() => setActiveTab('plans')}
-                className={`h-7 w-7 p-0 rounded-md ${activeTab === 'plans' ? 'bg-background shadow-sm' : 'hover:bg-background/50'}`}
+                className={`h-7 w-7 p-0 rounded-xl hover:bg-transparent ${activeTab === 'plans' ? 'text-[#8B1538]' : 'text-muted-foreground'}`}
                 title="Plans"
               >
-                <Map className="h-3 w-3" />
+                <Sparkles className="h-4 w-4" />
               </Button>
               <Button 
-                variant={activeTab === 'audits' ? 'default' : 'ghost'} 
+                variant="ghost" 
                 size="sm" 
                 onClick={() => setActiveTab('audits')}
-                className={`h-7 w-7 p-0 rounded-md ${activeTab === 'audits' ? 'bg-background shadow-sm' : 'hover:bg-background/50'}`}
+                className={`h-7 w-7 p-0 rounded-xl hover:bg-transparent ${activeTab === 'audits' ? 'text-[#8B1538]' : 'text-muted-foreground'}`}
                 title="Audits"
               >
-                <Search className="h-3 w-3" />
+                <Scan className="h-4 w-4" />
               </Button>
               <Button 
-                variant={activeTab === 'components' ? 'default' : 'ghost'} 
+                variant="ghost" 
                 size="sm" 
                 onClick={() => setActiveTab('components')}
-                className={`h-7 w-7 p-0 rounded-md ${activeTab === 'components' ? 'bg-background shadow-sm' : 'hover:bg-background/50'}`}
+                className={`h-7 w-7 p-0 rounded-xl hover:bg-transparent ${activeTab === 'components' ? 'text-[#8B1538]' : 'text-muted-foreground'}`}
                 title="21st.dev"
               >
-                <Code className="h-3 w-3" />
+                <Code className="h-4 w-4" />
               </Button>
               <Button 
-                variant={activeTab === 'saved-components' ? 'default' : 'ghost'} 
+                variant="ghost" 
                 size="sm" 
                 onClick={() => setActiveTab('saved-components')}
-                className={`h-7 w-7 p-0 rounded-md ${activeTab === 'saved-components' ? 'bg-background shadow-sm' : 'hover:bg-background/50'}`}
+                className={`h-7 w-7 p-0 rounded-xl hover:bg-transparent ${activeTab === 'saved-components' ? 'text-[#8B1538]' : 'text-muted-foreground'}`}
                 title="Composants sauvés"
               >
-                <Plus className="h-3 w-3" />
+                <BookmarkPlus className="h-4 w-4" />
               </Button>
               <Button 
-                variant={activeTab === 'media' ? 'default' : 'ghost'} 
+                variant="ghost" 
                 size="sm" 
                 onClick={() => setActiveTab('media')}
-                className={`h-7 w-7 p-0 rounded-md ${activeTab === 'media' ? 'bg-background shadow-sm' : 'hover:bg-background/50'}`}
+                className={`h-7 w-7 p-0 rounded-xl hover:bg-transparent ${activeTab === 'media' ? 'text-[#8B1538]' : 'text-muted-foreground'}`}
                 title="Médias"
               >
-                <Upload className="h-3 w-3" />
+                <Image className="h-4 w-4" />
               </Button>
               <Button 
-                variant={activeTab === 'posts' ? 'default' : 'ghost'} 
+                variant="ghost" 
                 size="sm" 
                 onClick={() => setActiveTab('posts')}
-                className={`h-7 w-7 p-0 rounded-md ${activeTab === 'posts' ? 'bg-background shadow-sm' : 'hover:bg-background/50'}`}
+                className={`h-7 w-7 p-0 rounded-xl hover:bg-transparent ${activeTab === 'posts' ? 'text-[#8B1538]' : 'text-muted-foreground'}`}
                 title="Posts"
               >
-                <MessageSquare className="h-3 w-3" />
+                <MessagesSquare className="h-4 w-4" />
               </Button>
               <Button 
-                variant={activeTab === 'collaboration' ? 'default' : 'ghost'} 
+                variant="ghost" 
                 size="sm" 
                 onClick={() => setActiveTab('collaboration')}
-                className={`h-7 w-7 p-0 rounded-md ${activeTab === 'collaboration' ? 'bg-background shadow-sm' : 'hover:bg-background/50'}`}
+                className={`h-7 w-7 p-0 rounded-xl hover:bg-transparent ${activeTab === 'collaboration' ? 'text-[#8B1538]' : 'text-muted-foreground'}`}
                 title="Équipe"
               >
-                <Users className="h-3 w-3" />
+                <Users className="h-4 w-4" />
               </Button>
               <Button 
-                variant={activeTab === 'payment' ? 'default' : 'ghost'} 
+                variant="ghost" 
                 size="sm" 
                 onClick={() => setActiveTab('payment')}
-                className={`h-7 w-7 p-0 rounded-md ${activeTab === 'payment' ? 'bg-background shadow-sm' : 'hover:bg-background/50'}`}
+                className={`h-7 w-7 p-0 rounded-xl hover:bg-transparent ${activeTab === 'payment' ? 'text-[#8B1538]' : 'text-muted-foreground'}`}
                 title="Abonnements"
               >
-                <CreditCard className="h-3 w-3" />
+                <CreditCard className="h-4 w-4" />
               </Button>
             </div>
           )}

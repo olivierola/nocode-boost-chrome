@@ -608,14 +608,24 @@ const PlanGenerator = () => {
 
         <div className="relative z-10 w-full max-w-2xl px-8">
           <div className="text-center mb-12 space-y-6">
-            {/* Logo Plan avec gradient */}
+            {/* Logo Plan avec gradient inline */}
             <div className="flex justify-center mb-6">
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-500 via-purple-600 to-red-800 rounded-2xl blur-xl opacity-60 animate-pulse"></div>
-                <div className="relative bg-gradient-to-br from-blue-500 via-purple-600 to-red-800 p-6 rounded-2xl">
-                  <FileText className="h-16 w-16 text-white" strokeWidth={1.5} />
-                </div>
-              </div>
+              <svg className="h-20 w-20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <linearGradient id="planGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style={{ stopColor: '#3B82F6', stopOpacity: 1 }} />
+                    <stop offset="50%" style={{ stopColor: '#7C3AED', stopOpacity: 1 }} />
+                    <stop offset="100%" style={{ stopColor: '#8B1538', stopOpacity: 1 }} />
+                  </linearGradient>
+                </defs>
+                <path
+                  d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8M14 2L20 8M14 2V8H20M16 13H8M16 17H8M10 9H8"
+                  stroke="url(#planGradient)"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
             </div>
 
             <h1 className="text-5xl font-bold text-foreground">
