@@ -85,7 +85,7 @@ const MainLayout = () => {
 
           {/* Centered Tab Navigation */}
           {isProjectSelected && (
-            <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center gap-1 bg-card p-1.5 rounded-2xl border border-border">
+            <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center gap-1 bg-header p-1.5 rounded-2xl border border-border">
               <Button 
                 variant="ghost" 
                 size="sm" 
