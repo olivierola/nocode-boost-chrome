@@ -17,6 +17,7 @@ import { PromptBox } from '@/components/ui/chatgpt-prompt-input';
 import { FlickeringGrid } from '@/components/ui/flickering-grid';
 import PlanAgent from '@/components/PlanAgent';
 import AgentKnowledgeBase from '@/components/AgentKnowledgeBase';
+import TypewriterText from '@/components/TypewriterText';
 
 interface ChatMessage {
   id: string;
@@ -602,88 +603,42 @@ const PlanGenerator = () => {
   // Vue quand il n'y a pas de plan
   if (!currentPlan) {
     return (
-      <div className="min-h-screen relative overflow-hidden">
+      <div className="min-h-screen relative overflow-hidden flex items-center justify-center">
         <DottedSurface />
 
-        {/* Interface de chat plein écran */}
-        <div className="relative z-10 flex flex-col items-center justify-center min-h-screen p-8">
-          <div className="max-w-4xl w-full h-[85vh] flex flex-col gap-6">
-            <div className="text-center mb-6">
-              <h2 className="text-3xl font-bold text-foreground mb-2">
-                Créer un nouveau plan
-              </h2>
-              <p className="text-muted-foreground">
-                Décrivez votre projet et laissez l'IA générer un plan détaillé
-              </p>
-            </div>
-
-            <ScrollArea className="flex-1 w-full rounded-lg border p-6 bg-card/50 backdrop-blur-sm">
-              <div className="space-y-4">
-                {messages.length === 0 ? (
-                  <div className="text-center text-muted-foreground py-8">
-                    <Bot className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>Commencez par décrire votre projet...</p>
-                  </div>
-                ) : (
-                  messages.map((message) => (
-                    <div key={message.id} className="space-y-2">
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        {message.role === 'user' ? (
-                          <User className="h-4 w-4" />
-                        ) : (
-                          <Bot className="h-4 w-4" />
-                        )}
-                        <span className="capitalize">{message.role}</span>
-                        <Clock className="h-3 w-3" />
-                        <span>{formatTime(message.created_at)}</span>
-                      </div>
-                      <div className={`p-3 rounded-lg ${
-                        message.role === 'user' 
-                          ? 'bg-primary text-primary-foreground ml-12' 
-                          : 'bg-muted mr-12'
-                      }`}>
-                        <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                        {message.questions && message.questions.length > 0 && (
-                          <div className="mt-3 space-y-2">
-                            <p className="text-xs font-medium">Questions à répondre :</p>
-                            <ul className="space-y-1">
-                              {message.questions.map((question, index) => (
-                                <li key={index} className="text-xs p-2 bg-background/50 rounded border-l-2 border-primary">
-                                  {question}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))
-                )}
-                {isGenerating && (
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Bot className="h-4 w-4" />
-                    <div className="flex items-center gap-1">
-                      <div className="animate-bounce w-2 h-2 bg-primary rounded-full"></div>
-                      <div className="animate-bounce w-2 h-2 bg-primary rounded-full delay-100"></div>
-                      <div className="animate-bounce w-2 h-2 bg-primary rounded-full delay-200"></div>
-                    </div>
-                    <span className="text-sm">IA réfléchit...</span>
-                  </div>
-                )}
-              </div>
-            </ScrollArea>
-
-            <form onSubmit={handleSubmit} className="flex justify-center h-[200px]">
-              <div className="w-full h-full">
-                <PromptBox 
-                  value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
-                  placeholder="Décrivez votre projet (ex: application de livraison de nourriture)..."
-                  disabled={isGenerating}
-                />
-              </div>
-            </form>
+        <div className="relative z-10 w-full max-w-3xl px-8">
+          <div className="text-center mb-12 space-y-4">
+            <h1 className="text-5xl font-bold text-foreground">
+              <TypewriterText text="Créer un nouveau plan" delay={80} />
+            </h1>
+            <p className="text-lg text-muted-foreground">
+              <TypewriterText 
+                text="Décrivez votre projet et laissez l'IA générer un plan détaillé pour vous" 
+                delay={40}
+              />
+            </p>
           </div>
+
+          <form onSubmit={handleSubmit}>
+            <PromptBox 
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              placeholder="Décrivez votre projet en détail (ex: application de livraison de nourriture avec géolocalisation)..."
+              disabled={isGenerating}
+            />
+          </form>
+
+          {isGenerating && (
+            <div className="flex items-center justify-center gap-3 text-muted-foreground mt-6 animate-fade-in">
+              <Bot className="h-5 w-5" />
+              <div className="flex items-center gap-1.5">
+                <div className="animate-bounce w-2 h-2 bg-primary rounded-full"></div>
+                <div className="animate-bounce w-2 h-2 bg-primary rounded-full delay-100"></div>
+                <div className="animate-bounce w-2 h-2 bg-primary rounded-full delay-200"></div>
+              </div>
+              <span className="text-sm">IA génère votre plan...</span>
+            </div>
+          )}
         </div>
       </div>
     );
