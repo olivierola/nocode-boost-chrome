@@ -105,15 +105,6 @@ const MainLayout = () => {
               <Button 
                 variant="ghost" 
                 size="sm" 
-                onClick={() => setActiveTab('audits')}
-                className={`h-7 w-7 p-0 rounded-xl hover:bg-transparent ${activeTab === 'audits' ? 'text-[#8B1538]' : 'text-muted-foreground'}`}
-                title="Audits"
-              >
-                <Scan className="h-4 w-4" />
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="sm" 
                 onClick={() => setActiveTab('components')}
                 className={`h-7 w-7 p-0 rounded-xl hover:bg-transparent ${activeTab === 'components' ? 'text-[#8B1538]' : 'text-muted-foreground'}`}
                 title="21st.dev"
