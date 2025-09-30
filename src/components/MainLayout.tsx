@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useProjectContext } from '@/hooks/useProjectContext';
+import { useTheme } from 'next-themes';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -13,7 +14,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { LogOut, Home, Code, Sparkles, Scan, Image, Users, FolderOpen, X, CreditCard, BookmarkPlus, MessagesSquare, User } from 'lucide-react';
+import { LogOut, Home, Code, Sparkles, Scan, Image, Users, FolderOpen, X, CreditCard, BookmarkPlus, MessagesSquare, User, Moon, Sun } from 'lucide-react';
 
 // Import all components
 import Dashboard from '@/pages/Dashboard';
@@ -31,6 +32,7 @@ import ProjectSelector from '@/components/ProjectSelector';
 const MainLayout = () => {
   const { user, signOut } = useAuth();
   const { selectedProject, clearProject, isProjectSelected } = useProjectContext();
+  const { theme, setTheme } = useTheme();
   const [activeTab, setActiveTab] = useState('dashboard');
 
   const getInitials = (name?: string) => {
@@ -59,7 +61,7 @@ const MainLayout = () => {
       </div>
       
       {/* Fixed Header */}
-      <header className="border-b border-border bg-card flex-shrink-0 fixed top-0 left-0 right-0 z-50 w-[750px]">
+      <header className="border-b border-border bg-header flex-shrink-0 fixed top-0 left-0 right-0 z-50 w-[750px]">
         <div className="px-6 py-3 flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <h1 className="text-lg font-bold text-foreground">SN</h1>
@@ -83,7 +85,7 @@ const MainLayout = () => {
 
           {/* Centered Tab Navigation */}
           {isProjectSelected && (
-            <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center gap-1 bg-white p-1.5 rounded-2xl border border-black/20">
+            <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center gap-1 bg-card p-1.5 rounded-2xl border border-border">
               <Button 
                 variant="ghost" 
                 size="sm" 
@@ -159,8 +161,21 @@ const MainLayout = () => {
             </div>
           )}
           
-          {/* User Avatar with Dropdown */}
-          <div className="flex items-center">
+          {/* Theme Toggle and User Avatar */}
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              className="h-8 w-8 p-0"
+            >
+              {theme === 'dark' ? (
+                <Sun className="h-4 w-4" />
+              ) : (
+                <Moon className="h-4 w-4" />
+              )}
+            </Button>
+            
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
