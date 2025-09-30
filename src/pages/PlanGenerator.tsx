@@ -187,28 +187,6 @@ const PlanGenerator = () => {
     setIsGenerating(true);
 
     try {
-      let finalPrompt = userMessage;
-      
-      // Si l'optimisation est activée, optimiser d'abord le prompt
-      if (isOptimizeEnabled) {
-        try {
-          const { data: optimizedData, error: optimizeError } = await supabase.functions.invoke('enhance-prompt', {
-            body: { prompt: userMessage }
-          });
-          
-          if (optimizeError) {
-            console.error('Erreur optimisation prompt:', optimizeError);
-            toast.error('Erreur lors de l\'optimisation du prompt');
-          } else if (optimizedData?.enhancedPrompt) {
-            finalPrompt = optimizedData.enhancedPrompt;
-            toast.success('Prompt optimisé avec succès !');
-          }
-        } catch (error) {
-          console.error('Erreur optimisation:', error);
-          toast.error('Erreur lors de l\'optimisation du prompt');
-        }
-      }
-      
       await saveMessage('user', userMessage);
       
       const updatedMessages = [...messages, {
@@ -222,9 +200,10 @@ const PlanGenerator = () => {
 
       const { data, error } = await supabase.functions.invoke('generate-plan', {
         body: {
-          prompt: finalPrompt,
+          prompt: userMessage,
           projectId: selectedProject.id,
-          conversationHistory: updatedMessages.slice(-10)
+          conversationHistory: updatedMessages.slice(-10),
+          optimizePrompt: isOptimizeEnabled
         }
       });
 

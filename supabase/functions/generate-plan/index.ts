@@ -115,13 +115,50 @@ serve(async (req) => {
       });
     }
 
-    const { prompt: userPrompt, projectId, conversationHistory = [] } = await req.json();
+    const { prompt: userPrompt, projectId, conversationHistory = [], optimizePrompt = false } = await req.json();
 
     if (!userPrompt || !projectId) {
       return new Response(JSON.stringify({ error: 'Prompt et projectId requis' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
+    }
+
+    // Optimize prompt if requested
+    let finalPrompt = userPrompt;
+    if (optimizePrompt) {
+      console.log('Optimizing prompt before plan generation...');
+      try {
+        const enhanceMessages = [
+          {
+            role: 'system',
+            content: `Tu es un expert en création de prompts pour des outils d'intelligence artificielle. 
+            Ton rôle est d'améliorer et d'optimiser les prompts pour qu'ils soient plus clairs, précis et efficaces.
+            
+            Règles d'amélioration :
+            - Rendre le prompt plus spécifique et détaillé
+            - Ajouter du contexte pertinent
+            - Structurer le prompt de manière logique
+            - Préciser les attentes de résultat
+            - Ajouter des exemples si nécessaire
+            - Conserver l'intention originale
+            - Utiliser un langage clair et professionnel
+            
+            Réponds uniquement avec le prompt amélioré, sans préambule ni explication.`
+          },
+          {
+            role: 'user',
+            content: `Améliore ce prompt : "${userPrompt}"`
+          }
+        ];
+
+        const optimizedPrompt = await callAIWithFallback(enhanceMessages, 'gpt-4o-mini', 1000, 0.7);
+        finalPrompt = optimizedPrompt;
+        console.log('Prompt optimized successfully');
+      } catch (error) {
+        console.error('Error optimizing prompt, using original:', error);
+        // Continue with original prompt if optimization fails
+      }
     }
 
     // Get project info to include in plan generation
@@ -173,7 +210,7 @@ serve(async (req) => {
       },
       {
         role: "user",
-        content: userPrompt
+        content: finalPrompt
       }
     ];
 
@@ -265,7 +302,7 @@ Ton rôle est d'agir comme un consultant SaaS senior spécialisé dans le growth
       })),
       {
         role: "user",
-        content: userPrompt
+        content: finalPrompt
       }
     ];
 
