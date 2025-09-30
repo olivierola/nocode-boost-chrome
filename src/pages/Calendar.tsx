@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { FullScreenCalendar } from '@/components/ui/fullscreen-calendar';
 import { useCalendarEvents } from '@/hooks/useCalendarEvents';
+import DayEventsPanel from '@/components/DayEventsPanel';
+import { isSameDay } from 'date-fns';
 import {
   Dialog,
   DialogContent,
@@ -27,9 +29,10 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { cn } from '@/lib/utils';
 
 const Calendar = () => {
-  const { events, addEvent } = useCalendarEvents();
+  const { events, addEvent, deleteEvent } = useCalendarEvents();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>();
+  const [selectedDayForPanel, setSelectedDayForPanel] = useState<Date | null>(null);
   const [eventName, setEventName] = useState('');
   const [eventTime, setEventTime] = useState('');
   const [eventType, setEventType] = useState<'user' | 'ai' | 'task'>('user');
@@ -57,9 +60,30 @@ const Calendar = () => {
     }
   };
 
+  // Get events for selected day
+  const selectedDayEvents = selectedDayForPanel
+    ? events
+        .filter((event) => isSameDay(event.day, selectedDayForPanel))
+        .flatMap((event) => event.events)
+    : [];
+
+  const handleDayClick = (day: Date) => {
+    setSelectedDayForPanel(day);
+  };
+
   return (
-    <div className="flex flex-col h-full w-full">
-      <FullScreenCalendar data={events} onAddEvent={() => setIsDialogOpen(true)} />
+    <div className="flex flex-col h-full w-full overflow-y-auto">
+      <FullScreenCalendar 
+        data={events} 
+        onAddEvent={() => setIsDialogOpen(true)}
+        onDayClick={handleDayClick}
+      />
+
+      <DayEventsPanel 
+        selectedDate={selectedDayForPanel}
+        events={selectedDayEvents}
+        onDeleteEvent={deleteEvent}
+      />
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">

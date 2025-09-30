@@ -44,6 +44,7 @@ interface CalendarData {
 interface FullScreenCalendarProps {
   data: CalendarData[]
   onAddEvent?: () => void
+  onDayClick?: (day: Date) => void
 }
 
 const colStartClasses = [
@@ -56,7 +57,7 @@ const colStartClasses = [
   "col-start-7",
 ]
 
-export function FullScreenCalendar({ data, onAddEvent }: FullScreenCalendarProps) {
+export function FullScreenCalendar({ data, onAddEvent, onDayClick }: FullScreenCalendarProps) {
   const today = startOfToday()
   const [selectedDay, setSelectedDay] = React.useState(today)
   const [currentMonth, setCurrentMonth] = React.useState(
@@ -85,7 +86,8 @@ export function FullScreenCalendar({ data, onAddEvent }: FullScreenCalendarProps
   }
 
   return (
-    <div className="flex flex-1 flex-col h-full">
+    <div className="flex flex-1 flex-col h-full px-4 py-2">
+      <div className="border rounded-2xl overflow-hidden shadow-sm bg-card">
       {/* Calendar Header */}
       <div className="flex flex-col space-y-4 p-4 md:flex-row md:items-center md:justify-between md:space-y-0 lg:flex-none">
         <div className="flex flex-auto">
@@ -177,7 +179,10 @@ export function FullScreenCalendar({ data, onAddEvent }: FullScreenCalendarProps
             {days.map((day, dayIdx) => (
               <div
                 key={dayIdx}
-                onClick={() => setSelectedDay(day)}
+                onClick={() => {
+                  setSelectedDay(day);
+                  onDayClick?.(day);
+                }}
                 className={cn(
                   dayIdx === 0 && colStartClasses[getDay(day)],
                   !isEqual(day, selectedDay) &&
@@ -255,7 +260,10 @@ export function FullScreenCalendar({ data, onAddEvent }: FullScreenCalendarProps
           <div className="isolate grid w-full grid-cols-7 grid-rows-5 border-x lg:hidden">
             {days.map((day, dayIdx) => (
               <button
-                onClick={() => setSelectedDay(day)}
+                onClick={() => {
+                  setSelectedDay(day);
+                  onDayClick?.(day);
+                }}
                 key={dayIdx}
                 type="button"
                 className={cn(
@@ -315,6 +323,7 @@ export function FullScreenCalendar({ data, onAddEvent }: FullScreenCalendarProps
             ))}
           </div>
         </div>
+      </div>
       </div>
     </div>
   )

@@ -7,9 +7,11 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Play, Pause, SkipForward, CheckCircle, AlertCircle, Clock, RefreshCw, Bot, MessageSquare } from 'lucide-react';
+import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { ClaudeChatInput } from '@/components/ui/claude-style-ai-input';
+import { useCalendarEvents } from '@/hooks/useCalendarEvents';
 import { supabase } from '@/integrations/supabase/client';
 import { createNotification } from '@/utils/notificationHelper';
 import AIMonitor from './AIMonitor';
@@ -58,6 +60,7 @@ const PlanAutoExecutor = ({ steps, isOpen, onClose, mode, onUpdateSteps, planDat
   
   const { toast } = useToast();
   const { user } = useAuth();
+  const { addEvent } = useCalendarEvents();
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const addLog = useCallback((message: string, type: 'info' | 'success' | 'error' | 'warning' = 'info') => {
@@ -276,6 +279,20 @@ const PlanAutoExecutor = ({ steps, isOpen, onClose, mode, onUpdateSteps, planDat
           }
         );
       }
+
+      // Add event to calendar
+      const eventDate = new Date();
+      addEvent(
+        {
+          name: `IA: ${step.titre}`,
+          time: format(eventDate, 'HH:mm'),
+          datetime: eventDate.toISOString(),
+          type: 'ai',
+          description: step.description,
+        },
+        eventDate
+      );
+
       addLog(`Étape ${stepIndex + 1} complétée avec succès`, 'success');
 
       // Validation selon le mode

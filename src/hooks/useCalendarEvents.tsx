@@ -7,6 +7,7 @@ export interface CalendarEvent {
   time: string;
   datetime: string;
   type?: 'user' | 'ai' | 'task';
+  description?: string;
   reminderSent?: boolean;
 }
 
