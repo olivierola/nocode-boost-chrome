@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { SendHorizontal, Bot, User, Clock, Plus, BookOpen, Database, Shield, Play, MessageCircle, Settings } from 'lucide-react';
+import { SendHorizontal, Bot, User, Clock, Plus, BookOpen, Database, Shield, Play, MessageCircle, Settings, FileText } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import ReactMarkdown from 'react-markdown';
 import PlanStepCards from '@/components/ui/plan-step-cards';
@@ -603,11 +603,21 @@ const PlanGenerator = () => {
   // Vue quand il n'y a pas de plan
   if (!currentPlan) {
     return (
-      <div className="min-h-screen relative overflow-hidden flex items-center justify-center">
+      <div className="h-screen relative overflow-hidden flex items-center justify-center">
         <DottedSurface />
 
-        <div className="relative z-10 w-full max-w-3xl px-8">
-          <div className="text-center mb-12 space-y-4">
+        <div className="relative z-10 w-full max-w-2xl px-8">
+          <div className="text-center mb-12 space-y-6">
+            {/* Logo Plan avec gradient */}
+            <div className="flex justify-center mb-6">
+              <div className="relative">
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-500 via-purple-600 to-red-800 rounded-2xl blur-xl opacity-60 animate-pulse"></div>
+                <div className="relative bg-gradient-to-br from-blue-500 via-purple-600 to-red-800 p-6 rounded-2xl">
+                  <FileText className="h-16 w-16 text-white" strokeWidth={1.5} />
+                </div>
+              </div>
+            </div>
+
             <h1 className="text-5xl font-bold text-foreground">
               <TypewriterText text="Créer un nouveau plan" delay={80} />
             </h1>
@@ -648,7 +658,7 @@ const PlanGenerator = () => {
   const planSections = getPlanSections(currentPlan.plan_data);
 
   return (
-    <div className="min-h-screen bg-background relative">
+    <div className="h-screen bg-background relative overflow-hidden">
       {/* Background FlickeringGrid */}
       <FlickeringGrid
         className="fixed inset-0 z-0"
