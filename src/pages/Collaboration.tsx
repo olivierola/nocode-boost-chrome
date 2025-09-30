@@ -144,9 +144,9 @@ const Collaboration = () => {
         .from('profiles')
         .select('user_id')
         .eq('email', inviteEmail.trim())
-        .single();
+        .maybeSingle();
 
-      if (userError && userError.code !== 'PGRST116') {
+      if (userError) {
         throw new Error("Erreur lors de la recherche de l'utilisateur");
       }
 

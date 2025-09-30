@@ -60,9 +60,9 @@ const InviteCollaboratorDialog = ({ projectId, children }: InviteCollaboratorDia
         .from('profiles')
         .select('user_id')
         .eq('email', email)
-        .single();
+        .maybeSingle();
 
-      if (profileError && profileError.code !== 'PGRST116') {
+      if (profileError) {
         toast({
           title: "Erreur",
           description: "Erreur lors de la vérification de l'utilisateur",
