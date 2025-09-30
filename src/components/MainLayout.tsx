@@ -14,7 +14,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { LogOut, Home, Code, Sparkles, Scan, Image, Users, FolderOpen, X, CreditCard, BookmarkPlus, MessagesSquare, User, Moon, Sun } from 'lucide-react';
+import { LogOut, Home, Code, Sparkles, Scan, Image, Users, FolderOpen, X, CreditCard, BookmarkPlus, MessagesSquare, User, Moon, Sun, Calendar as CalendarIcon } from 'lucide-react';
 
 // Import all components
 import Dashboard from '@/pages/Dashboard';
@@ -26,13 +26,16 @@ import MediaUpload from '@/pages/MediaUpload';
 import Collaboration from '@/pages/Collaboration';
 import Payment from '@/pages/Payment';
 import Posts from '@/pages/Posts';
+import Calendar from '@/pages/Calendar';
 import NotificationCenter from '@/components/NotificationCenter';
 import ProjectSelector from '@/components/ProjectSelector';
+import { useCalendarEvents } from '@/hooks/useCalendarEvents';
 
 const MainLayout = () => {
   const { user, signOut } = useAuth();
   const { selectedProject, clearProject, isProjectSelected } = useProjectContext();
   const { theme, setTheme } = useTheme();
+  const { upcomingEventsCount } = useCalendarEvents();
   const [activeTab, setActiveTab] = useState('dashboard');
 
   const getInitials = (name?: string) => {
@@ -158,6 +161,23 @@ const MainLayout = () => {
               >
                 <CreditCard className="h-4 w-4" />
               </Button>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setActiveTab('calendar')}
+                className={`h-7 w-7 p-0 rounded-xl hover:bg-transparent relative ${activeTab === 'calendar' ? 'text-[#8B1538]' : 'text-muted-foreground'}`}
+                title="Calendrier"
+              >
+                <CalendarIcon className="h-4 w-4" />
+                {upcomingEventsCount > 0 && (
+                  <Badge 
+                    variant="destructive" 
+                    className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-[10px]"
+                  >
+                    {upcomingEventsCount}
+                  </Badge>
+                )}
+              </Button>
             </div>
           )}
           
@@ -260,6 +280,10 @@ const MainLayout = () => {
                 <div className="flex-1 px-6 py-4 overflow-y-auto">
                   <Payment />
                 </div>
+              </TabsContent>
+
+              <TabsContent value="calendar" className="h-full m-0 data-[state=active]:flex data-[state=active]:flex-col">
+                <Calendar />
               </TabsContent>
             </div>
           </Tabs>
