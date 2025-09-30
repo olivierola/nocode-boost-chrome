@@ -12,7 +12,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import ReactMarkdown from 'react-markdown';
 import PlanStepCards from '@/components/ui/plan-step-cards';
 import PlanChatDialog from '@/components/PlanChatDialog';
-import { FlickeringGrid } from '@/components/ui/flickering-grid';
+import { DottedSurface } from '@/components/ui/dotted-surface';
+import { PromptBox } from '@/components/ui/chatgpt-prompt-input';
 import PlanAgent from '@/components/PlanAgent';
 import AgentKnowledgeBase from '@/components/AgentKnowledgeBase';
 
@@ -667,22 +668,15 @@ const PlanGenerator = () => {
               </div>
             </ScrollArea>
 
-            <form onSubmit={handleSubmit} className="flex gap-4">
-              <Textarea
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                placeholder="Décrivez votre projet (ex: application de livraison de nourriture)..."
-                className="flex-1 min-h-[80px] resize-none bg-white/20 border-white/20"
-                disabled={isGenerating}
-              />
-              <Button
-                type="submit"
-                disabled={!prompt.trim() || isGenerating}
-                className="px-8 h-20"
-                size="lg"
-              >
-                <SendHorizontal className="h-5 w-5" />
-              </Button>
+            <form onSubmit={handleSubmit} className="flex justify-center">
+              <div className="w-full max-w-xl">
+                <PromptBox 
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  placeholder="Décrivez votre projet (ex: application de livraison de nourriture)..."
+                  disabled={isGenerating}
+                />
+              </div>
             </form>
           </div>
         </div>
