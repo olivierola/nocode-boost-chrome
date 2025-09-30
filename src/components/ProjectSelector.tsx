@@ -7,6 +7,7 @@ import { FolderOpen, Plus } from 'lucide-react';
 import CreateProjectDialog from '@/components/CreateProjectDialog';
 import ProjectAccessDialog from '@/components/ProjectAccessDialog';
 import ProjectSpotlightCard from '@/components/ProjectSpotlightCard';
+import { DottedSurface } from '@/components/ui/dotted-surface';
 
 const ProjectSelector = () => {
   const { projects, loading, getUserRole } = useProjects();
@@ -36,8 +37,9 @@ const ProjectSelector = () => {
   }
 
   return (
-    <div className="flex-1 px-6 py-4 overflow-y-auto">
-      <div className="max-w-4xl mx-auto space-y-6">
+    <div className="relative flex-1 px-6 py-4 overflow-y-auto">
+      <DottedSurface />
+      <div className="relative max-w-4xl mx-auto space-y-6">
         <div className="text-center space-y-2">
           <h2 className="text-2xl font-bold text-foreground">Sélectionnez un projet</h2>
           <p className="text-muted-foreground">
