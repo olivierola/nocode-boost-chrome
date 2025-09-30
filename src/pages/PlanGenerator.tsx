@@ -17,7 +17,7 @@ import { PromptBox } from '@/components/ui/chatgpt-prompt-input';
 import { FlickeringGrid } from '@/components/ui/flickering-grid';
 import PlanAgent from '@/components/PlanAgent';
 import AgentKnowledgeBase from '@/components/AgentKnowledgeBase';
-import TypewriterText, { LoopingTypewriter } from '@/components/TypewriterText';
+import TypewriterText from '@/components/TypewriterText';
 
 interface ChatMessage {
   id: string;
@@ -606,21 +606,16 @@ const PlanGenerator = () => {
       <div className="min-h-screen relative overflow-hidden flex items-center justify-center">
         <DottedSurface />
 
-        <div className="relative z-10 w-full max-w-2xl px-8">
+        <div className="relative z-10 w-full max-w-3xl px-8">
           <div className="text-center mb-12 space-y-4">
             <h1 className="text-5xl font-bold text-foreground">
-              Créer un plan{' '}
-              <span className="inline-block px-4 py-1 rounded-lg bg-gradient-to-r from-primary/20 via-secondary/20 to-accent/20 backdrop-blur-sm">
-                <LoopingTypewriter 
-                  words={['innovant', 'détaillé', 'sur mesure', 'stratégique', 'complet']} 
-                  delay={100}
-                  pauseDuration={2000}
-                  className="text-primary"
-                />
-              </span>
+              <TypewriterText text="Créer un nouveau plan" delay={80} />
             </h1>
             <p className="text-lg text-muted-foreground">
-              Décrivez votre projet et laissez l'IA générer un plan détaillé pour vous
+              <TypewriterText 
+                text="Décrivez votre projet et laissez l'IA générer un plan détaillé pour vous" 
+                delay={40}
+              />
             </p>
           </div>
 
