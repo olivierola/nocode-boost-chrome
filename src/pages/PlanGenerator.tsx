@@ -14,6 +14,7 @@ import PlanStepCards from '@/components/ui/plan-step-cards';
 import PlanChatDialog from '@/components/PlanChatDialog';
 import { DottedSurface } from '@/components/ui/dotted-surface';
 import { PromptBox } from '@/components/ui/chatgpt-prompt-input';
+import { FlickeringGrid } from '@/components/ui/flickering-grid';
 import PlanAgent from '@/components/PlanAgent';
 import AgentKnowledgeBase from '@/components/AgentKnowledgeBase';
 
