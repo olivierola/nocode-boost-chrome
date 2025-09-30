@@ -35,26 +35,22 @@ const PaintBrushIcon = (props: React.SVGProps<SVGSVGElement>) => ( <svg viewBox=
 const TelescopeIcon = (props: React.SVGProps<SVGSVGElement>) => ( <svg viewBox="0 0 512 512" fill="currentColor" {...props}> <g> <path d="M452.425,202.575l-38.269-23.11c-1.266-10.321-5.924-18.596-13.711-21.947l-86.843-52.444l-0.275,0.598c-3.571-7.653-9.014-13.553-16.212-16.668L166.929,10.412l-0.236,0.543v-0.016c-3.453-2.856-7.347-5.239-11.594-7.08C82.569-10.435,40.76,14.5,21.516,59.203C2.275,103.827,12.82,151.417,45.142,165.36c4.256,1.826,8.669,3.005,13.106,3.556l-0.19,0.464l146.548,40.669c7.19,3.107,15.206,3.004,23.229,0.37l-0.236,0.566L365.55,238.5c7.819,3.366,17.094,1.125,25.502-5.082l42.957,11.909c7.67,3.312,18.014-3.548,23.104-15.362C462.202,218.158,460.11,205.894,452.425,202.575z M154.516,99.56c-11.792,27.374-31.402,43.783-47.19,49.132c-6.962,2.281-13.176,2.556-17.605,0.637c-14.536-6.254-25.235-41.856-8.252-81.243c16.976-39.378,50.186-56.055,64.723-49.785c4.429,1.904,8.519,6.592,11.626,13.246C164.774,46.699,166.3,72.216,154.516,99.56z"/> </g> </svg> );
 const LightbulbIcon = (props: React.SVGProps<SVGSVGElement>) => ( <svg viewBox="0 0 24 24" fill="none" {...props}> <path d="M12 7C9.23858 7 7 9.23858 7 12C7 13.3613 7.54402 14.5955 8.42651 15.4972C8.77025 15.8484 9.05281 16.2663 9.14923 16.7482L9.67833 19.3924C9.86537 20.3272 10.6862 21 11.6395 21H12.3605C13.3138 21 14.1346 20.3272 14.3217 19.3924L14.8508 16.7482C14.9472 16.2663 15.2297 15.8484 15.5735 15.4972C16.456 14.5955 17 13.3613 17 12C17 9.23858 14.7614 7 12 7Z" stroke="currentColor" strokeWidth="2"/> <path d="M12 4V3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/> <path d="M18 6L19 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/> <path d="M20 12H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/> <path d="M4 12H3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/> <path d="M5 5L6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/> <path d="M10 17H14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/> </svg> );
 const MicIcon = (props: React.SVGProps<SVGSVGElement>) => ( <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" {...props}> <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path> <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path> <line x1="12" y1="19" x2="12" y2="23"></line> </svg> );
+const SparklesIcon = (props: React.SVGProps<SVGSVGElement>) => ( <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" {...props}> <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/> <path d="M5 3v4"/> <path d="M19 17v4"/> <path d="M3 5h4"/> <path d="M17 19h4"/> </svg> );
 
-
-const toolsList = [ 
-  { id: 'createImage', name: 'Create an image', shortName: 'Image', icon: PaintBrushIcon }, 
-  { id: 'searchWeb', name: 'Search the web', shortName: 'Search', icon: GlobeIcon }, 
-  { id: 'writeCode', name: 'Write or code', shortName: 'Write', icon: PencilIcon }, 
-  { id: 'deepResearch', name: 'Run deep research', shortName: 'Deep Search', icon: TelescopeIcon, extra: '5 left' }, 
-  { id: 'thinkLonger', name: 'Think for longer', shortName: 'Think', icon: LightbulbIcon }, 
-];
 
 // --- The Final, Self-Contained PromptBox Component ---
-export const PromptBox = React.forwardRef<HTMLTextAreaElement, React.TextareaHTMLAttributes<HTMLTextAreaElement>>(
-  ({ className, ...props }, ref) => {
+interface PromptBoxProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
+  onOptimizeToggle?: (enabled: boolean) => void;
+}
+
+export const PromptBox = React.forwardRef<HTMLTextAreaElement, PromptBoxProps>(
+  ({ className, onOptimizeToggle, ...props }, ref) => {
     const internalTextareaRef = React.useRef<HTMLTextAreaElement>(null);
     const fileInputRef = React.useRef<HTMLInputElement>(null);
     const [value, setValue] = React.useState("");
     const [imagePreview, setImagePreview] = React.useState<string | null>(null);
-    const [selectedTool, setSelectedTool] = React.useState<string | null>(null);
-    const [isPopoverOpen, setIsPopoverOpen] = React.useState(false);
     const [isImageDialogOpen, setIsImageDialogOpen] = React.useState(false);
+    const [isOptimizeEnabled, setIsOptimizeEnabled] = React.useState(false);
     React.useImperativeHandle(ref, () => internalTextareaRef.current!, []);
     React.useLayoutEffect(() => { const textarea = internalTextareaRef.current; if (textarea) { textarea.style.height = "auto"; const newHeight = Math.min(textarea.scrollHeight, 200); textarea.style.height = `${newHeight}px`; } }, [value]);
     const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => { setValue(e.target.value); if (props.onChange) props.onChange(e); };
@@ -62,8 +58,6 @@ export const PromptBox = React.forwardRef<HTMLTextAreaElement, React.TextareaHTM
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => { const file = event.target.files?.[0]; if (file && file.type.startsWith("image/")) { const reader = new FileReader(); reader.onloadend = () => { setImagePreview(reader.result as string); }; reader.readAsDataURL(file); } event.target.value = ""; };
     const handleRemoveImage = (e: React.MouseEvent<HTMLButtonElement>) => { e.stopPropagation(); setImagePreview(null); if(fileInputRef.current) { fileInputRef.current.value = ""; } };
     const hasValue = value.trim().length > 0 || imagePreview;
-    const activeTool = selectedTool ? toolsList.find(t => t.id === selectedTool) : null;
-    const ActiveToolIcon = activeTool?.icon;
 
     return (
       <div className={cn("flex flex-col rounded-[28px] p-2 shadow-sm transition-colors bg-white border dark:bg-[#303030] dark:border-transparent cursor-text h-full", className)}>
@@ -78,35 +72,27 @@ export const PromptBox = React.forwardRef<HTMLTextAreaElement, React.TextareaHTM
             <div className="flex items-center gap-2">
               <Tooltip> <TooltipTrigger asChild><button type="button" onClick={handlePlusClick} className="flex h-8 w-8 items-center justify-center rounded-full text-foreground dark:text-white transition-colors hover:bg-accent dark:hover:bg-[#515151] focus-visible:outline-none"><PlusIcon className="h-6 w-6" /><span className="sr-only">Attach image</span></button></TooltipTrigger> <TooltipContent side="top" showArrow={true}><p>Attach image</p></TooltipContent> </Tooltip>
               
-              <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <PopoverTrigger asChild>
-                      <button type="button" className="flex h-8 items-center gap-2 rounded-full p-2 text-sm text-foreground dark:text-white transition-colors hover:bg-accent dark:hover:bg-[#515151] focus-visible:outline-none focus-visible:ring-ring">
-                        <Settings2Icon className="h-4 w-4" />
-                        {!selectedTool && 'Tools'}
-                      </button>
-                    </PopoverTrigger>
-                  </TooltipTrigger>
-                  <TooltipContent side="top" showArrow={true}><p>Explore Tools</p></TooltipContent>
-                </Tooltip>
-                <PopoverContent side="top" align="start">
-                  <div className="flex flex-col gap-1">
-                    {toolsList.map(tool => ( <button key={tool.id} onClick={() => { setSelectedTool(tool.id); setIsPopoverOpen(false); }} className="flex w-full items-center gap-2 rounded-md p-2 text-left text-sm hover:bg-accent dark:hover:bg-[#515151]"> <tool.icon className="h-4 w-4" /> <span>{tool.name}</span> {tool.extra && <span className="ml-auto text-xs text-muted-foreground dark:text-gray-400">{tool.extra}</span>} </button> ))}
-                  </div>
-                </PopoverContent>
-              </Popover>
-
-              {activeTool && (
-                <>
-                  <div className="h-4 w-px bg-border dark:bg-gray-600" />
-                  <button onClick={() => setSelectedTool(null)} className="flex h-8 items-center gap-2 rounded-full px-2 text-sm dark:hover:bg-[#3b4045] hover:bg-accent cursor-pointer dark:text-[#99ceff] text-[#2294ff] transition-colors flex-row items-center justify-center">
-                    {ActiveToolIcon && <ActiveToolIcon className="h-4 w-4" />}
-                    {activeTool.shortName}
-                    <XIcon className="h-4 w-4" />
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button 
+                    type="button" 
+                    onClick={() => {
+                      const newState = !isOptimizeEnabled;
+                      setIsOptimizeEnabled(newState);
+                      onOptimizeToggle?.(newState);
+                    }}
+                    className={`flex h-8 w-8 items-center justify-center rounded-full transition-colors focus-visible:outline-none ${
+                      isOptimizeEnabled 
+                        ? 'bg-[#8B1538] text-white hover:bg-[#6B1028]' 
+                        : 'text-foreground dark:text-white hover:bg-accent dark:hover:bg-[#515151]'
+                    }`}
+                  >
+                    <SparklesIcon className="h-5 w-5" />
+                    <span className="sr-only">Optimiser le prompt</span>
                   </button>
-                </>
-              )}
+                </TooltipTrigger>
+                <TooltipContent side="top" showArrow={true}><p>Optimiser le prompt</p></TooltipContent>
+              </Tooltip>
 
               {/* MODIFIED: Right-aligned buttons container */}
               <div className="ml-auto flex items-center gap-2">
