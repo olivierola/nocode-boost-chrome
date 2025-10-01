@@ -299,8 +299,8 @@ const Collaboration = () => {
       <div className="border-b border-border bg-card flex-shrink-0 px-6 py-4">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-base font-bold text-foreground">Collaboration</h2>
-            <p className="text-xs text-muted-foreground">
+            <h2 className="text-3xl font-bold">Collaboration</h2>
+            <p className="text-muted-foreground">
               Gérez les membres et permissions de vos projets
             </p>
           </div>

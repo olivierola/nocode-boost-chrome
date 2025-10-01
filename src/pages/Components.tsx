@@ -4,17 +4,21 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Copy, Plus, Search, ExternalLink, Check, Trash2 } from 'lucide-react';
+import { Copy, Plus, Search, ExternalLink, Check, Trash2, Type } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import CreateComponentDialog from '@/components/CreateComponentDialog';
+import { ComponentCard } from '@/components/ui/expandable-card';
 
 interface Component {
   id: string;
   nom: string;
   description: string | null;
   prompt: string | null;
+  type?: string;
+  font_family?: string;
+  font_url?: string;
   created_at: string;
 }
 
@@ -220,6 +224,50 @@ const ComponentsSaved = () => {
     component.description?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const renderItemsByType = (type: string) => {
+    const items = filteredComponents.filter(c => (c.type || 'component') === type);
+    
+    if (loading) {
+      return (
+        <div className="flex items-center justify-center py-8">
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+        </div>
+      );
+    }
+
+    if (items.length === 0) {
+      return (
+        <Card className="border-dashed border-2">
+          <CardContent className="flex flex-col items-center justify-center py-8">
+            <Type className="h-8 w-8 text-muted-foreground mb-2" />
+            <p className="text-sm text-muted-foreground text-center">
+              Aucun élément de ce type
+            </p>
+          </CardContent>
+        </Card>
+      );
+    }
+
+    return (
+      <div className="grid gap-3">
+        {items.map((component) => (
+          <ComponentCard
+            key={component.id}
+            id={component.id}
+            title={component.nom}
+            description={component.description}
+            prompt={component.prompt}
+            type={component.type || 'component'}
+            created_at={component.created_at}
+            onCopy={() => copyPrompt(component)}
+            onAddToPrompt={() => addToPrompt(component)}
+            onDelete={() => deleteComponent(component.id)}
+          />
+        ))}
+      </div>
+    );
+  };
+
   useEffect(() => {
     fetchComponents();
   }, [user]);
@@ -230,9 +278,9 @@ const ComponentsSaved = () => {
       <div className="border-b border-border bg-card flex-shrink-0 px-6 py-4">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-base font-bold text-foreground">Composants Sauvegardés</h2>
-            <p className="text-xs text-muted-foreground">
-              Gérez vos composants importés et créez-en de nouveaux
+            <h2 className="text-3xl font-bold">Composants Sauvegardés</h2>
+            <p className="text-muted-foreground">
+              Gérez vos composants, polices et fichiers sauvegardés
             </p>
           </div>
           <CreateComponentDialog onComponentCreated={fetchComponents} />
@@ -252,82 +300,64 @@ const ComponentsSaved = () => {
           />
         </div>
 
-        {/* Components List */}
-        <div className="flex-1 overflow-y-auto space-y-3">
-          {loading ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-            </div>
-          ) : filteredComponents.length === 0 ? (
-            <Card className="border-dashed border-2">
-              <CardContent className="flex flex-col items-center justify-center py-8">
-                <Plus className="h-8 w-8 text-muted-foreground mb-2" />
-                <p className="text-sm text-muted-foreground text-center">
-                  {searchTerm ? 'Aucun composant trouvé' : 'Aucun composant sauvegardé'}
-                </p>
-                <p className="text-xs text-muted-foreground text-center mt-1">
-                  Importez vos premiers composants depuis 21st.dev
-                </p>
-              </CardContent>
-            </Card>
-          ) : (
-            filteredComponents.map((component) => (
-              <Card key={component.id} className="hover:shadow-md transition-shadow">
-                <CardHeader className="pb-2">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1 min-w-0">
-                      <CardTitle className="text-sm font-medium truncate">
-                        {component.nom}
-                      </CardTitle>
-                      {component.description && (
-                        <CardDescription className="text-xs line-clamp-2 mt-1">
-                          {component.description}
-                        </CardDescription>
-                      )}
-                    </div>
-                    <Badge variant="outline" className="text-xs ml-2">
-                      Composant
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => copyPrompt(component)}
-                      className="flex-1"
-                      disabled={!component.prompt}
-                    >
-                      {copiedId === component.id ? (
-                        <Check className="h-3 w-3 mr-1" />
-                      ) : (
-                        <Copy className="h-3 w-3 mr-1" />
-                      )}
-                      {copiedId === component.id ? 'Copié!' : 'Copier prompt'}
-                    </Button>
-                    <Button
-                      variant="default"
-                      size="sm"
-                      onClick={() => addToPrompt(component)}
-                      className="flex-1"
-                    >
-                      <Plus className="h-3 w-3 mr-1" />
-                      Ajouter au prompt
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => deleteComponent(component.id)}
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  </div>
+        {/* Tabs for different types */}
+        <Tabs defaultValue="all" className="flex-1 flex flex-col">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="all">Tous</TabsTrigger>
+            <TabsTrigger value="components">Composants</TabsTrigger>
+            <TabsTrigger value="fonts">Polices</TabsTrigger>
+            <TabsTrigger value="files">Fichiers</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="all" className="flex-1 overflow-y-auto space-y-3 mt-4">
+            {loading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+              </div>
+            ) : filteredComponents.length === 0 ? (
+              <Card className="border-dashed border-2">
+                <CardContent className="flex flex-col items-center justify-center py-8">
+                  <Plus className="h-8 w-8 text-muted-foreground mb-2" />
+                  <p className="text-sm text-muted-foreground text-center">
+                    {searchTerm ? 'Aucun élément trouvé' : 'Aucun élément sauvegardé'}
+                  </p>
+                  <p className="text-xs text-muted-foreground text-center mt-1">
+                    Commencez par ajouter des composants, polices ou fichiers
+                  </p>
                 </CardContent>
               </Card>
-            ))
-          )}
-        </div>
+            ) : (
+              <div className="grid gap-3">
+                {filteredComponents.map((component) => (
+                  <ComponentCard
+                    key={component.id}
+                    id={component.id}
+                    title={component.nom}
+                    description={component.description}
+                    prompt={component.prompt}
+                    type={component.type || 'component'}
+                    created_at={component.created_at}
+                    onCopy={() => copyPrompt(component)}
+                    onAddToPrompt={() => addToPrompt(component)}
+                    onDelete={() => deleteComponent(component.id)}
+                  />
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="components" className="flex-1 overflow-y-auto space-y-3 mt-4">
+            {renderItemsByType('component')}
+          </TabsContent>
+
+          <TabsContent value="fonts" className="flex-1 overflow-y-auto space-y-3 mt-4">
+            {renderItemsByType('font')}
+          </TabsContent>
+
+          <TabsContent value="files" className="flex-1 overflow-y-auto space-y-3 mt-4">
+            {renderItemsByType('file')}
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
