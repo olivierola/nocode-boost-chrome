@@ -2,16 +2,11 @@
 
 import React, { useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Copy, Plus, Trash2, Code, FileText } from "lucide-react";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-} from "@/components/ui/card";
+import { Copy, Plus, Trash2, Code, ChevronDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useExpandable } from "@/hooks/use-expandable";
+import { cn } from "@/lib/utils";
 
 interface ComponentCardProps {
   id: string;
@@ -54,20 +49,32 @@ export function ComponentCard({
     });
   };
 
+  const getTypeLabel = () => {
+    if (type === "font") return "Police";
+    if (type === "file") return "Fichier";
+    return "Composant";
+  };
+
   return (
-    <Card
-      className="w-full cursor-pointer transition-all duration-300 hover:shadow-lg"
-      onClick={toggleExpand}
+    <div
+      className={cn(
+        "w-full",
+        "bg-card",
+        "border border-border",
+        "rounded-2xl shadow-sm hover:shadow-md transition-all duration-300"
+      )}
     >
-      <CardHeader className="space-y-2">
-        <div className="flex justify-between items-start w-full">
-          <div className="space-y-2 flex-1">
-            <div className="flex items-center gap-2">
+      <div className="p-6">
+        {/* Header section */}
+        <div className="flex items-start justify-between mb-3">
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-2">
               <Badge variant="secondary" className="text-xs">
-                {type === "font" ? "Police" : type === "file" ? "Fichier" : "Composant"}
+                {getTypeLabel()}
               </Badge>
+              <span className="text-xs text-muted-foreground">{formatDate(created_at)}</span>
             </div>
-            <h3 className="text-lg font-semibold">{title}</h3>
+            <h3 className="text-lg font-semibold text-foreground mb-1">{title}</h3>
             {description && (
               <p className="text-sm text-muted-foreground line-clamp-2">
                 {description}
@@ -75,90 +82,96 @@ export function ComponentCard({
             )}
           </div>
         </div>
-      </CardHeader>
 
-      <CardContent>
-        <motion.div
-          style={{ height: animatedHeight }}
-          transition={{ type: "spring", stiffness: 300, damping: 30 }}
-          className="overflow-hidden"
-        >
-          <div ref={contentRef}>
-            <AnimatePresence>
-              {isExpanded && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="space-y-4 pt-2"
-                >
-                  {prompt && (
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Code className="h-4 w-4" />
-                        <h4 className="font-medium text-sm">Prompt</h4>
-                      </div>
-                      <div className="bg-muted p-3 rounded-md text-xs font-mono overflow-x-auto">
+        {/* Action buttons */}
+        <div className="flex items-center gap-2 mb-4">
+          {onCopy && prompt && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                onCopy();
+              }}
+              className="flex-1"
+            >
+              <Copy className="h-3 w-3 mr-1" />
+              Copier
+            </Button>
+          )}
+          {onAddToPrompt && (
+            <Button
+              variant="default"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                onAddToPrompt();
+              }}
+              className="flex-1"
+            >
+              <Plus className="h-3 w-3 mr-1" />
+              Ajouter
+            </Button>
+          )}
+          {onDelete && (
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete();
+              }}
+            >
+              <Trash2 className="h-3 w-3" />
+            </Button>
+          )}
+        </div>
+
+        {/* Expandable prompt section */}
+        {prompt && (
+          <>
+            <button
+              type="button"
+              onClick={toggleExpand}
+              className="w-full flex items-center justify-between p-3 rounded-lg hover:bg-accent transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <Code className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-medium">Voir le prompt</span>
+              </div>
+              <ChevronDown
+                className={cn(
+                  "h-4 w-4 text-muted-foreground transition-transform duration-200",
+                  isExpanded && "rotate-180"
+                )}
+              />
+            </button>
+
+            <motion.div
+              style={{ height: animatedHeight }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              className="overflow-hidden"
+            >
+              <div ref={contentRef}>
+                <AnimatePresence>
+                  {isExpanded && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="pt-3"
+                    >
+                      <div className="bg-muted p-4 rounded-lg text-xs font-mono overflow-x-auto">
                         {prompt}
                       </div>
-                    </div>
+                    </motion.div>
                   )}
-
-                  <div className="flex gap-2 pt-2">
-                    {onCopy && prompt && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onCopy();
-                        }}
-                        className="flex-1"
-                      >
-                        <Copy className="h-3 w-3 mr-1" />
-                        Copier
-                      </Button>
-                    )}
-                    {onAddToPrompt && (
-                      <Button
-                        variant="default"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onAddToPrompt();
-                        }}
-                        className="flex-1"
-                      >
-                        <Plus className="h-3 w-3 mr-1" />
-                        Ajouter
-                      </Button>
-                    )}
-                    {onDelete && (
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onDelete();
-                        }}
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                    )}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        </motion.div>
-      </CardContent>
-
-      <CardFooter>
-        <div className="flex items-center justify-between w-full text-xs text-muted-foreground">
-          <span>{formatDate(created_at)}</span>
-          <span className="text-primary">{isExpanded ? "Cliquer pour réduire" : "Cliquer pour voir plus"}</span>
-        </div>
-      </CardFooter>
-    </Card>
+                </AnimatePresence>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </div>
+    </div>
   );
 }

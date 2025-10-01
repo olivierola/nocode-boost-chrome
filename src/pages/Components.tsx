@@ -275,7 +275,7 @@ const ComponentsSaved = () => {
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="border-b border-border bg-card flex-shrink-0 px-6 py-4">
+      <div className="bg-card flex-shrink-0 px-6 py-4">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-3xl font-bold">Composants Sauvegardés</h2>
