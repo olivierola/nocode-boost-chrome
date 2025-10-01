@@ -6,11 +6,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Github, Mail } from 'lucide-react';
+import { Github, Mail, Moon, Sun } from 'lucide-react';
 import { FlickeringGrid } from '@/components/ui/flickering-grid';
+import { useTheme } from 'next-themes';
 
 const Auth = () => {
   const { user, loading, signUp, signIn, signInWithGoogle, signInWithGithub } = useAuth();
+  const { theme, setTheme } = useTheme();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Redirect if already authenticated
@@ -71,6 +73,17 @@ const Auth = () => {
         maxOpacity={0.3}
         flickerChance={0.1}
       />
+      
+      <Button
+        variant="outline"
+        size="icon"
+        onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+        className="fixed top-4 right-4 z-20 rounded-full shadow-lg backdrop-blur-sm bg-card/90"
+      >
+        <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+        <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+        <span className="sr-only">Changer de thème</span>
+      </Button>
       <Card className="relative z-10 w-full max-w-sm backdrop-blur-sm bg-card/90 border-border/50 shadow-2xl">
         <CardHeader className="text-center pb-4">
           <CardTitle className="text-xl font-bold">SN</CardTitle>
