@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Github, Mail } from 'lucide-react';
-import { Component as RaycastBackground } from '@/components/ui/raycast-animated-background';
+import { FlickeringGrid } from '@/components/ui/flickering-grid';
 
 const Auth = () => {
   const { user, loading, signUp, signIn, signInWithGoogle, signInWithGithub } = useAuth();
@@ -63,9 +63,14 @@ const Auth = () => {
 
   return (
     <div className="relative w-full h-screen flex items-center justify-center p-6 overflow-hidden">
-      <div className="absolute inset-0 w-full h-full z-0">
-        <RaycastBackground />
-      </div>
+      <FlickeringGrid
+        className="absolute inset-0 w-full h-full z-0"
+        squareSize={4}
+        gridGap={6}
+        color="hsl(var(--primary))"
+        maxOpacity={0.3}
+        flickerChance={0.1}
+      />
       <Card className="relative z-10 w-full max-w-sm backdrop-blur-sm bg-card/90 border-border/50 shadow-2xl">
         <CardHeader className="text-center pb-4">
           <CardTitle className="text-xl font-bold">SN</CardTitle>
