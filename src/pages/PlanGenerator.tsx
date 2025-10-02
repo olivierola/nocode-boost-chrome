@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { SendHorizontal, Bot, User, Clock, Plus, BookOpen, Database, Shield, Play, MessageCircle, Settings, FileText, Sparkles } from 'lucide-react';
+import { SendHorizontal, Bot, User, Clock, Plus, BookOpen, Database, Shield, Play, MessageCircle, Settings, FileText, Sparkles, ListTodo } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import ReactMarkdown from 'react-markdown';
 import PlanStepCards from '@/components/ui/plan-step-cards';
@@ -64,7 +65,8 @@ const PlanGenerator = () => {
   const [currentPlan, setCurrentPlan] = useState<Plan | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedSection, setSelectedSection] = useState<string | null>(null);
-  const [chatDialogOpen, setChatDialogOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<'plan' | 'chat'>('plan');
+  const [chatTarget, setChatTarget] = useState<'documentation' | 'steps'>('steps');
   const [agentActive, setAgentActive] = useState(false);
   const [currentExecutionStep, setCurrentExecutionStep] = useState<any>(null);
   const [executionContext, setExecutionContext] = useState<any>({});
@@ -740,84 +742,34 @@ const PlanGenerator = () => {
         maxOpacity={0.1}
         flickerChance={0.05}
       />
-      {/* Sidebar verticale flottante */}
-      <div className="fixed left-4 top-1/2 transform -translate-y-1/2 z-50 relative">
+      
+      {/* Sidebar flottante simplifiée */}
+      <div className="fixed left-4 top-1/2 transform -translate-y-1/2 z-50">
         <div className="bg-card border rounded-xl shadow-lg p-2 flex flex-col space-y-2">
-          {planSections.map((section) => (
-            <Button
-              key={section.key}
-              variant={selectedSection === section.key ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setSelectedSection(selectedSection === section.key ? null : section.key)}
-              className="w-10 h-10 p-0 rounded-lg flex flex-col items-center justify-center"
-              title={section.title}
-            >
-              <section.icon className="h-4 w-4" />
-            </Button>
-          ))}
-          <div className="border-t pt-2 flex flex-col space-y-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setChatDialogOpen(true)}
-              className="w-10 h-10 p-0 rounded-lg hover:bg-primary/10 flex flex-col items-center justify-center"
-              title="Chat IA pour modifier le plan"
-            >
-              <MessageCircle className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="default"
-              size="sm"
-              className="w-10 h-10 p-0 bg-green-600 hover:bg-green-700 rounded-lg flex flex-col items-center justify-center"
-              title="Exécuter le plan"
-            >
-              <Play className="h-4 w-4" />
-            </Button>
-          </div>
+          <Button
+            variant={activeTab === 'plan' ? "default" : "ghost"}
+            size="sm"
+            onClick={() => setActiveTab('plan')}
+            className="w-10 h-10 p-0 rounded-lg flex flex-col items-center justify-center"
+            title="Plan"
+          >
+            <ListTodo className="h-4 w-4" />
+          </Button>
+          <Button
+            variant={activeTab === 'chat' ? "default" : "ghost"}
+            size="sm"
+            onClick={() => setActiveTab('chat')}
+            className="w-10 h-10 p-0 rounded-lg flex flex-col items-center justify-center"
+            title="Chat"
+          >
+            <MessageCircle className="h-4 w-4" />
+          </Button>
         </div>
       </div>
 
       {/* Contenu principal */}
       <div className="p-8">
-        {selectedSection ? (
-          <div className="max-w-7xl mx-auto">
-            {(() => {
-              const section = planSections.find(s => s.key === selectedSection);
-              if (!section) return null;
-              
-              const steps = convertSectionToSteps(section.content, section.key as 'documentation' | 'implementation' | 'backend' | 'security');
-              
-              return (
-                <div className="space-y-6">
-                  <div className="flex items-center gap-3 mb-6">
-                    <section.icon className="h-6 w-6 text-primary" />
-                    <h2 className="text-2xl font-bold">{section.title}</h2>
-                  </div>
-                  
-                  {section.key === 'documentation' ? (
-                    <Card>
-                      <CardContent className="p-6">
-                        <div className="prose max-w-none">
-                          {renderSectionContent(section.content, 0, section.key)}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ) : (
-                    <PlanStepCards
-                      steps={steps}
-                      onEditStep={handleEditStep}
-                      onAddStep={handleAddStep}
-                      onDeleteStep={handleDeleteStep}
-                      onSavePlan={handleSavePlan}
-                      sectionType={section.key as 'documentation' | 'implementation' | 'backend' | 'security'}
-                      editable={true}
-                    />
-                  )}
-                </div>
-              );
-            })()}
-          </div>
-        ) : (
+        {activeTab === 'plan' ? (
           <div className="max-w-6xl mx-auto space-y-8">
             {/* Documentation Card */}
             {projectDocumentation ? (
@@ -892,14 +844,97 @@ const PlanGenerator = () => {
               />
             </div>
           </div>
+        ) : (
+          <div className="max-w-4xl mx-auto">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <MessageCircle className="h-5 w-5 text-primary" />
+                    Chat IA - Modifier le plan
+                  </CardTitle>
+                  <Select value={chatTarget} onValueChange={(value) => setChatTarget(value as 'documentation' | 'steps')}>
+                    <SelectTrigger className="w-[200px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="documentation">
+                        <div className="flex items-center gap-2">
+                          <FileText className="h-4 w-4" />
+                          Documentation
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="steps">
+                        <div className="flex items-center gap-2">
+                          <ListTodo className="h-4 w-4" />
+                          Étapes
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <ScrollArea className="h-[400px] w-full rounded-md border p-4 mb-4">
+                  <div className="space-y-4">
+                    {messages.length === 0 ? (
+                      <div className="text-center text-muted-foreground py-8">
+                        <Bot className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                        <p>Posez votre question pour modifier {chatTarget === 'documentation' ? 'la documentation' : 'les étapes'}...</p>
+                      </div>
+                    ) : (
+                      messages.map((message) => (
+                        <div key={message.id} className="space-y-2">
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            {message.role === 'user' ? (
+                              <User className="h-4 w-4" />
+                            ) : (
+                              <Bot className="h-4 w-4" />
+                            )}
+                            <span className="capitalize">{message.role}</span>
+                            <span>
+                              <Clock className="h-3 w-3 inline mr-1" />
+                              {formatTime(message.created_at)}
+                            </span>
+                          </div>
+                          <div className={`p-3 rounded-lg ${
+                            message.role === 'user' 
+                              ? 'bg-primary text-primary-foreground ml-12' 
+                              : 'bg-muted mr-12'
+                          }`}>
+                            <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                    {isGenerating && (
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Bot className="h-4 w-4" />
+                        <div className="flex items-center gap-1">
+                          <div className="animate-bounce w-2 h-2 bg-primary rounded-full"></div>
+                          <div className="animate-bounce w-2 h-2 bg-primary rounded-full delay-100"></div>
+                          <div className="animate-bounce w-2 h-2 bg-primary rounded-full delay-200"></div>
+                        </div>
+                        <span className="text-sm">IA réfléchit...</span>
+                      </div>
+                    )}
+                  </div>
+                </ScrollArea>
+
+                <form onSubmit={handleSubmit} className="mt-4">
+                  <PromptBox 
+                    value={prompt}
+                    onChange={(e) => setPrompt(e.target.value)}
+                    placeholder={`Décrivez les modifications pour ${chatTarget === 'documentation' ? 'la documentation' : 'les étapes'}...`}
+                    disabled={isGenerating}
+                    onOptimizeToggle={setIsOptimizeEnabled}
+                  />
+                </form>
+              </CardContent>
+            </Card>
+          </div>
         )}
       </div>
-
-      <PlanChatDialog
-        open={chatDialogOpen}
-        onOpenChange={setChatDialogOpen}
-        sectionTitle={selectedSection ? planSections.find(s => s.key === selectedSection)?.title : "Plan"}
-      />
     </div>
   );
 };
