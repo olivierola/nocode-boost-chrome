@@ -825,7 +825,10 @@ const PlanGenerator = () => {
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <CardTitle className="text-2xl mb-2">{projectDocumentation.title}</CardTitle>
+                      <CardTitle className="text-2xl mb-2 flex items-center gap-2">
+                        <FileText className="w-6 h-6" />
+                        {projectDocumentation.title}
+                      </CardTitle>
                       <CardDescription className="text-base">{projectDocumentation.description}</CardDescription>
                     </div>
                     <Button
@@ -840,8 +843,8 @@ const PlanGenerator = () => {
                     </Button>
                   </div>
                 </CardHeader>
-                <CardContent>
-                  <div className="prose max-w-none dark:prose-invert">
+                <CardContent className="pt-6">
+                  <div className="prose prose-sm md:prose-base max-w-none dark:prose-invert prose-headings:text-foreground prose-p:text-foreground/90 prose-strong:text-foreground prose-a:text-primary">
                     <ReactMarkdown>{projectDocumentation.documentation_markdown}</ReactMarkdown>
                   </div>
                 </CardContent>
