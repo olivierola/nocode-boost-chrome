@@ -21,7 +21,6 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { Button as MovingBorderButton } from '@/components/ui/moving-border';
 
 interface MediaFile {
   id: string;
@@ -236,15 +235,14 @@ const MediaUpload = () => {
               className="hidden"
               accept="image/*,video/*,.pdf,.txt,.doc,.docx"
             />
-            <MovingBorderButton 
+            <Button 
+              size="sm" 
               onClick={() => fileInputRef.current?.click()}
               disabled={uploading}
-              containerClassName="w-auto h-10"
-              className="gap-2"
             >
-              <Plus className="h-4 w-4" />
+              <Plus className="h-3 w-3 mr-1" />
               Upload
-            </MovingBorderButton>
+            </Button>
           </div>
         </div>
       </div>
