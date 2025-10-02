@@ -35,6 +35,23 @@ Deno.serve(async (req) => {
       }
     );
 
+    // Get existing documentation for context
+    const { data: existingDoc } = await supabaseClient
+      .from('project_documentation')
+      .select('*')
+      .eq('project_id', projectId)
+      .single();
+
+    const previousDocContext = existingDoc 
+      ? `\n\n### Documentation Précédente (pour contexte et amélioration)
+**Titre précédent :** ${existingDoc.title}
+**Description précédente :** ${existingDoc.description}
+**Extrait de la documentation :**
+${existingDoc.documentation_markdown.substring(0, 1500)}...
+
+**IMPORTANT :** Utilise cette documentation précédente comme base, améliore-la et enrichis-la avec les nouvelles informations du plan.`
+      : '';
+
     // Get OpenAI API Key from secrets
     const { data: secretData, error: secretError } = await supabaseClient
       .from('vault_secrets')
@@ -63,6 +80,7 @@ La documentation doit inclure :
    - Modèle économique
    - Roadmap suggérée
    - Recommandations de sécurité et conformité
+${existingDoc ? '\n**IMPORTANT :** Une documentation précédente existe. Utilise-la comme base et améliore-la avec les nouvelles informations.' : ''}
 
 Format de réponse JSON :
 {
@@ -76,6 +94,7 @@ Format de réponse JSON :
 Nom : ${projectName}
 ${projectDescription ? `Description : ${projectDescription}` : ''}
 ${planData ? `Plan existant : ${JSON.stringify(planData, null, 2)}` : ''}
+${previousDocContext}
 
 Créer une documentation professionnelle, détaillée et actionnelle.`;
 

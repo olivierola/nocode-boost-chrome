@@ -168,7 +168,19 @@ serve(async (req) => {
       .eq('id', projectId)
       .single();
 
-    console.log('Generating plan for user:', user.id, 'project:', projectId, 'with context:', project);
+    // Get existing plan for context (if regenerating)
+    const { data: existingPlans } = await supabaseClient
+      .from('plans')
+      .select('plan_data')
+      .eq('project_id', projectId)
+      .order('created_at', { ascending: false })
+      .limit(1);
+
+    const previousPlanContext = existingPlans && existingPlans.length > 0 
+      ? existingPlans[0].plan_data 
+      : null;
+
+    console.log('Generating plan for user:', user.id, 'project:', projectId, 'with context:', project, 'has previous plan:', !!previousPlanContext);
 
     // Check usage limits
     const { data: canUse, error: usageError } = await supabaseClient
@@ -235,22 +247,32 @@ serve(async (req) => {
     }
 
     // Step 2: Generate comprehensive plan using new structure
-        const planMessages = [
-          {
-            role: "system",
-            content: `Tu es un expert en SaaS, stratégie produit, no-code development, et gestion de projet.  
+    const previousPlanSection = previousPlanContext 
+      ? `\n\n### Plan Précédent (pour contexte et amélioration)
+${previousPlanContext.etude_saas?.documentation_markdown ? `**Étude SaaS précédente :**\n${previousPlanContext.etude_saas.documentation_markdown.substring(0, 1000)}...\n\n` : ''}
+${previousPlanContext.plan_implementation ? `**Nombre d'étapes précédentes :** ${previousPlanContext.plan_implementation.length}\n` : ''}
+
+**IMPORTANT :** Utilise ce plan précédent comme base, mais améliore-le selon la nouvelle demande. Garde les bonnes parties, affine ou remplace ce qui doit l'être.`
+      : '';
+
+    const planMessages = [
+      {
+        role: "system",
+        content: `Tu es un expert en SaaS, stratégie produit, no-code development, et gestion de projet.  
 Je veux que tu réalises une étude très complète pour un projet SaaS, puis que tu crées un plan d'implémentation détaillé avec un outil no-code.  
 
 ### Contexte du Projet
 - Type d'application: ${project?.project_type || 'web'}
 - Stack technique: ${project?.tech_stack || 'react'}
 - Framework details: ${JSON.stringify(project?.framework_details || {})}
+${previousPlanSection}
 
 ### Instructions de génération
 - Prendre en compte le type d'application et la stack technique choisie
 - Adapter les recommandations techniques selon la plateforme cible
 - Inclure des considérations spécifiques au type de projet (mobile, desktop, etc.)
 - Optimiser pour la stack technique sélectionnée
+${previousPlanContext ? '- **IMPORTANT :** Si un plan précédent existe, utilise-le comme base et améliore-le selon la nouvelle demande utilisateur' : ''}
 
 ### Contexte
 - Objectif : construire un SaaS rentable, innovant et simple à développer en no-code.  
@@ -295,7 +317,7 @@ Le JSON doit avoir la structure suivante :
 }
 
 Ton rôle est d'agir comme un consultant SaaS senior spécialisé dans le growth, le product management et la mise en place d'outils no-code. Tu dois remplir ce JSON avec du contenu riche, concret et actionnable. N'ajoute aucun texte hors du JSON.`
-          },
+      },
       ...conversationHistory.map((msg: any) => ({
         role: msg.role,
         content: msg.content
