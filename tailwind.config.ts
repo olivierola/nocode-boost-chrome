@@ -93,5 +93,34 @@ export default {
 			}
 		}
 	},
-	plugins: [require("tailwindcss-animate")],
+	plugins: [require("tailwindcss-animate"), addVariablesForColors],
 } satisfies Config;
+
+// This plugin adds each Tailwind color as a global CSS variable, e.g. var(--gray-200).
+function addVariablesForColors({ addBase, theme }: any) {
+	const allColors = flattenColorPalette(theme("colors"));
+	const newVars = Object.fromEntries(
+		Object.entries(allColors).map(([key, val]) => [`--${key}`, val])
+	);
+
+	addBase({
+		":root": newVars,
+	});
+}
+
+const flattenColorPalette = (colors: Record<string, any>): Record<string, string> => {
+	const result: Record<string, string> = {};
+	
+	const flatten = (obj: Record<string, any>, prefix = '') => {
+		for (const [key, value] of Object.entries(obj)) {
+			if (typeof value === 'string') {
+				result[prefix + key] = value;
+			} else if (typeof value === 'object' && value !== null) {
+				flatten(value, `${prefix}${key}-`);
+			}
+		}
+	};
+	
+	flatten(colors);
+	return result;
+};

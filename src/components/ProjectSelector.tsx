@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useProjects } from '@/hooks/useProjects';
 import { useProjectContext } from '@/hooks/useProjectContext';
 import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Button as MovingBorderButton } from '@/components/ui/moving-border';
 import { FolderOpen, Plus } from 'lucide-react';
 import CreateProjectDialog from '@/components/CreateProjectDialog';
 import ProjectAccessDialog from '@/components/ProjectAccessDialog';
@@ -49,10 +49,14 @@ const ProjectSelector = () => {
 
         <div className="flex justify-center">
           <CreateProjectDialog>
-            <Button className="gap-2">
+            <MovingBorderButton
+              borderRadius="1.75rem"
+              className="bg-background dark:bg-slate-900/80 text-foreground border-border gap-2"
+              containerClassName="h-12 w-auto px-6"
+            >
               <Plus className="h-4 w-4" />
               Nouveau Projet
-            </Button>
+            </MovingBorderButton>
           </CreateProjectDialog>
         </div>
 
