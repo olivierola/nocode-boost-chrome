@@ -15,6 +15,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { LogOut, Home, Code, Sparkles, Scan, Image, Users, FolderOpen, X, CreditCard, BookmarkPlus, MessagesSquare, User, Moon, Sun, Calendar as CalendarIcon } from 'lucide-react';
+import { LimelightNav } from '@/components/ui/limelight-nav';
 
 // Import all components
 import Dashboard from '@/pages/Dashboard';
@@ -52,6 +53,33 @@ const MainLayout = () => {
     return user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Utilisateur';
   };
 
+  const navItems = [
+    { id: 'dashboard', icon: <Home className="h-4 w-4" />, label: 'Dashboard', onClick: () => setActiveTab('dashboard') },
+    { id: 'plans', icon: <Sparkles className="h-4 w-4" />, label: 'Plans', onClick: () => setActiveTab('plans') },
+    { id: 'components', icon: <Code className="h-4 w-4" />, label: '21st.dev', onClick: () => setActiveTab('components') },
+    { id: 'saved-components', icon: <BookmarkPlus className="h-4 w-4" />, label: 'Composants sauvés', onClick: () => setActiveTab('saved-components') },
+    { id: 'media', icon: <Image className="h-4 w-4" />, label: 'Médias', onClick: () => setActiveTab('media') },
+    { id: 'posts', icon: <MessagesSquare className="h-4 w-4" />, label: 'Posts', onClick: () => setActiveTab('posts') },
+    { id: 'collaboration', icon: <Users className="h-4 w-4" />, label: 'Équipe', onClick: () => setActiveTab('collaboration') },
+    { id: 'payment', icon: <CreditCard className="h-4 w-4" />, label: 'Abonnements', onClick: () => setActiveTab('payment') },
+    { 
+      id: 'calendar', 
+      icon: <CalendarIcon className="h-4 w-4" />, 
+      label: 'Calendrier', 
+      onClick: () => setActiveTab('calendar'),
+      badge: upcomingEventsCount > 0 ? (
+        <Badge 
+          variant="destructive" 
+          className="h-4 w-4 p-0 flex items-center justify-center text-[10px]"
+        >
+          {upcomingEventsCount}
+        </Badge>
+      ) : undefined
+    },
+  ];
+
+  const activeTabIndex = navItems.findIndex(item => item.id === activeTab);
+
   return (
     <div className="w-[750px] h-[600px] bg-background flex flex-col relative">
       <NotificationCenter />
@@ -88,96 +116,12 @@ const MainLayout = () => {
 
           {/* Centered Tab Navigation */}
           {isProjectSelected && (
-            <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center gap-1 bg-header p-1.5 rounded-2xl border border-border">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => setActiveTab('dashboard')}
-                className={`h-7 w-7 p-0 rounded-xl hover:bg-transparent ${activeTab === 'dashboard' ? 'text-[#8B1538]' : 'text-muted-foreground'}`}
-                title="Dashboard"
-              >
-                <Home className="h-4 w-4" />
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => setActiveTab('plans')}
-                className={`h-7 w-7 p-0 rounded-xl hover:bg-transparent ${activeTab === 'plans' ? 'text-[#8B1538]' : 'text-muted-foreground'}`}
-                title="Plans"
-              >
-                <Sparkles className="h-4 w-4" />
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => setActiveTab('components')}
-                className={`h-7 w-7 p-0 rounded-xl hover:bg-transparent ${activeTab === 'components' ? 'text-[#8B1538]' : 'text-muted-foreground'}`}
-                title="21st.dev"
-              >
-                <Code className="h-4 w-4" />
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => setActiveTab('saved-components')}
-                className={`h-7 w-7 p-0 rounded-xl hover:bg-transparent ${activeTab === 'saved-components' ? 'text-[#8B1538]' : 'text-muted-foreground'}`}
-                title="Composants sauvés"
-              >
-                <BookmarkPlus className="h-4 w-4" />
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => setActiveTab('media')}
-                className={`h-7 w-7 p-0 rounded-xl hover:bg-transparent ${activeTab === 'media' ? 'text-[#8B1538]' : 'text-muted-foreground'}`}
-                title="Médias"
-              >
-                <Image className="h-4 w-4" />
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => setActiveTab('posts')}
-                className={`h-7 w-7 p-0 rounded-xl hover:bg-transparent ${activeTab === 'posts' ? 'text-[#8B1538]' : 'text-muted-foreground'}`}
-                title="Posts"
-              >
-                <MessagesSquare className="h-4 w-4" />
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => setActiveTab('collaboration')}
-                className={`h-7 w-7 p-0 rounded-xl hover:bg-transparent ${activeTab === 'collaboration' ? 'text-[#8B1538]' : 'text-muted-foreground'}`}
-                title="Équipe"
-              >
-                <Users className="h-4 w-4" />
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => setActiveTab('payment')}
-                className={`h-7 w-7 p-0 rounded-xl hover:bg-transparent ${activeTab === 'payment' ? 'text-[#8B1538]' : 'text-muted-foreground'}`}
-                title="Abonnements"
-              >
-                <CreditCard className="h-4 w-4" />
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => setActiveTab('calendar')}
-                className={`h-7 w-7 p-0 rounded-xl hover:bg-transparent relative ${activeTab === 'calendar' ? 'text-[#8B1538]' : 'text-muted-foreground'}`}
-                title="Calendrier"
-              >
-                <CalendarIcon className="h-4 w-4" />
-                {upcomingEventsCount > 0 && (
-                  <Badge 
-                    variant="destructive" 
-                    className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-[10px]"
-                  >
-                    {upcomingEventsCount}
-                  </Badge>
-                )}
-              </Button>
+            <div className="absolute left-1/2 transform -translate-x-1/2">
+              <LimelightNav 
+                items={navItems}
+                activeIndex={activeTabIndex}
+                onTabChange={(index) => setActiveTab(navItems[index].id as string)}
+              />
             </div>
           )}
           
