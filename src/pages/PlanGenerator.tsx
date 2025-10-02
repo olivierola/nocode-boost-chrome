@@ -693,7 +693,7 @@ const PlanGenerator = () => {
             </p>
           </div>
 
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit} className="w-full">
             <PromptBox 
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
