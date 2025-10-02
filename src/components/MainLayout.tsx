@@ -15,6 +15,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { LogOut, Home, Code, Sparkles, Scan, Image, Users, FolderOpen, X, CreditCard, BookmarkPlus, MessagesSquare, User, Moon, Sun, Calendar as CalendarIcon, Settings, Zap, HelpCircle, Keyboard, Bell } from 'lucide-react';
+import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
 
 // Import all components
 import Dashboard from '@/pages/Dashboard';
@@ -36,6 +37,7 @@ const MainLayout = () => {
   const { selectedProject, clearProject, isProjectSelected } = useProjectContext();
   const { theme, setTheme } = useTheme();
   const { upcomingEventsCount } = useCalendarEvents();
+  const { unreadCount } = useRealtimeNotifications();
   const [activeTab, setActiveTab] = useState('dashboard');
 
   const getInitials = (name?: string) => {
@@ -181,7 +183,7 @@ const MainLayout = () => {
             </div>
           )}
           
-          {/* Theme Toggle and User Avatar */}
+          {/* Theme Toggle, Notifications and User Avatar */}
           <div className="flex items-center gap-2">
             <Button
               variant="ghost"
@@ -193,6 +195,23 @@ const MainLayout = () => {
                 <Sun className="h-4 w-4" />
               ) : (
                 <Moon className="h-4 w-4" />
+              )}
+            </Button>
+            
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0 relative"
+              title="Notifications"
+            >
+              <Bell className="h-4 w-4" />
+              {unreadCount > 0 && (
+                <Badge 
+                  variant="destructive" 
+                  className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-[10px]"
+                >
+                  {unreadCount}
+                </Badge>
               )}
             </Button>
             

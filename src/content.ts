@@ -387,6 +387,54 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       }
       break;
       
+    case 'clickElement':
+      // Agent interaction with DOM - Click on an element
+      try {
+        const element = document.querySelector(request.selector);
+        if (element && element instanceof HTMLElement) {
+          element.click();
+          console.log('Element clicked by agent:', request.selector);
+          sendResponse({ success: true });
+        } else {
+          sendResponse({ success: false, error: 'Element not found' });
+        }
+      } catch (error) {
+        sendResponse({ success: false, error: String(error) });
+      }
+      break;
+      
+    case 'getElementText':
+      // Get text content of an element
+      try {
+        const element = document.querySelector(request.selector);
+        if (element) {
+          sendResponse({ success: true, text: element.textContent });
+        } else {
+          sendResponse({ success: false, error: 'Element not found' });
+        }
+      } catch (error) {
+        sendResponse({ success: false, error: String(error) });
+      }
+      break;
+      
+    case 'fillInput':
+      // Fill an input field
+      try {
+        const element = document.querySelector(request.selector);
+        if (element && (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement)) {
+          element.value = request.value;
+          element.dispatchEvent(new Event('input', { bubbles: true }));
+          element.dispatchEvent(new Event('change', { bubbles: true }));
+          console.log('Input filled by agent:', request.selector);
+          sendResponse({ success: true });
+        } else {
+          sendResponse({ success: false, error: 'Input element not found' });
+        }
+      } catch (error) {
+        sendResponse({ success: false, error: String(error) });
+      }
+      break;
+      
     default:
       sendResponse({ success: false, error: 'Action non reconnue' });
   }

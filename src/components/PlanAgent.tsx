@@ -8,12 +8,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { Bot, Play, Pause, RotateCcw, Zap, Brain, Target, CheckCircle, AlertCircle, Clock } from 'lucide-react';
+import { Bot, Play, Pause, RotateCcw, Zap, Brain, Target, CheckCircle, AlertCircle, Clock, MousePointer2, Key } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { createNotification, notifyPlanStepCompletion, notifyPlanCompletion } from '@/utils/notificationHelper';
 
 interface AgentAction {
   id: string;
-  type: 'optimize_prompt' | 'generate_step' | 'analyze_response' | 'suggest_improvement' | 'inject_knowledge';
+  type: 'optimize_prompt' | 'generate_step' | 'analyze_response' | 'suggest_improvement' | 'inject_knowledge' | 'click_approve' | 'click_fix_error' | 'request_api_key';
   title: string;
   description: string;
   status: 'pending' | 'executing' | 'completed' | 'error';
@@ -21,6 +22,8 @@ interface AgentAction {
   result?: any;
   timestamp: Date;
   context?: any;
+  domSelector?: string;
+  apiKeyName?: string;
 }
 
 interface PlanAgentProps {
@@ -49,6 +52,7 @@ const PlanAgent: React.FC<PlanAgentProps> = ({
   const [actions, setActions] = useState<AgentAction[]>([]);
   const [contextHistory, setContextHistory] = useState<any[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [canInteractWithDOM, setCanInteractWithDOM] = useState(false);
 
   // Surveille l'avancement et génère des actions
   const monitorAndAnalyze = useCallback(async () => {
@@ -98,6 +102,60 @@ const PlanAgent: React.FC<PlanAgentProps> = ({
     }
   }, [isActive, plan, selectedProject, user, currentStep, executionContext, contextHistory]);
 
+  // Interagit avec le DOM
+  const interactWithDOM = useCallback(async (action: AgentAction) => {
+    if (!action.domSelector) return false;
+
+    try {
+      // Vérifie si on est dans le contexte de l'extension Chrome
+      if (typeof chrome !== 'undefined' && chrome.tabs) {
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (tab.id) {
+          await chrome.tabs.sendMessage(tab.id, {
+            action: 'clickElement',
+            selector: action.domSelector
+          });
+          return true;
+        }
+      }
+      
+      // Sinon, tente de cliquer directement dans la page
+      const element = document.querySelector(action.domSelector);
+      if (element && element instanceof HTMLElement) {
+        element.click();
+        return true;
+      }
+    } catch (error) {
+      console.error('Erreur interaction DOM:', error);
+    }
+    return false;
+  }, []);
+
+  // Enregistre une action dans la base de données
+  const recordAgentAction = useCallback(async (action: AgentAction, result: any) => {
+    if (!user || !selectedProject || !plan) return;
+
+    try {
+      await supabase.from('agent_actions').insert({
+        project_id: selectedProject.id,
+        plan_id: plan.id,
+        user_id: user.id,
+        action_type: action.type,
+        step_name: currentStep?.nom || null,
+        step_index: currentStep?.index || null,
+        action_details: {
+          title: action.title,
+          description: action.description,
+          prompt: action.prompt,
+          context: action.context
+        },
+        result: JSON.stringify(result)
+      });
+    } catch (error) {
+      console.error('Erreur enregistrement action:', error);
+    }
+  }, [user, selectedProject, plan, currentStep]);
+
   // Exécute une action de l'agent
   const executeAction = async (action: AgentAction) => {
     setIsProcessing(true);
@@ -106,66 +164,167 @@ const PlanAgent: React.FC<PlanAgentProps> = ({
     );
 
     try {
-      const { data, error } = await supabase.functions.invoke('plan-agent', {
-        body: {
-          action: 'execute_action',
-          action_type: action.type,
-          action_data: action,
-          plan_id: plan.id,
-          project_id: selectedProject!.id,
-          user_id: user!.id,
-          context_history: contextHistory
+      // Actions spéciales qui nécessitent une interaction DOM
+      if (action.type === 'click_approve' || action.type === 'click_fix_error') {
+        const domSuccess = await interactWithDOM(action);
+        
+        if (domSuccess) {
+          await recordAgentAction(action, { success: true, method: 'dom_interaction' });
+          
+          setActions(prev => 
+            prev.map(a => a.id === action.id ? { 
+              ...a, 
+              status: 'completed',
+              result: { domInteraction: true }
+            } : a)
+          );
+
+          toast.success(`Action "${action.title}" exécutée avec succès`);
+          
+          // Notifie l'utilisateur
+          if (user) {
+            await createNotification(
+              user.id,
+              'success',
+              'Action de l\'agent',
+              `L'agent a ${action.type === 'click_approve' ? 'approuvé' : 'corrigé'} une action automatiquement`
+            );
+          }
+        } else {
+          throw new Error('Impossible d\'interagir avec l\'élément DOM');
         }
-      });
+      } 
+      // Action pour demander une clé API
+      else if (action.type === 'request_api_key') {
+        if (user && action.apiKeyName) {
+          await createNotification(
+            user.id,
+            'warning',
+            'Clé API requise',
+            `L'agent a besoin de la clé API: ${action.apiKeyName}`,
+            { api_key_name: action.apiKeyName, plan_id: plan.id }
+          );
+        }
 
-      if (error) throw error;
+        await recordAgentAction(action, { api_key_requested: action.apiKeyName });
+        
+        setActions(prev => 
+          prev.map(a => a.id === action.id ? { 
+            ...a, 
+            status: 'completed',
+            result: { notificationSent: true }
+          } : a)
+        );
 
-      // Mise à jour du contexte
-      setContextHistory(prev => [...prev, {
-        timestamp: new Date(),
-        action: action.type,
-        input: action,
-        output: data
-      }]);
-
-      // Actions spécifiques selon le type
-      switch (action.type) {
-        case 'optimize_prompt':
-          if (data.optimized_prompt) {
-            onPromptOptimized?.(data.optimized_prompt, data.context);
-          }
-          break;
-        case 'generate_step':
-          if (data.generated_step) {
-            onStepGenerated?.(data.generated_step);
-          }
-          break;
-        case 'analyze_response':
-          if (data.analysis) {
-            onAnalysisResult?.(data.analysis);
-          }
-          break;
+        toast.info(`Notification envoyée: clé API "${action.apiKeyName}" requise`);
       }
+      // Actions normales via l'edge function
+      else {
+        const { data, error } = await supabase.functions.invoke('plan-agent', {
+          body: {
+            action: 'execute_action',
+            action_type: action.type,
+            action_data: action,
+            plan_id: plan.id,
+            project_id: selectedProject!.id,
+            user_id: user!.id,
+            context_history: contextHistory
+          }
+        });
 
-      setActions(prev => 
-        prev.map(a => a.id === action.id ? { 
-          ...a, 
-          status: 'completed',
-          result: data 
-        } : a)
-      );
+        if (error) throw error;
 
-      toast.success(`Action "${action.title}" exécutée avec succès`);
+        // Enregistre l'action
+        await recordAgentAction(action, data);
+
+        // Mise à jour du contexte
+        setContextHistory(prev => [...prev, {
+          timestamp: new Date(),
+          action: action.type,
+          input: action,
+          output: data
+        }]);
+
+        // Actions spécifiques selon le type
+        switch (action.type) {
+          case 'optimize_prompt':
+            if (data.optimized_prompt) {
+              onPromptOptimized?.(data.optimized_prompt, data.context);
+            }
+            break;
+          case 'generate_step':
+            if (data.generated_step) {
+              onStepGenerated?.(data.generated_step);
+              
+              // Notifie la création d'une étape intermédiaire
+              if (user) {
+                await createNotification(
+                  user.id,
+                  'info',
+                  'Étape intermédiaire créée',
+                  `L'agent a créé une nouvelle étape: ${data.generated_step.nom}`,
+                  { plan_id: plan.id, step: data.generated_step }
+                );
+              }
+            }
+            break;
+          case 'analyze_response':
+            if (data.analysis) {
+              onAnalysisResult?.(data.analysis);
+            }
+            break;
+        }
+
+        setActions(prev => 
+          prev.map(a => a.id === action.id ? { 
+            ...a, 
+            status: 'completed',
+            result: data 
+          } : a)
+        );
+
+        toast.success(`Action "${action.title}" exécutée avec succès`);
+      }
     } catch (error) {
       console.error('Erreur exécution action:', error);
       setActions(prev => 
         prev.map(a => a.id === action.id ? { ...a, status: 'error' } : a)
       );
       toast.error(`Erreur lors de l'exécution de "${action.title}"`);
+      
+      // Notifie l'erreur
+      if (user) {
+        await createNotification(
+          user.id,
+          'error',
+          'Erreur de l\'agent',
+          `Échec de l'action: ${action.title}`,
+          { action_id: action.id, error: String(error) }
+        );
+      }
     }
 
     setIsProcessing(false);
   };
+
+  // Notifie la complétion d'une étape
+  const notifyStepCompletion = useCallback(async (stepName: string, stepIndex: number, totalSteps: number) => {
+    if (!user || !plan) return;
+    
+    await notifyPlanStepCompletion(user.id, plan.id, stepName, stepIndex, totalSteps);
+    toast.success(`Étape "${stepName}" complétée!`);
+  }, [user, plan]);
+
+  // Notifie la complétion du plan
+  const notifyPlanCompleted = useCallback(async () => {
+    if (!user || !plan) return;
+    
+    const planTitle = plan.plan_data?.titre || 'Plan';
+    await notifyPlanCompletion(user.id, plan.id, planTitle);
+    toast.success(`Plan "${planTitle}" terminé avec succès!`, {
+      duration: 5000
+    });
+  }, [user, plan]);
 
   // Monitoring automatique
   useEffect(() => {
@@ -201,6 +360,9 @@ const PlanAgent: React.FC<PlanAgentProps> = ({
       case 'analyze_response': return <Brain className="w-4 h-4" />;
       case 'suggest_improvement': return <CheckCircle className="w-4 h-4" />;
       case 'inject_knowledge': return <Bot className="w-4 h-4" />;
+      case 'click_approve': return <MousePointer2 className="w-4 h-4" />;
+      case 'click_fix_error': return <AlertCircle className="w-4 h-4" />;
+      case 'request_api_key': return <Key className="w-4 h-4" />;
       default: return <Bot className="w-4 h-4" />;
     }
   };
