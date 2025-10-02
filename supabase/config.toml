@@ -93,3 +93,12 @@ verify_jwt = true
 
 [functions.generate-posts]
 verify_jwt = true
+
+[functions.generate-project-documentation]
+verify_jwt = true
+
+[functions.generate-progress-report]
+verify_jwt = true
+
+[functions.plan-agent]
+verify_jwt = true

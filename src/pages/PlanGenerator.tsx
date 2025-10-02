@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { SendHorizontal, Bot, User, Clock, Plus, BookOpen, Database, Shield, Play, MessageCircle, Settings, FileText, Sparkles, ListTodo } from 'lucide-react';
+import { SendHorizontal, Bot, User, Clock, Plus, BookOpen, Database, Shield, Play, MessageCircle, Settings, FileText, Sparkles, ListTodo, MessageSquare, FileBarChart, Database as DatabaseIcon } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import ReactMarkdown from 'react-markdown';
@@ -20,6 +20,9 @@ import PlanAgent from '@/components/PlanAgent';
 import AgentKnowledgeBase from '@/components/AgentKnowledgeBase';
 import TypewriterText from '@/components/TypewriterText';
 import { TimelineStepper } from '@/components/ui/timeline-stepper';
+import { ProgressReportView } from '@/components/ProgressReportView';
+import { KnowledgeBaseManager } from '@/components/KnowledgeBaseManager';
+import { Label } from '@/components/ui/label';
 
 interface ChatMessage {
   id: string;
@@ -65,8 +68,8 @@ const PlanGenerator = () => {
   const [currentPlan, setCurrentPlan] = useState<Plan | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedSection, setSelectedSection] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'plan' | 'chat'>('plan');
-  const [chatTarget, setChatTarget] = useState<'documentation' | 'steps'>('steps');
+  const [activeTab, setActiveTab] = useState<'plan' | 'chat' | 'rapport' | 'knowledge'>('plan');
+  const [chatTarget, setChatTarget] = useState<'documentation' | 'steps'>('documentation');
   const [agentActive, setAgentActive] = useState(false);
   const [currentExecutionStep, setCurrentExecutionStep] = useState<any>(null);
   const [executionContext, setExecutionContext] = useState<any>({});
@@ -762,7 +765,25 @@ const PlanGenerator = () => {
             className="w-10 h-10 p-0 rounded-lg flex flex-col items-center justify-center"
             title="Chat"
           >
-            <MessageCircle className="h-4 w-4" />
+            <MessageSquare className="h-4 w-4" />
+          </Button>
+          <Button
+            variant={activeTab === 'rapport' ? "default" : "ghost"}
+            size="sm"
+            onClick={() => setActiveTab('rapport')}
+            className="w-10 h-10 p-0 rounded-lg flex flex-col items-center justify-center"
+            title="Rapport"
+          >
+            <FileBarChart className="h-4 w-4" />
+          </Button>
+          <Button
+            variant={activeTab === 'knowledge' ? "default" : "ghost"}
+            size="sm"
+            onClick={() => setActiveTab('knowledge')}
+            className="w-10 h-10 p-0 rounded-lg flex flex-col items-center justify-center"
+            title="Ressources"
+          >
+            <DatabaseIcon className="h-4 w-4" />
           </Button>
         </div>
       </div>
@@ -843,6 +864,14 @@ const PlanGenerator = () => {
                 }}
               />
             </div>
+          </div>
+        ) : activeTab === 'rapport' ? (
+          <div className="max-w-6xl mx-auto">
+            <ProgressReportView projectId={selectedProject?.id || ''} planId={currentPlan?.id} />
+          </div>
+        ) : activeTab === 'knowledge' ? (
+          <div className="max-w-6xl mx-auto">
+            <KnowledgeBaseManager projectId={selectedProject?.id || ''} />
           </div>
         ) : (
           <div className="max-w-4xl mx-auto">

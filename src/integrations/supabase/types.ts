@@ -38,6 +38,117 @@ export type Database = {
         }
         Relationships: []
       }
+      agent_actions: {
+        Row: {
+          action_details: Json
+          action_type: string
+          created_at: string
+          id: string
+          plan_id: string | null
+          project_id: string
+          resources_used: string[] | null
+          result: string | null
+          step_index: number | null
+          step_name: string | null
+          user_id: string
+        }
+        Insert: {
+          action_details?: Json
+          action_type: string
+          created_at?: string
+          id?: string
+          plan_id?: string | null
+          project_id: string
+          resources_used?: string[] | null
+          result?: string | null
+          step_index?: number | null
+          step_name?: string | null
+          user_id: string
+        }
+        Update: {
+          action_details?: Json
+          action_type?: string
+          created_at?: string
+          id?: string
+          plan_id?: string | null
+          project_id?: string
+          resources_used?: string[] | null
+          result?: string | null
+          step_index?: number | null
+          step_name?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_actions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_actions_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agent_progress_reports: {
+        Row: {
+          actions_covered: string[] | null
+          created_at: string
+          id: string
+          metadata: Json | null
+          plan_id: string | null
+          project_id: string
+          report_markdown: string
+          summary: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          actions_covered?: string[] | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          plan_id?: string | null
+          project_id: string
+          report_markdown: string
+          summary?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          actions_covered?: string[] | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          plan_id?: string | null
+          project_id?: string
+          report_markdown?: string
+          summary?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_progress_reports_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_progress_reports_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       collaborators: {
         Row: {
           created_at: string
@@ -186,6 +297,53 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      knowledge_base: {
+        Row: {
+          content: Json
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          project_id: string
+          resource_type: string
+          tags: string[] | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content?: Json
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          project_id: string
+          resource_type: string
+          tags?: string[] | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: Json
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          project_id?: string
+          resource_type?: string
+          tags?: string[] | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "knowledge_base_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       notifications: {
         Row: {
