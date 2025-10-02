@@ -818,30 +818,76 @@ const PlanGenerator = () => {
             })()}
           </div>
         ) : (
-          <div className="max-w-4xl mx-auto text-center space-y-6">
-            <div className="space-y-3">
-              <h1 className="text-3xl font-bold">Plan de projet généré</h1>
-              <p className="text-muted-foreground">
-                Utilisez la barre latérale pour naviguer entre les différentes sections de votre plan
-              </p>
+          <div className="max-w-6xl mx-auto space-y-8">
+            {/* Documentation Card */}
+            {projectDocumentation ? (
+              <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-background">
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <CardTitle className="text-2xl mb-2">{projectDocumentation.title}</CardTitle>
+                      <CardDescription className="text-base">{projectDocumentation.description}</CardDescription>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={generateProjectDocumentation}
+                      disabled={isGeneratingDocs}
+                      className="ml-4"
+                    >
+                      <Sparkles className="w-4 h-4 mr-2" />
+                      Régénérer
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="prose max-w-none dark:prose-invert">
+                    <ReactMarkdown>{projectDocumentation.documentation_markdown}</ReactMarkdown>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card className="border-dashed border-2">
+                <CardContent className="flex flex-col items-center justify-center py-12">
+                  <FileText className="w-12 h-12 text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">Aucune documentation générée</h3>
+                  <p className="text-muted-foreground mb-4 text-center">
+                    Générez une documentation complète pour votre projet
+                  </p>
+                  <Button
+                    onClick={generateProjectDocumentation}
+                    disabled={isGeneratingDocs}
+                    className="bg-gradient-to-r from-primary to-primary/80"
+                  >
+                    {isGeneratingDocs ? (
+                      <>
+                        <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2" />
+                        Génération en cours...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-4 h-4 mr-2" />
+                        Générer la documentation
+                      </>
+                    )}
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Timeline Stepper */}
+            <div className="mt-8">
+              <TimelineStepper
+                steps={timelineSteps}
+                onPromptChange={(stepId, newPrompt) => {
+                  console.log('Prompt changed for step:', stepId, newPrompt);
+                }}
+                isExecuting={false}
+                onExecute={() => {
+                  toast.info('Exécution de la timeline à venir...');
+                }}
+              />
             </div>
-            <Card className="p-8">
-              <CardContent>
-                <Accordion type="single" collapsible className="w-full">
-                  {planSections.map((section, index) => (
-                    <AccordionItem key={section.key} value={section.key}>
-                      <AccordionTrigger className="flex items-center gap-2">
-                        <section.icon className="h-4 w-4" />
-                        {section.title}
-                      </AccordionTrigger>
-                      <AccordionContent className="space-y-4">
-                        {renderSectionContent(section.content)}
-                      </AccordionContent>
-                    </AccordionItem>
-                  ))}
-                </Accordion>
-              </CardContent>
-            </Card>
           </div>
         )}
       </div>
