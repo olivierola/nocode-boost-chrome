@@ -699,6 +699,8 @@ const PlanGenerator = () => {
             placeholder="Décrivez votre projet en détail (ex: application de livraison de nourriture avec géolocalisation)..."
             disabled={isGenerating}
             onOptimizeToggle={setIsOptimizeEnabled}
+            onSubmit={handleSubmit}
+            onInsertResource={(text) => setPrompt((prev) => (prev ? `${prev} ${text}` : text))}
           />
 
           {isGenerating && (

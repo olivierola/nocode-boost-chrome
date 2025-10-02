@@ -300,26 +300,22 @@ const ComponentsSaved = () => {
 
   return (
     <div className="container mx-auto p-6 max-w-7xl">
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-semibold">Ressources sauvegardées</h1>
+          <p className="mt-1 text-muted-foreground">Gérez vos composants, médias, couleurs et polices</p>
+        </div>
+        <div className="relative w-80">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Rechercher..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10 border-b-0"
+          />
+        </div>
+      </div>
       <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-3xl">Ressources sauvegardées</CardTitle>
-              <CardDescription className="mt-2">
-                Gérez vos composants, médias, couleurs et polices
-              </CardDescription>
-            </div>
-            <div className="relative w-80">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Rechercher..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-          </div>
-        </CardHeader>
         <CardContent>
           <div className="mb-6">
             <ExpandableTabs tabs={tabs} onChange={setActiveTab} />

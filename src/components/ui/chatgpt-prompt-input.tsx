@@ -3,6 +3,7 @@ import * as React from "react";
 import * as TooltipPrimitive from "@radix-ui/react-tooltip";
 import * as PopoverPrimitive from "@radix-ui/react-popover";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
+import PromptResourceInserter from "@/components/PromptResourceInserter";
 
 // --- Utility Function & Radix Primitives (Unchanged) ---
 type ClassValue = string | number | boolean | null | undefined;
@@ -41,10 +42,12 @@ const SparklesIcon = (props: React.SVGProps<SVGSVGElement>) => ( <svg width="24"
 // --- The Final, Self-Contained PromptBox Component ---
 interface PromptBoxProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
   onOptimizeToggle?: (enabled: boolean) => void;
+  onSubmit?: (e: React.FormEvent) => void;
+  onInsertResource?: (text: string) => void;
 }
 
 export const PromptBox = React.forwardRef<HTMLTextAreaElement, PromptBoxProps>(
-  ({ className, onOptimizeToggle, value: controlledValue, onChange, ...props }, ref) => {
+  ({ className, onOptimizeToggle, onSubmit, onInsertResource, value: controlledValue, onChange, ...props }, ref) => {
     const internalTextareaRef = React.useRef<HTMLTextAreaElement>(null);
     const formRef = React.useRef<HTMLFormElement>(null);
     const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -84,7 +87,14 @@ export const PromptBox = React.forwardRef<HTMLTextAreaElement, PromptBoxProps>(
     };
 
     return (
-      <form ref={formRef} className="w-full">
+      <form 
+        ref={formRef} 
+        className="w-full"
+        onSubmit={(e) => {
+          e.preventDefault();
+          onSubmit?.(e);
+        }}
+      >
         <div className={cn("flex flex-col rounded-[28px] p-2 shadow-sm transition-colors bg-white border dark:bg-[#303030] dark:border-transparent cursor-text h-full", className)}>
           <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*"/>
           
@@ -95,7 +105,7 @@ export const PromptBox = React.forwardRef<HTMLTextAreaElement, PromptBoxProps>(
         <div className="mt-0.5 p-1 pt-0">
           <TooltipProvider delayDuration={100}>
             <div className="flex items-center gap-2">
-              <Tooltip> <TooltipTrigger asChild><button type="button" onClick={handlePlusClick} className="flex h-8 w-8 items-center justify-center rounded-full text-foreground dark:text-white transition-colors hover:bg-accent dark:hover:bg-[#515151] focus-visible:outline-none"><PlusIcon className="h-6 w-6" /><span className="sr-only">Attach image</span></button></TooltipTrigger> <TooltipContent side="top" showArrow={true}><p>Attach image</p></TooltipContent> </Tooltip>
+              <PromptResourceInserter onInsert={(text) => onInsertResource?.(text)} />
               
               <Tooltip>
                 <TooltipTrigger asChild>

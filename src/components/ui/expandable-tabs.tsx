@@ -58,8 +58,8 @@ export function ExpandableTabs({
   const outsideClickRef = React.useRef(null);
 
   useOnClickOutside(outsideClickRef, () => {
+    // Collapse visual selection but keep parent active tab unchanged
     setSelected(null);
-    onChange?.(null);
   });
 
   const handleSelect = (index: number) => {

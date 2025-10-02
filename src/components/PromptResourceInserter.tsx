@@ -151,14 +151,14 @@ const PromptResourceInserter: React.FC<PromptResourceInserterProps> = ({ onInser
           <Plus className="h-5 w-5" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-56">
+      <DropdownMenuContent align="start" className="z-50 w-56 bg-popover">
         {/* Composants */}
         <DropdownMenuSub>
           <DropdownMenuSubTrigger>
             <Component className="mr-2 h-4 w-4" />
             <span>Composants</span>
           </DropdownMenuSubTrigger>
-          <DropdownMenuSubContent className="max-h-[300px] overflow-y-auto">
+          <DropdownMenuSubContent className="z-50 max-h-[300px] overflow-y-auto bg-popover">
             {components.length === 0 ? (
               <DropdownMenuItem disabled>Aucun composant</DropdownMenuItem>
             ) : (
@@ -180,7 +180,7 @@ const PromptResourceInserter: React.FC<PromptResourceInserterProps> = ({ onInser
             <Image className="mr-2 h-4 w-4" />
             <span>Médias</span>
           </DropdownMenuSubTrigger>
-          <DropdownMenuSubContent className="max-h-[300px] overflow-y-auto">
+          <DropdownMenuSubContent className="z-50 max-h-[300px] overflow-y-auto bg-popover">
             {mediaFiles.length === 0 ? (
               <DropdownMenuItem disabled>Aucun média</DropdownMenuItem>
             ) : (
@@ -202,7 +202,7 @@ const PromptResourceInserter: React.FC<PromptResourceInserterProps> = ({ onInser
             <Type className="mr-2 h-4 w-4" />
             <span>Polices</span>
           </DropdownMenuSubTrigger>
-          <DropdownMenuSubContent className="max-h-[300px] overflow-y-auto">
+          <DropdownMenuSubContent className="z-50 max-h-[300px] overflow-y-auto bg-popover">
             {fonts.map((font, index) => (
               <DropdownMenuItem
                 key={index}
@@ -221,7 +221,7 @@ const PromptResourceInserter: React.FC<PromptResourceInserterProps> = ({ onInser
             <Droplet className="mr-2 h-4 w-4" />
             <span>Couleurs</span>
           </DropdownMenuSubTrigger>
-          <DropdownMenuSubContent className="max-h-[300px] overflow-y-auto">
+          <DropdownMenuSubContent className="z-50 max-h-[300px] overflow-y-auto bg-popover">
             {colors.map((color, index) => (
               <DropdownMenuItem
                 key={index}
@@ -248,7 +248,7 @@ const PromptResourceInserter: React.FC<PromptResourceInserterProps> = ({ onInser
             <Palette className="mr-2 h-4 w-4" />
             <span>Palettes</span>
           </DropdownMenuSubTrigger>
-          <DropdownMenuSubContent className="max-h-[300px] overflow-y-auto">
+          <DropdownMenuSubContent className="z-50 max-h-[300px] overflow-y-auto bg-popover">
             {palettes.map((palette, index) => (
               <DropdownMenuItem
                 key={index}
