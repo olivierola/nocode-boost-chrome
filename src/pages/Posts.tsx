@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { PostGenerationModal } from '@/components/PostGenerationModal';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { Button as MovingBorderButton } from '@/components/ui/moving-border';
 
 interface Post {
   id: string;
@@ -127,10 +128,14 @@ const Posts = () => {
             Générez et gérez vos posts pour {selectedProject.name}
           </p>
         </div>
-        <Button onClick={() => setIsModalOpen(true)} className="gap-2">
+        <MovingBorderButton 
+          onClick={() => setIsModalOpen(true)} 
+          containerClassName="w-auto h-10"
+          className="gap-2"
+        >
           <Plus className="h-4 w-4" />
           Générer des posts
-        </Button>
+        </MovingBorderButton>
       </div>
 
       {posts.length === 0 ? (

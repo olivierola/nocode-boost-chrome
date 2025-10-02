@@ -30,6 +30,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useProjects } from '@/hooks/useProjects';
+import { Button as MovingBorderButton } from '@/components/ui/moving-border';
 
 interface Collaborator {
   id: string;
@@ -304,10 +305,14 @@ const Collaboration = () => {
               Gérez les membres et permissions de vos projets
             </p>
           </div>
-          <Button size="sm" onClick={() => setShowInviteDialog(true)}>
-            <UserPlus className="h-3 w-3 mr-1" />
+          <MovingBorderButton 
+            onClick={() => setShowInviteDialog(true)}
+            containerClassName="w-auto h-10"
+            className="gap-2"
+          >
+            <UserPlus className="h-4 w-4" />
             Inviter
-          </Button>
+          </MovingBorderButton>
         </div>
       </div>
 
