@@ -5,9 +5,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { SendHorizontal, Bot, User, Clock, Plus, BookOpen, Database, Shield, Play, MessageCircle, Settings, FileText } from 'lucide-react';
+import { SendHorizontal, Bot, User, Clock, Plus, BookOpen, Database, Shield, Play, MessageCircle, Settings, FileText, Sparkles } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import ReactMarkdown from 'react-markdown';
 import PlanStepCards from '@/components/ui/plan-step-cards';
@@ -18,6 +18,7 @@ import { FlickeringGrid } from '@/components/ui/flickering-grid';
 import PlanAgent from '@/components/PlanAgent';
 import AgentKnowledgeBase from '@/components/AgentKnowledgeBase';
 import TypewriterText from '@/components/TypewriterText';
+import { TimelineStepper } from '@/components/ui/timeline-stepper';
 
 interface ChatMessage {
   id: string;
@@ -69,6 +70,8 @@ const PlanGenerator = () => {
   const [executionContext, setExecutionContext] = useState<any>({});
   const [showKnowledgeBase, setShowKnowledgeBase] = useState(false);
   const [isOptimizeEnabled, setIsOptimizeEnabled] = useState(false);
+  const [projectDocumentation, setProjectDocumentation] = useState<any>(null);
+  const [isGeneratingDocs, setIsGeneratingDocs] = useState(false);
 
   useEffect(() => {
     if (selectedProject && user) {
@@ -119,12 +122,56 @@ const PlanGenerator = () => {
       await loadCurrentPlan();
       if (currentPlan) {
         await loadChatHistory();
+        await loadProjectDocumentation();
       }
     } catch (error) {
       console.error('Erreur lors du chargement:', error);
       toast.error('Erreur lors du chargement des données');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadProjectDocumentation = async () => {
+    if (!selectedProject) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('project_documentation')
+        .select('*')
+        .eq('project_id', selectedProject.id)
+        .single();
+
+      if (error && error.code !== 'PGRST116') throw error;
+      setProjectDocumentation(data || null);
+    } catch (error) {
+      console.error('Erreur chargement documentation:', error);
+    }
+  };
+
+  const generateProjectDocumentation = async () => {
+    if (!selectedProject || !currentPlan) return;
+
+    setIsGeneratingDocs(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-project-documentation', {
+        body: {
+          projectId: selectedProject.id,
+          projectName: selectedProject.name,
+          projectDescription: selectedProject.description,
+          planData: currentPlan.plan_data
+        }
+      });
+
+      if (error) throw error;
+
+      setProjectDocumentation(data.documentation);
+      toast.success('Documentation générée avec succès !');
+    } catch (error) {
+      console.error('Erreur génération documentation:', error);
+      toast.error('Erreur lors de la génération de la documentation');
+    } finally {
+      setIsGeneratingDocs(false);
     }
   };
 
@@ -669,6 +716,18 @@ const PlanGenerator = () => {
 
   // Vue avec plan généré
   const planSections = getPlanSections(currentPlan.plan_data);
+
+  // Convert plan sections to timeline steps
+  const timelineSteps = planSections.flatMap((section) => {
+    const steps = convertSectionToSteps(section.content, section.key as 'documentation' | 'implementation' | 'backend' | 'security');
+    return steps.map((step, index) => ({
+      id: step.id,
+      title: step.title,
+      description: step.description,
+      prompt: step.prompt || '',
+      status: index === 0 ? 'current' as const : 'upcoming' as const
+    }));
+  });
 
   return (
     <div className="h-screen bg-background relative overflow-hidden">
