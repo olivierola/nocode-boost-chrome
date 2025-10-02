@@ -693,15 +693,13 @@ const PlanGenerator = () => {
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="w-full">
-            <PromptBox 
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              placeholder="Décrivez votre projet en détail (ex: application de livraison de nourriture avec géolocalisation)..."
-              disabled={isGenerating}
-              onOptimizeToggle={setIsOptimizeEnabled}
-            />
-          </form>
+          <PromptBox 
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            placeholder="Décrivez votre projet en détail (ex: application de livraison de nourriture avec géolocalisation)..."
+            disabled={isGenerating}
+            onOptimizeToggle={setIsOptimizeEnabled}
+          />
 
           {isGenerating && (
             <div className="flex items-center justify-center gap-3 text-muted-foreground mt-6 animate-fade-in">
@@ -950,15 +948,13 @@ const PlanGenerator = () => {
                   </div>
                 </ScrollArea>
 
-                <form onSubmit={handleSubmit} className="mt-4">
-                  <PromptBox 
-                    value={prompt}
-                    onChange={(e) => setPrompt(e.target.value)}
-                    placeholder={`Décrivez les modifications pour ${chatTarget === 'documentation' ? 'la documentation' : 'les étapes'}...`}
-                    disabled={isGenerating}
-                    onOptimizeToggle={setIsOptimizeEnabled}
-                  />
-                </form>
+                <PromptBox 
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  placeholder={`Décrivez les modifications pour ${chatTarget === 'documentation' ? 'la documentation' : 'les étapes'}...`}
+                  disabled={isGenerating}
+                  onOptimizeToggle={setIsOptimizeEnabled}
+                />
               </CardContent>
             </Card>
           </div>

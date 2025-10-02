@@ -12,8 +12,7 @@ import {
 import { Plus, Component, Image, Type, Palette, Droplet } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { useProjectContext } from '@/hooks/useProjectContext';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 interface ComponentItem {
   id: string;
@@ -53,8 +52,6 @@ const PromptResourceInserter: React.FC<PromptResourceInserterProps> = ({ onInser
   const [fonts, setFonts] = useState<FontItem[]>([]);
   
   const { user } = useAuth();
-  const { selectedProject } = useProjectContext();
-  const { toast } = useToast();
 
   // Couleurs par défaut
   const defaultColors: ColorItem[] = [
@@ -83,7 +80,7 @@ const PromptResourceInserter: React.FC<PromptResourceInserterProps> = ({ onInser
 
   useEffect(() => {
     fetchData();
-  }, [user, selectedProject]);
+  }, [user]);
 
   const fetchData = async () => {
     if (!user) return;
@@ -105,38 +102,10 @@ const PromptResourceInserter: React.FC<PromptResourceInserterProps> = ({ onInser
       
       if (filesData) setMediaFiles(filesData);
 
-      // Load default colors and fonts
+      // Load default colors, fonts, and palettes
       setColors(defaultColors);
       setFonts(defaultFonts);
       setPalettes(defaultPalettes);
-
-      // Fetch project visual identity if available
-      if (selectedProject) {
-        const { data: visualIdentity } = await supabase
-          .from('visual_identities')
-          .select('couleurs, polices')
-          .eq('project_id', selectedProject.id)
-          .single();
-
-        if (visualIdentity) {
-          // Merge project colors with defaults
-          if (visualIdentity.couleurs && Array.isArray(visualIdentity.couleurs)) {
-            const projectColors = visualIdentity.couleurs.map((c: any) => ({
-              nom: c.nom || c.name || 'Custom',
-              code: c.code || c.hex || c.value
-            }));
-            setColors([...defaultColors, ...projectColors]);
-          }
-
-          // Merge project fonts with defaults
-          if (visualIdentity.polices && Array.isArray(visualIdentity.polices)) {
-            const projectFonts = visualIdentity.polices.map((f: any) => ({
-              nom: f.nom || f.name || f
-            }));
-            setFonts([...defaultFonts, ...projectFonts]);
-          }
-        }
-      }
     } catch (error) {
       console.error('Error fetching data:', error);
     }
@@ -145,44 +114,29 @@ const PromptResourceInserter: React.FC<PromptResourceInserterProps> = ({ onInser
   const handleInsertComponent = (component: ComponentItem) => {
     if (component.prompt) {
       onInsert(`<composant>${component.prompt}</composant>`);
-      toast({
-        title: "Composant ajouté",
-        description: `Le prompt du composant "${component.nom}" a été ajouté`,
-      });
+      toast.success(`Composant "${component.nom}" ajouté`);
     }
   };
 
   const handleInsertMedia = (media: MediaFile) => {
     onInsert(media.url);
-    toast({
-      title: "Média ajouté",
-      description: `Le lien du média "${media.nom}" a été ajouté`,
-    });
+    toast.success(`Média "${media.nom}" ajouté`);
   };
 
   const handleInsertColor = (color: ColorItem) => {
     onInsert(color.code);
-    toast({
-      title: "Couleur ajoutée",
-      description: `La couleur ${color.nom} (${color.code}) a été ajoutée`,
-    });
+    toast.success(`Couleur ${color.nom} ajoutée`);
   };
 
   const handleInsertPalette = (palette: PaletteItem) => {
     const colorCodes = palette.couleurs.join(', ');
     onInsert(colorCodes);
-    toast({
-      title: "Palette ajoutée",
-      description: `La palette "${palette.nom}" a été ajoutée`,
-    });
+    toast.success(`Palette "${palette.nom}" ajoutée`);
   };
 
   const handleInsertFont = (font: FontItem) => {
     onInsert(font.nom);
-    toast({
-      title: "Police ajoutée",
-      description: `La police "${font.nom}" a été ajoutée`,
-    });
+    toast.success(`Police "${font.nom}" ajoutée`);
   };
 
   return (

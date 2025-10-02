@@ -17,12 +17,15 @@ import {
   Trash2,
   Download,
   Eye,
-  Loader2
+  Loader2,
+  Component,
+  Palette,
+  Type
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ExpandableTabs } from '@/components/ui/expandable-tabs';
 
 interface Component {
   id: string;
@@ -42,6 +45,20 @@ interface MediaFile {
   updated_at: string;
 }
 
+interface ColorItem {
+  nom: string;
+  code: string;
+}
+
+interface PaletteItem {
+  nom: string;
+  couleurs: string[];
+}
+
+interface FontItem {
+  nom: string;
+}
+
 const ComponentsSaved = () => {
   const [components, setComponents] = useState<Component[]>([]);
   const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([]);
@@ -50,10 +67,43 @@ const ComponentsSaved = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [activeTab, setActiveTab] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const { user } = useAuth();
   const { toast } = useToast();
+
+  // Couleurs par défaut
+  const defaultColors: ColorItem[] = [
+    { nom: 'Primary Blue', code: '#3B82F6' },
+    { nom: 'Purple', code: '#7C3AED' },
+    { nom: 'Crimson', code: '#8B1538' },
+    { nom: 'Emerald', code: '#10B981' },
+    { nom: 'Orange', code: '#F97316' },
+  ];
+
+  // Palettes par défaut
+  const defaultPalettes: PaletteItem[] = [
+    { nom: 'Modern Blue', couleurs: ['#3B82F6', '#7C3AED', '#8B1538'] },
+    { nom: 'Nature', couleurs: ['#10B981', '#059669', '#047857'] },
+    { nom: 'Sunset', couleurs: ['#F97316', '#FB923C', '#FDBA74'] },
+  ];
+
+  // Polices par défaut
+  const defaultFonts: FontItem[] = [
+    { nom: 'Inter' },
+    { nom: 'Roboto' },
+    { nom: 'Poppins' },
+    { nom: 'Playfair Display' },
+    { nom: 'Montserrat' },
+  ];
+
+  const tabs = [
+    { title: 'Composants', icon: Component },
+    { title: 'Médias', icon: ImageIcon },
+    { title: 'Couleurs', icon: Palette },
+    { title: 'Polices', icon: Type },
+  ];
 
   const fetchComponents = async () => {
     if (!user) return;
@@ -98,6 +148,13 @@ const ComponentsSaved = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (user) {
+      fetchComponents();
+      fetchMediaFiles();
+    }
+  }, [user]);
 
   const uploadFile = async (file: File) => {
     if (!user) return;
@@ -208,304 +265,199 @@ const ComponentsSaved = () => {
     }
   };
 
-  const copyPrompt = async (component: Component) => {
-    if (!component.prompt) return;
-
-    try {
-      await navigator.clipboard.writeText(component.prompt);
-      setCopiedId(component.id);
-      
-      toast({
-        title: "Prompt copié",
-        description: `Le prompt pour "${component.nom}" a été copié`,
-      });
-
-      setTimeout(() => setCopiedId(null), 2000);
-    } catch (error) {
-      toast({
-        title: "Erreur",
-        description: "Impossible de copier le prompt",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const addToPrompt = (component: Component) => {
-    const tag = `{component:${component.nom}}`;
-    
-    window.dispatchEvent(new CustomEvent('addComponentTag', { 
-      detail: { tag, component } 
-    }));
-    
+  const handleCopy = (text: string, id: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
     toast({
-      title: "Composant ajouté",
-      description: `Tag "${tag}" ajouté au prompt`,
+      title: "Copié",
+      description: "Le contenu a été copié dans le presse-papiers",
     });
   };
 
   const getFileIcon = (type: string) => {
-    if (type.startsWith('image/')) return <ImageIcon className="h-4 w-4" />;
-    if (type.startsWith('video/')) return <Video className="h-4 w-4" />;
-    if (type.includes('pdf')) return <FileText className="h-4 w-4" />;
-    return <File className="h-4 w-4" />;
+    if (type.startsWith('image/')) return <ImageIcon className="h-5 w-5" />;
+    if (type.startsWith('video/')) return <Video className="h-5 w-5" />;
+    return <File className="h-5 w-5" />;
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('fr-FR', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
-  const filteredComponents = components.filter(component =>
-    component.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    component.description?.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredComponents = components.filter(comp =>
+    comp.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    comp.description?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const filteredMediaFiles = mediaFiles.filter(file =>
     file.nom.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  useEffect(() => {
-    const fetchData = async () => {
-      await Promise.all([fetchComponents(), fetchMediaFiles()]);
-    };
-    fetchData();
-  }, [user]);
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
-    <div className="h-full flex flex-col">
-      {/* Header */}
-      <div className="border-b border-border bg-card flex-shrink-0 px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-base font-bold text-foreground">Ressources Sauvegardées</h2>
-            <p className="text-xs text-muted-foreground">
-              Gérez vos composants et médias
-            </p>
+    <div className="container mx-auto p-6 max-w-7xl">
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-3xl">Ressources sauvegardées</CardTitle>
+              <CardDescription className="mt-2">
+                Gérez vos composants, médias, couleurs et polices
+              </CardDescription>
+            </div>
+            <div className="relative w-80">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Rechercher..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
           </div>
-        </div>
-      </div>
+        </CardHeader>
+        <CardContent>
+          <div className="mb-6">
+            <ExpandableTabs tabs={tabs} onChange={setActiveTab} />
+          </div>
 
-      {/* Content */}
-      <div className="flex-1 px-6 py-4 space-y-4 flex flex-col overflow-hidden">
-        {/* Search */}
-        <div className="relative flex-shrink-0">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-3 w-3 text-muted-foreground" />
-          <Input
-            placeholder="Rechercher..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-8 text-xs"
-          />
-        </div>
-
-        {/* Tabs */}
-        <Tabs defaultValue="components" className="flex-1 flex flex-col overflow-hidden">
-          <TabsList className="flex-shrink-0">
-            <TabsTrigger value="components">Composants</TabsTrigger>
-            <TabsTrigger value="media">Médias</TabsTrigger>
-          </TabsList>
-
-          {/* Components Tab */}
-          <TabsContent value="components" className="flex-1 overflow-y-auto space-y-3 mt-4">
-            {loading ? (
-              <div className="flex items-center justify-center py-8">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+          {/* Composants Tab */}
+          {(activeTab === null || activeTab === 0) && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold">Composants</h3>
               </div>
-            ) : filteredComponents.length === 0 ? (
-              <Card className="border-dashed border-2">
-                <CardContent className="flex flex-col items-center justify-center py-8">
-                  <Plus className="h-8 w-8 text-muted-foreground mb-2" />
-                  <p className="text-sm text-muted-foreground text-center">
-                    {searchTerm ? 'Aucun composant trouvé' : 'Aucun composant sauvegardé'}
-                  </p>
-                  <p className="text-xs text-muted-foreground text-center mt-1">
-                    Importez vos premiers composants depuis 21st.dev
-                  </p>
-                </CardContent>
-              </Card>
-            ) : (
-              filteredComponents.map((component) => (
-                <Card key={component.id} className="hover:shadow-md transition-shadow">
-                  <CardHeader className="pb-2">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1 min-w-0">
-                        <CardTitle className="text-sm font-medium truncate">
-                          {component.nom}
-                        </CardTitle>
-                        {component.description && (
-                          <CardDescription className="text-xs line-clamp-2 mt-1">
-                            {component.description}
-                          </CardDescription>
-                        )}
-                      </div>
-                      <Badge variant="outline" className="text-xs ml-2">
-                        Composant
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="pt-0">
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => copyPrompt(component)}
-                        className="flex-1"
-                        disabled={!component.prompt}
-                      >
-                        {copiedId === component.id ? (
-                          <Check className="h-3 w-3 mr-1" />
-                        ) : (
-                          <Copy className="h-3 w-3 mr-1" />
-                        )}
-                        {copiedId === component.id ? 'Copié!' : 'Copier prompt'}
-                      </Button>
-                      <Button
-                        variant="default"
-                        size="sm"
-                        onClick={() => addToPrompt(component)}
-                        className="flex-1"
-                      >
-                        <Plus className="h-3 w-3 mr-1" />
-                        Ajouter au prompt
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            )}
-          </TabsContent>
+              {filteredComponents.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  Aucun composant sauvegardé
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {filteredComponents.map((component) => (
+                    <Card key={component.id} className="hover:shadow-md transition-shadow">
+                      <CardHeader>
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <CardTitle className="text-lg">{component.nom}</CardTitle>
+                            {component.description && (
+                              <CardDescription className="mt-1">{component.description}</CardDescription>
+                            )}
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => component.prompt && handleCopy(component.prompt, component.id)}
+                          >
+                            {copiedId === component.id ? (
+                              <Check className="h-4 w-4 text-green-500" />
+                            ) : (
+                              <Copy className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </div>
+                      </CardHeader>
+                      {component.prompt && (
+                        <CardContent>
+                          <div className="bg-muted p-3 rounded-lg text-sm font-mono max-h-24 overflow-y-auto">
+                            {component.prompt}
+                          </div>
+                        </CardContent>
+                      )}
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
-          {/* Media Tab */}
-          <TabsContent value="media" className="flex-1 flex flex-col overflow-hidden mt-4">
-            <div className="flex-1 overflow-y-auto space-y-4">
-              {/* Upload Progress */}
+          {/* Médias Tab */}
+          {activeTab === 1 && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold">Médias</h3>
+                <div className="flex gap-2">
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileSelect}
+                    className="hidden"
+                    multiple
+                    accept="image/*,video/*"
+                  />
+                  <Button
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading}
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    Uploader
+                  </Button>
+                </div>
+              </div>
+
               {uploading && (
-                <Card>
-                  <CardContent className="p-4">
+                <Card className="border-primary/50">
+                  <CardContent className="pt-6">
                     <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium">Upload en cours...</span>
-                        <span className="text-sm text-muted-foreground">{Math.round(uploadProgress)}%</span>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Upload en cours...</span>
+                        <span className="font-medium">{uploadProgress}%</span>
                       </div>
-                      <Progress value={uploadProgress} className="w-full" />
+                      <Progress value={uploadProgress} />
                     </div>
                   </CardContent>
                 </Card>
               )}
 
-              {/* Upload Zone */}
-              <input
-                ref={fileInputRef}
-                type="file"
-                multiple
-                onChange={handleFileSelect}
-                className="hidden"
-                accept="image/*,video/*,.pdf,.txt,.doc,.docx"
-              />
-              <Card 
-                className="border-dashed border-2 hover:border-primary transition-colors cursor-pointer"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <CardContent className="flex flex-col items-center justify-center py-8">
-                  <Upload className="h-8 w-8 text-muted-foreground mb-2" />
-                  <p className="text-sm font-medium text-center mb-1">
-                    Cliquez pour uploader des fichiers
-                  </p>
-                  <p className="text-xs text-muted-foreground text-center">
-                    Images, vidéos, PDF, texte... (Max 50MB par fichier)
-                  </p>
-                </CardContent>
-              </Card>
-
-              {/* Files Grid */}
-              {loading ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              {filteredMediaFiles.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  Aucun média uploadé
                 </div>
-              ) : filteredMediaFiles.length === 0 ? (
-                <Card className="border-dashed border-2">
-                  <CardContent className="flex flex-col items-center justify-center py-8">
-                    <File className="h-8 w-8 text-muted-foreground mb-2" />
-                    <p className="text-sm text-muted-foreground text-center">
-                      {searchTerm ? 'Aucun fichier trouvé' : 'Aucun fichier uploadé'}
-                    </p>
-                    <p className="text-xs text-muted-foreground text-center mt-1">
-                      Commencez par uploader vos premiers médias
-                    </p>
-                  </CardContent>
-                </Card>
               ) : (
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                   {filteredMediaFiles.map((file) => (
                     <Card key={file.id} className="hover:shadow-md transition-shadow">
                       <CardContent className="p-4">
-                        <div className="space-y-3">
-                          {/* File Preview */}
-                          <div className="flex items-center gap-3">
-                            <div className="flex-shrink-0">
-                              {file.type.startsWith('image/') ? (
-                                <img 
-                                  src={file.url} 
-                                  alt={file.nom}
-                                  className="w-12 h-12 object-cover rounded border"
-                                />
+                        <div className="aspect-square bg-muted rounded-lg mb-3 flex items-center justify-center overflow-hidden">
+                          {file.type.startsWith('image/') ? (
+                            <img src={file.url} alt={file.nom} className="w-full h-full object-cover" />
+                          ) : (
+                            getFileIcon(file.type)
+                          )}
+                        </div>
+                        <div className="space-y-2">
+                          <p className="text-sm font-medium truncate">{file.nom}</p>
+                          <div className="flex gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => window.open(file.url, '_blank')}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => handleCopy(file.url, file.id)}
+                            >
+                              {copiedId === file.id ? (
+                                <Check className="h-4 w-4 text-green-500" />
                               ) : (
-                                <div className="w-12 h-12 bg-muted rounded border flex items-center justify-center">
-                                  {getFileIcon(file.type)}
-                                </div>
+                                <Copy className="h-4 w-4" />
                               )}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <h3 className="text-sm font-medium truncate" title={file.nom}>
-                                {file.nom}
-                              </h3>
-                              <div className="flex items-center gap-2 mt-1">
-                                <Badge variant="outline" className="text-xs">
-                                  {file.type.split('/')[0]}
-                                </Badge>
-                              </div>
-                              <p className="text-xs text-muted-foreground mt-1">
-                                {formatDate(file.created_at)}
-                              </p>
-                            </div>
-                          </div>
-
-                          {/* Actions */}
-                          <div className="flex gap-2">
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              className="flex-1"
-                              asChild
-                            >
-                              <a href={file.url} target="_blank" rel="noopener noreferrer">
-                                <Eye className="h-3 w-3 mr-1" />
-                                Voir
-                              </a>
                             </Button>
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              className="flex-1"
-                              asChild
-                            >
-                              <a href={file.url} download={file.nom}>
-                                <Download className="h-3 w-3 mr-1" />
-                                Télécharger
-                              </a>
-                            </Button>
-                            <Button 
-                              variant="outline" 
-                              size="sm"
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
                               onClick={() => deleteFile(file)}
-                              className="text-destructive hover:text-destructive"
                             >
-                              <Trash2 className="h-3 w-3" />
+                              <Trash2 className="h-4 w-4 text-destructive" />
                             </Button>
                           </div>
                         </div>
@@ -515,9 +467,90 @@ const ComponentsSaved = () => {
                 </div>
               )}
             </div>
-          </TabsContent>
-        </Tabs>
-      </div>
+          )}
+
+          {/* Couleurs Tab */}
+          {activeTab === 2 && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold mb-4">Couleurs</h3>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                {defaultColors.map((color, index) => (
+                  <Card key={index} className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => handleCopy(color.code, `color-${index}`)}>
+                    <CardContent className="p-4">
+                      <div
+                        className="w-full h-24 rounded-lg mb-3"
+                        style={{ backgroundColor: color.code }}
+                      />
+                      <p className="text-sm font-medium">{color.nom}</p>
+                      <p className="text-xs text-muted-foreground font-mono">{color.code}</p>
+                      {copiedId === `color-${index}` && (
+                        <Badge className="mt-2 bg-green-500">
+                          <Check className="h-3 w-3 mr-1" />
+                          Copié
+                        </Badge>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
+              <h4 className="text-md font-semibold mt-8 mb-4">Palettes</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {defaultPalettes.map((palette, index) => (
+                  <Card key={index} className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => handleCopy(palette.couleurs.join(', '), `palette-${index}`)}>
+                    <CardContent className="p-4">
+                      <p className="text-sm font-medium mb-3">{palette.nom}</p>
+                      <div className="flex gap-2">
+                        {palette.couleurs.map((color, colorIndex) => (
+                          <div
+                            key={colorIndex}
+                            className="flex-1 h-16 rounded"
+                            style={{ backgroundColor: color }}
+                          />
+                        ))}
+                      </div>
+                      {copiedId === `palette-${index}` && (
+                        <Badge className="mt-3 bg-green-500">
+                          <Check className="h-3 w-3 mr-1" />
+                          Copié
+                        </Badge>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Polices Tab */}
+          {activeTab === 3 && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold mb-4">Polices</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {defaultFonts.map((font, index) => (
+                  <Card key={index} className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => handleCopy(font.nom, `font-${index}`)}>
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <p className="text-sm text-muted-foreground mb-2">{font.nom}</p>
+                          <p className="text-2xl" style={{ fontFamily: font.nom }}>
+                            Aa Bb Cc 123
+                          </p>
+                        </div>
+                        {copiedId === `font-${index}` ? (
+                          <Check className="h-5 w-5 text-green-500" />
+                        ) : (
+                          <Copy className="h-5 w-5 text-muted-foreground" />
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };
