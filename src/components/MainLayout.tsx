@@ -14,7 +14,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { LogOut, Home, Code, Sparkles, Scan, Image, Users, FolderOpen, X, CreditCard, BookmarkPlus, MessagesSquare, User, Moon, Sun, Calendar as CalendarIcon } from 'lucide-react';
+import { LogOut, Home, Code, Sparkles, Scan, Image, Users, FolderOpen, X, CreditCard, BookmarkPlus, MessagesSquare, User, Moon, Sun, Calendar as CalendarIcon, Settings, Zap, HelpCircle, Keyboard, Bell } from 'lucide-react';
 
 // Import all components
 import Dashboard from '@/pages/Dashboard';
@@ -207,7 +207,7 @@ const MainLayout = () => {
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56 bg-card border border-border shadow-lg" align="end" forceMount>
+              <DropdownMenuContent className="w-64 bg-card border border-border shadow-lg" align="end" forceMount>
                 <DropdownMenuLabel className="font-normal">
                   <div className="flex flex-col space-y-1">
                     <p className="text-sm font-medium leading-none">{getUserName()}</p>
@@ -217,12 +217,51 @@ const MainLayout = () => {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
+                
+                <DropdownMenuItem onClick={() => setActiveTab('payment')}>
+                  <Zap className="mr-2 h-4 w-4 text-primary" />
+                  <span>Upgrade Plan</span>
+                  <Badge variant="default" className="ml-auto text-xs">Pro</Badge>
+                </DropdownMenuItem>
+                
+                <DropdownMenuSeparator />
+                
                 <DropdownMenuItem onClick={() => console.log('Profil')}>
                   <User className="mr-2 h-4 w-4" />
-                  <span>Profil</span>
+                  <span>Mon Profil</span>
                 </DropdownMenuItem>
+                
+                <DropdownMenuItem onClick={() => console.log('Paramètres')}>
+                  <Settings className="mr-2 h-4 w-4" />
+                  <span>Paramètres</span>
+                </DropdownMenuItem>
+                
+                <DropdownMenuItem onClick={() => setActiveTab('calendar')}>
+                  <Bell className="mr-2 h-4 w-4" />
+                  <span>Notifications</span>
+                  {upcomingEventsCount > 0 && (
+                    <Badge variant="destructive" className="ml-auto text-xs">
+                      {upcomingEventsCount}
+                    </Badge>
+                  )}
+                </DropdownMenuItem>
+                
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={signOut}>
+                
+                <DropdownMenuItem onClick={() => window.open('https://docs.example.com', '_blank')}>
+                  <HelpCircle className="mr-2 h-4 w-4" />
+                  <span>Aide & Support</span>
+                </DropdownMenuItem>
+                
+                <DropdownMenuItem onClick={() => console.log('Raccourcis')}>
+                  <Keyboard className="mr-2 h-4 w-4" />
+                  <span>Raccourcis clavier</span>
+                  <span className="ml-auto text-xs text-muted-foreground">⌘K</span>
+                </DropdownMenuItem>
+                
+                <DropdownMenuSeparator />
+                
+                <DropdownMenuItem onClick={signOut} className="text-destructive focus:text-destructive">
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Se déconnecter</span>
                 </DropdownMenuItem>
