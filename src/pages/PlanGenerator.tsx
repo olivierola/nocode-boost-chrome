@@ -736,15 +736,7 @@ const PlanGenerator = () => {
 
   return (
     <div className="h-screen bg-background relative overflow-hidden">
-      {/* Background FlickeringGrid */}
-      <FlickeringGrid
-        className="fixed inset-0 z-0"
-        squareSize={4}
-        gridGap={6}
-        color="hsl(var(--primary))"
-        maxOpacity={0.1}
-        flickerChance={0.05}
-      />
+      {/* Pas de background animé quand le plan est généré - fond simple */}
       
       {/* Sidebar flottante simplifiée */}
       <div className="fixed left-4 top-1/2 transform -translate-y-1/2 z-50">

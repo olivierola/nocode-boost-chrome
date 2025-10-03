@@ -103,6 +103,24 @@ serve(async (req) => {
 
       if (planError) throw planError;
 
+      // Récupérer la base de connaissances pour enrichir le contexte
+      const { data: knowledgeBase } = await supabase
+        .from('knowledge_base')
+        .select('*')
+        .eq('project_id', project_id);
+
+      let knowledgeContext = '';
+      if (knowledgeBase && knowledgeBase.length > 0) {
+        knowledgeContext = '\n\nBASE DE CONNAISSANCES DISPONIBLE:\n';
+        knowledgeBase.forEach((kb: any) => {
+          knowledgeContext += `\n**${kb.name}** (${kb.resource_type}):\n`;
+          if (kb.description) knowledgeContext += `Description: ${kb.description}\n`;
+          if (kb.content && typeof kb.content === 'object') {
+            knowledgeContext += `Contenu: ${JSON.stringify(kb.content)}\n`;
+          }
+        });
+      }
+
       // Analyser l'avancement et suggérer des actions
       const analysisPrompt = `
 Tu es un agent IA expert en développement SaaS qui surveille l'avancement d'un plan d'implémentation.
@@ -118,8 +136,10 @@ ${JSON.stringify(execution_context, null, 2)}
 
 HISTORIQUE DU CONTEXTE:
 ${JSON.stringify(context_history, null, 2)}
+${knowledgeContext}
 
 Analyse la situation et suggère des actions concrètes pour optimiser l'avancement du plan.
+Utilise la base de connaissances pour enrichir tes suggestions avec des ressources concrètes (composants, couleurs, polices, fichiers TXT).
 
 Types d'actions possibles:
 1. "optimize_prompt" - Optimiser un prompt avant envoi
@@ -184,13 +204,26 @@ Réponds en JSON avec cette structure:
 
       switch (action_type) {
         case 'optimize_prompt':
-          // Charger la base de connaissances
+          // Charger la base de connaissances complète du projet
+          const { data: knowledgeBaseItems } = await supabase
+            .from('knowledge_base')
+            .select('*')
+            .eq('project_id', project_id);
+
           const { data: components } = await supabase
             .from('components')
             .select('*')
             .eq('user_id', user_id);
 
-          const knowledgeBase = {
+          // Construire une base de connaissances enrichie
+          const enrichedKnowledgeBase = {
+            knowledge_files: (knowledgeBaseItems || []).map((kb: any) => ({
+              name: kb.name,
+              type: kb.resource_type,
+              description: kb.description,
+              content: kb.content,
+              tags: kb.tags
+            })),
             components: components || [],
             colors: [
               { name: 'Bleu Moderne', colors: ['#2563eb', '#3b82f6', '#60a5fa'], use_case: 'professionnel' },
@@ -209,26 +242,27 @@ PROMPT ORIGINAL:
 ${action_data.prompt || action_data.description}
 
 BASE DE CONNAISSANCES DISPONIBLE:
-${JSON.stringify(knowledgeBase, null, 2)}
+${JSON.stringify(enrichedKnowledgeBase, null, 2)}
 
 CONTEXTE DU PROJET:
 ${JSON.stringify(execution_context, null, 2)}
 
 Optimise ce prompt en:
 1. Ajoutant des détails spécifiques si nécessaire
-2. Injectant des ressources de la base de connaissances pertinentes
+2. Injectant des ressources de la base de connaissances pertinentes (fichiers TXT, composants, couleurs, polices)
 3. Améliorant la clarté des instructions
-4. Ajoutant des exemples concrets
+4. Ajoutant des exemples concrets tirés de la base de connaissances
 
 Réponds en JSON:
 {
   "optimized_prompt": "Prompt optimisé avec ressources injectées",
   "injected_resources": {
+    "knowledge_files": ["noms des fichiers de connaissances utilisés"],
     "components": ["noms des composants utilisés"],
     "colors": ["palettes recommandées"],
     "fonts": ["polices recommandées"]
   },
-  "optimization_notes": "Notes sur les améliorations apportées"
+  "optimization_notes": "Notes sur les améliorations apportées et ressources injectées"
 }`;
 
           const optimizationResult = await callAIWithFallback([
