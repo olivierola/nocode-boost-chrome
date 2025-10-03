@@ -247,6 +247,23 @@ serve(async (req) => {
     }
 
     // Step 2: Generate comprehensive plan using new structure
+    // Récupérer la base de connaissances pour le contexte
+    const { data: knowledgeBase } = await supabaseClient
+      .from('knowledge_base')
+      .select('*')
+      .eq('project_id', projectId);
+
+    let knowledgeContext = '';
+    if (knowledgeBase && knowledgeBase.length > 0) {
+      knowledgeContext = '\n\n### Base de connaissances du projet (à utiliser comme contexte) :\n';
+      knowledgeBase.forEach((kb: any) => {
+        knowledgeContext += `\n**${kb.name}** (${kb.resource_type}):\n${kb.description || ''}\n`;
+        if (kb.content && typeof kb.content === 'object') {
+          knowledgeContext += `Contenu: ${JSON.stringify(kb.content)}\n`;
+        }
+      });
+    }
+
     const previousPlanSection = previousPlanContext 
       ? `\n\n### Plan Précédent (pour contexte et amélioration)
 ${previousPlanContext.etude_saas?.documentation_markdown ? `**Étude SaaS précédente :**\n${previousPlanContext.etude_saas.documentation_markdown.substring(0, 1000)}...\n\n` : ''}
@@ -265,6 +282,7 @@ Je veux que tu réalises une étude très complète pour un projet SaaS, puis qu
 - Type d'application: ${project?.project_type || 'web'}
 - Stack technique: ${project?.tech_stack || 'react'}
 - Framework details: ${JSON.stringify(project?.framework_details || {})}
+${knowledgeContext}
 ${previousPlanSection}
 
 ### Instructions de génération
@@ -272,6 +290,7 @@ ${previousPlanSection}
 - Adapter les recommandations techniques selon la plateforme cible
 - Inclure des considérations spécifiques au type de projet (mobile, desktop, etc.)
 - Optimiser pour la stack technique sélectionnée
+- Utiliser la base de connaissances comme contexte pour améliorer les prompts et la génération
 ${previousPlanContext ? '- **IMPORTANT :** Si un plan précédent existe, utilise-le comme base et améliore-le selon la nouvelle demande utilisateur' : ''}
 
 ### Contexte
@@ -280,41 +299,49 @@ ${previousPlanContext ? '- **IMPORTANT :** Si un plan précédent existe, utilis
 - Les parties textuelles (analyse, documentation, explications) doivent être écrites en **Markdown** dans le JSON pour plus de lisibilité.  
 
 ### Contenu attendu du JSON
-1. **etude_saas** : étude complète du projet SaaS selon plusieurs aspects  
-   - Opportunité du marché  
-   - Analyse de la concurrence  
-   - Personas cibles  
-   - Proposition de valeur  
-   - Modèle économique (pricing, croissance, rétention)  
-   - Tech stack recommandée (no-code + API possibles)  
-   - Risques & challenges + atténuations  
+1. **etude_saas** : étude complète du projet SaaS avec la documentation complète
+   - title: Titre court du projet (50 caractères max)
+   - description: Description concise du projet (2-3 phrases)
+   - documentation_markdown: Documentation complète en markdown incluant :
+     * Études de marché et opportunités
+     * Analyse du projet (objectifs, cible, proposition de valeur unique)
+     * Fonctionnalités principales (détaillées)
+     * Cas d'usage typiques
+     * Architecture technique recommandée
+     * Modèle économique
+     * Roadmap suggérée
+     * Recommandations de sécurité et conformité
 
-2. **plan_implementation** : plan d'implémentation détaillé en plusieurs étapes  
-   Chaque étape doit contenir :  
-   - \`titre\` : nom court et clair  
-   - \`description\` : explication détaillée sous format Markdown  
-   - \`prompt_optimise\` : prompt prêt-à-l'emploi pour qu'une IA puisse aider à réaliser cette étape  
+2. **plan_implementation** : plan d'implémentation détaillé en plusieurs étapes AVEC STEPS FORMAT
+   - **IMPORTANT**: Le plan_implementation doit être un tableau d'objets avec les champs suivants:
+   * \`titre\` : nom court et clair de l'étape
+   * \`description\` : explication détaillée sous format Markdown
+   * \`prompt\` : prompt prêt-à-l'emploi pour qu'une IA puisse aider à réaliser cette étape
 
 ### Format de sortie attendu
-Le JSON doit avoir la structure suivante :  
+Le JSON doit avoir EXACTEMENT la structure suivante :  
 
 {
-"etude_saas": {
-"documentation_markdown": "## Étude SaaS ... (contenu en markdown)"
-},
-"plan_implementation": [
-{
-"titre": "Nom de l'étape",
-"description": "### Description\\nTexte en markdown expliquant cette étape...",
-"prompt_optimise": "Prompt très détaillé et opérationnel"
-},
-{
-"titre": "Nom de l'étape suivante",
-"description": "### Description\\nTexte en markdown explicatif...",
-"prompt_optimise": "Prompt suivant"
+  "etude_saas": {
+    "title": "Titre du projet",
+    "description": "Description concise du projet (2-3 phrases)",
+    "documentation_markdown": "# Documentation complète en markdown\\n\\n## Études de marché et opportunités\\n...\\n## Analyse du projet\\n...\\n## Fonctionnalités principales\\n...\\n## Cas d'usage\\n...\\n## Architecture technique\\n...\\n## Modèle économique\\n...\\n## Roadmap\\n...\\n## Sécurité et conformité\\n..."
+  },
+  "plan_implementation": [
+    {
+      "titre": "Nom de l'étape 1",
+      "description": "### Description\\nTexte en markdown expliquant cette étape...",
+      "prompt": "Prompt très détaillé et opérationnel pour réaliser cette étape"
+    },
+    {
+      "titre": "Nom de l'étape 2",
+      "description": "### Description\\nTexte en markdown explicatif...",
+      "prompt": "Prompt suivant très détaillé"
+    }
+  ]
 }
-]
-}
+
+**CRITIQUE**: Le format "plan_implementation" doit être un TABLEAU avec les champs "titre", "description" et "prompt". Ne pas utiliser d'autres formats !
 
 Ton rôle est d'agir comme un consultant SaaS senior spécialisé dans le growth, le product management et la mise en place d'outils no-code. Tu dois remplir ce JSON avec du contenu riche, concret et actionnable. N'ajoute aucun texte hors du JSON.`
       },
@@ -345,6 +372,25 @@ Ton rôle est d'agir comme un consultant SaaS senior spécialisé dans le growth
     } catch (parseError) {
       console.log('Failed to parse plan response:', cleanedResponse);
       throw new Error('Erreur lors de l\'analyse de la réponse IA');
+    }
+
+    // Sauvegarder la documentation si elle existe dans le plan
+    if (planData.etude_saas && planData.etude_saas.title && planData.etude_saas.documentation_markdown) {
+      const { error: docError } = await supabaseClient
+        .from('project_documentation')
+        .upsert({
+          project_id: projectId,
+          title: planData.etude_saas.title,
+          description: planData.etude_saas.description || '',
+          documentation_markdown: planData.etude_saas.documentation_markdown,
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'project_id'
+        });
+
+      if (docError) {
+        console.error('Error saving documentation:', docError);
+      }
     }
 
     // Save or update plan in database

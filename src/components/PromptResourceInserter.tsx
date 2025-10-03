@@ -41,10 +41,12 @@ interface FontItem {
 }
 
 interface PromptResourceInserterProps {
-  onInsert: (text: string) => void;
+  onInsert?: (text: string) => void;
+  onInsertResource?: (text: string) => void;
 }
 
-const PromptResourceInserter: React.FC<PromptResourceInserterProps> = ({ onInsert }) => {
+const PromptResourceInserter: React.FC<PromptResourceInserterProps> = ({ onInsert, onInsertResource }) => {
+  const insertCallback = onInsertResource || onInsert;
   const [components, setComponents] = useState<ComponentItem[]>([]);
   const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([]);
   const [colors, setColors] = useState<ColorItem[]>([]);
@@ -112,31 +114,39 @@ const PromptResourceInserter: React.FC<PromptResourceInserterProps> = ({ onInser
   };
 
   const handleInsertComponent = (component: ComponentItem) => {
-    if (component.prompt) {
-      onInsert(`<composant>${component.prompt}</composant>`);
+    if (component.prompt && insertCallback) {
+      insertCallback(`<composant>${component.prompt}</composant>`);
       toast.success(`Composant "${component.nom}" ajouté`);
     }
   };
 
   const handleInsertMedia = (media: MediaFile) => {
-    onInsert(media.url);
-    toast.success(`Média "${media.nom}" ajouté`);
+    if (insertCallback) {
+      insertCallback(media.url);
+      toast.success(`Média "${media.nom}" ajouté`);
+    }
   };
 
   const handleInsertColor = (color: ColorItem) => {
-    onInsert(color.code);
-    toast.success(`Couleur ${color.nom} ajoutée`);
+    if (insertCallback) {
+      insertCallback(color.code);
+      toast.success(`Couleur ${color.nom} ajoutée`);
+    }
   };
 
   const handleInsertPalette = (palette: PaletteItem) => {
-    const colorCodes = palette.couleurs.join(', ');
-    onInsert(colorCodes);
-    toast.success(`Palette "${palette.nom}" ajoutée`);
+    if (insertCallback) {
+      const colorCodes = palette.couleurs.join(', ');
+      insertCallback(colorCodes);
+      toast.success(`Palette "${palette.nom}" ajoutée`);
+    }
   };
 
   const handleInsertFont = (font: FontItem) => {
-    onInsert(font.nom);
-    toast.success(`Police "${font.nom}" ajoutée`);
+    if (insertCallback) {
+      insertCallback(font.nom);
+      toast.success(`Police "${font.nom}" ajoutée`);
+    }
   };
 
   return (

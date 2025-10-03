@@ -5,6 +5,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { ChevronDown, ChevronUp, Check, Circle, Sparkles, Play, Clock, CheckCircle2, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import PromptResourceInserter from '@/components/PromptResourceInserter';
 
 interface TimelineStep {
   id: string;
@@ -152,9 +153,16 @@ export const TimelineStepper: React.FC<TimelineStepperProps> = ({
                     {isExpanded && (
                       <CardContent className="pt-0">
                         <div className="space-y-2">
-                          <div className="flex items-center gap-2 text-xs font-semibold text-foreground/80">
-                            <Sparkles className="w-3 h-3 text-amber-600" />
-                            <span>AI Prompt</span>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2 text-xs font-semibold text-foreground/80">
+                              <Sparkles className="w-3 h-3 text-amber-600" />
+                              <span>AI Prompt</span>
+                            </div>
+                            <PromptResourceInserter
+                              onInsertResource={(resource) => {
+                                handlePromptChange(step.id, currentPrompt + resource);
+                              }}
+                            />
                           </div>
                           <Textarea
                             value={currentPrompt}
