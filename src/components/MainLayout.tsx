@@ -59,6 +59,13 @@ const MainLayout = () => {
     <div className="w-[750px] h-[600px] bg-background flex flex-col relative">
       <NotificationCenter />
       
+      {/* Animated Background */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-primary/5 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute bottom-1/3 right-1/4 w-48 h-48 bg-accent/10 rounded-full blur-2xl animate-pulse delay-1000" />
+        <div className="absolute top-2/3 left-1/2 w-32 h-32 bg-muted/20 rounded-full blur-xl animate-pulse delay-500" />
+      </div>
+      
       {/* Fixed Header */}
       <header className="border-b border-border bg-header flex-shrink-0 fixed top-0 left-0 right-0 z-50 w-[750px]">
         <div className="px-6 py-3 flex items-center justify-between">
