@@ -286,6 +286,7 @@ const PlanGenerator = () => {
         setMessages(prev => [...prev, planMessage]);
         await savePlan(data.plan);
         await loadCurrentPlan();
+        await loadProjectDocumentation();
         toast.success('Plan généré avec succès !');
       }
 
@@ -358,37 +359,50 @@ const PlanGenerator = () => {
 
     const sections: PlanSection[] = [];
 
-    if (planData.documentation) {
+    // Normalisation des clés possibles provenant de l'IA
+    const documentation = planData.documentation
+      || planData.etude_saas
+      || (planData.documentation_markdown ? { documentation_markdown: planData.documentation_markdown } : null);
+
+    const implementation = planData.implementation_plan
+      || planData.plan_implementation
+      || planData.etapes
+      || planData.steps;
+
+    const backend = planData.backend_database || planData.backend || planData.base_de_donnees;
+    const security = planData.security_plan || planData.securite || planData.plan_securite;
+
+    if (documentation) {
       sections.push({
         title: 'Documentation',
-        content: planData.documentation,
+        content: documentation,
         icon: BookOpen,
         key: 'documentation'
       });
     }
 
-    if (planData.implementation_plan) {
+    if (implementation) {
       sections.push({
         title: 'Plan d\'implémentation',
-        content: planData.implementation_plan,
+        content: implementation,
         icon: Plus,
         key: 'implementation'
       });
     }
 
-    if (planData.backend_database) {
+    if (backend) {
       sections.push({
         title: 'Backend & Base de données',
-        content: planData.backend_database,
+        content: backend,
         icon: Database,
         key: 'backend'
       });
     }
 
-    if (planData.security_plan) {
+    if (security) {
       sections.push({
         title: 'Plan de sécurité',
-        content: planData.security_plan,
+        content: security,
         icon: Shield,
         key: 'security'
       });
@@ -733,6 +747,20 @@ const PlanGenerator = () => {
       status: index === 0 ? 'current' as const : 'upcoming' as const
     }));
   });
+
+  // Fallback: si aucune documentation en base, essayer d'utiliser celle renvoyée dans le plan
+  const inlineDocMarkdown = (() => {
+    const pd = currentPlan?.plan_data;
+    if (!pd) return null as string | null;
+    if (typeof pd.documentation === 'string') return pd.documentation as string;
+    if (pd?.etude_saas?.documentation_markdown) return pd.etude_saas.documentation_markdown as string;
+    if (pd?.documentation_markdown) return pd.documentation_markdown as string;
+    return null as string | null;
+  })();
+  const inlineDoc = inlineDocMarkdown
+    ? { title: selectedProject?.name || 'Documentation', description: selectedProject?.description || '', documentation_markdown: inlineDocMarkdown }
+    : null;
+  const docToRender = projectDocumentation || inlineDoc;
 
   return (
     <div className="h-screen bg-background relative overflow-hidden">

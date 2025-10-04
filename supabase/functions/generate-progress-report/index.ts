@@ -7,6 +7,64 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+
+// Appel IA avec fallback OpenAI -> Groq
+async function callAIWithFallback(systemPrompt: string, OPENAI_API_KEY?: string, GROQ_API_KEY?: string) {
+  if (OPENAI_API_KEY) {
+    try {
+      const resp = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${OPENAI_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: "Génère le rapport d'avancement basé sur le contexte fourni." }
+          ],
+          temperature: 0.7,
+          max_tokens: 3000,
+        }),
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        return data.choices?.[0]?.message?.content as string;
+      }
+    } catch (e) {
+      console.error('OpenAI error (report):', e);
+    }
+  }
+  if (GROQ_API_KEY) {
+    try {
+      const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${GROQ_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'llama-3.3-70b-versatile',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: "Génère le rapport d'avancement basé sur le contexte fourni." }
+          ],
+          max_tokens: 3000,
+          temperature: 0.7,
+        }),
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        return data.choices?.[0]?.message?.content as string;
+      }
+    } catch (e) {
+      console.error('Groq error (report):', e);
+    }
+  }
+  throw new Error('Aucune API IA disponible pour générer le rapport');
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -69,9 +127,10 @@ serve(async (req) => {
       .eq('id', projectId)
       .single();
 
-    const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-    if (!openAIApiKey) {
-      throw new Error('OpenAI API key not configured');
+    const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
+    const GROQ_API_KEY = Deno.env.get('GROQ_API_KEY');
+    if (!OPENAI_API_KEY && !GROQ_API_KEY) {
+      throw new Error('Aucune clé API IA configurée (OpenAI ou Groq)');
     }
 
     const systemPrompt = `Tu es un expert en gestion de projet et reporting. 
@@ -108,31 +167,9 @@ Génère un rapport markdown complet incluant:
 
 Format: Markdown professionnel avec structure claire.`;
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: 'Génère le rapport d\'avancement basé sur le contexte fourni.' }
-        ],
-        temperature: 0.7,
-        max_tokens: 3000,
-      }),
-    });
+    // Appel IA avec fallback (OpenAI -> Groq)
+    const reportMarkdown = await callAIWithFallback(systemPrompt, OPENAI_API_KEY || undefined, GROQ_API_KEY || undefined);
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('OpenAI API error:', errorText);
-      throw new Error(`OpenAI API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    const reportMarkdown = data.choices[0].message.content;
 
     // Extract summary (first paragraph)
     const summary = reportMarkdown.split('\n\n')[0].substring(0, 500);

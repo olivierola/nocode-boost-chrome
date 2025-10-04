@@ -13,6 +13,76 @@ interface DocumentationRequest {
   planData?: any;
 }
 
+// Appel IA avec fallback OpenAI -> Groq
+async function callAIWithFallback(systemPrompt: string, userPrompt: string, OPENAI_API_KEY?: string, GROQ_API_KEY?: string) {
+  // Essai OpenAI
+  if (OPENAI_API_KEY) {
+    try {
+      const resp = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${OPENAI_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [
+            { role: 'system', content: systemPrompt + '\nRéponds STRICTEMENT en JSON valide.' },
+            { role: 'user', content: userPrompt }
+          ],
+          temperature: 0.7,
+          response_format: { type: 'json_object' }
+        }),
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        const content = data.choices?.[0]?.message?.content || '{}';
+        return JSON.parse(content);
+      }
+    } catch (e) {
+      console.error('OpenAI error (doc):', e);
+    }
+  }
+
+  // Fallback Groq
+  if (GROQ_API_KEY) {
+    try {
+      const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${GROQ_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'llama-3.3-70b-versatile',
+          messages: [
+            { role: 'system', content: systemPrompt + '\nRéponds STRICTEMENT en JSON valide. Ne renvoie que l\'objet JSON demandé.' },
+            { role: 'user', content: userPrompt }
+          ],
+          max_tokens: 3000,
+          temperature: 0.7
+        }),
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        const content: string = data.choices?.[0]?.message?.content || '{}';
+        try { return JSON.parse(content); } catch {
+          const start = content.indexOf('{');
+          const end = content.lastIndexOf('}');
+          if (start !== -1 && end !== -1) {
+            return JSON.parse(content.slice(start, end + 1));
+          }
+          throw new Error('Réponse Groq non JSON');
+        }
+      }
+    } catch (e) {
+      console.error('Groq error (doc):', e);
+    }
+  }
+
+  throw new Error('Aucune API IA n\'a pu générer la documentation');
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -52,18 +122,13 @@ ${existingDoc.documentation_markdown.substring(0, 1500)}...
 **IMPORTANT :** Utilise cette documentation précédente comme base, améliore-la et enrichis-la avec les nouvelles informations du plan.`
       : '';
 
-    // Get OpenAI API Key from secrets
-    const { data: secretData, error: secretError } = await supabaseClient
-      .from('vault_secrets')
-      .select('secret')
-      .eq('name', 'OPENAI_API_KEY')
-      .single();
+    // Récupération des clés API depuis les secrets d'environnement
+    const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
+    const GROQ_API_KEY = Deno.env.get('GROQ_API_KEY');
 
-    if (secretError || !secretData) {
-      throw new Error('OpenAI API key not configured');
+    if (!OPENAI_API_KEY && !GROQ_API_KEY) {
+      throw new Error('Aucune clé API IA configurée (OpenAI ou Groq requise)');
     }
-
-    const openaiApiKey = secretData.secret;
 
     // Construire le prompt pour générer la documentation
     const systemPrompt = `Tu es un expert en documentation de projets SaaS. Tu dois générer une documentation complète et professionnelle pour un projet.
@@ -98,31 +163,8 @@ ${previousDocContext}
 
 Créer une documentation professionnelle, détaillée et actionnelle.`;
 
-    // Call OpenAI API
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openaiApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
-        ],
-        temperature: 0.7,
-        response_format: { type: "json_object" }
-      }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(`OpenAI API error: ${JSON.stringify(errorData)}`);
-    }
-
-    const data = await response.json();
-    const documentationData = JSON.parse(data.choices[0].message.content);
+    // Appel IA avec fallback (OpenAI -> Groq)
+    const documentationData = await callAIWithFallback(systemPrompt, userPrompt, OPENAI_API_KEY || undefined, GROQ_API_KEY || undefined);
 
     // Save documentation to database
     const { error: saveError } = await supabaseClient
