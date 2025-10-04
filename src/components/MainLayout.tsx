@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { LogOut, Home, Code, Sparkles, Scan, Image, Users, FolderOpen, X, CreditCard, BookmarkPlus, MessagesSquare, User, Moon, Sun, Calendar as CalendarIcon, Settings, Zap, HelpCircle, Keyboard, Bell } from 'lucide-react';
 import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
+import logo from '@/assets/logo.png';
 
 // Import all components
 import Dashboard from '@/pages/Dashboard';
@@ -69,7 +70,7 @@ const MainLayout = () => {
       <header className="border-b border-border bg-header flex-shrink-0 fixed top-0 left-0 right-0 z-50 w-[750px]">
         <div className="px-6 py-3 flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <h1 className="text-lg font-bold text-foreground">SN</h1>
+            <img src={logo} alt="Logo" className="h-8 w-8 object-contain" />
             {selectedProject && (
               <div className="flex items-center gap-2">
                 <Badge variant="outline" className="gap-1">
