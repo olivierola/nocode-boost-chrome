@@ -123,11 +123,12 @@ const PlanGenerator = () => {
   const loadInitialData = async () => {
     try {
       setLoading(true);
-      // Load plan first, then chat history only if plan exists
+      // Load plan and documentation first
       await loadCurrentPlan();
+      await loadProjectDocumentation();
+      // Then load chat history if plan exists
       if (currentPlan) {
         await loadChatHistory();
-        await loadProjectDocumentation();
       }
     } catch (error) {
       console.error('Erreur lors du chargement:', error);

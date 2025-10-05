@@ -4,12 +4,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Copy, Plus, Search, ExternalLink, Check, Trash2, Type } from 'lucide-react';
+import { Copy, Plus, Search, ExternalLink, Check, Trash2, Type, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import CreateComponentDialog from '@/components/CreateComponentDialog';
 import { ComponentCard } from '@/components/ui/expandable-card';
+import { ButtonColorful } from '@/components/ui/button-colorful';
 
 interface Component {
   id: string;
@@ -27,8 +28,18 @@ const Components = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [selectedSource, setSelectedSource] = useState<string | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
+
+  const componentSources = [
+    { name: 'React Bits', url: 'https://react-bits.dev/', label: 'React Bits' },
+    { name: '21st.dev', url: 'https://21st.dev', label: '21st.dev' },
+    { name: 'PrimeVue', url: 'https://primevue.org/', label: 'PrimeVue' },
+    { name: 'React Native', url: 'https://reactnative.dev/docs/components-and-apis', label: 'React Native' },
+    { name: 'Flutter', url: 'https://docs.flutter.dev/ui/widgets', label: 'Flutter Widgets' },
+    { name: 'Chakra UI', url: 'https://chakra-ui.com/docs/components', label: 'Chakra UI' },
+  ];
 
   const fetchComponents = async () => {
     if (!user) return;
@@ -99,20 +110,51 @@ const Components = () => {
     fetchComponents();
   }, [user]);
 
+  if (selectedSource === null) {
+    return (
+      <div className="h-full w-full flex flex-col items-center justify-center bg-gradient-to-br from-background to-muted/20 p-8">
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold mb-2">Explorer les Composants</h1>
+          <p className="text-muted-foreground">Choisissez une source pour rechercher des composants</p>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-w-4xl w-full">
+          {componentSources.map((source) => (
+            <ButtonColorful
+              key={source.name}
+              label={source.label}
+              onClick={() => setSelectedSource(source.url)}
+              className="h-24 text-lg"
+            />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="h-full w-full relative">
       <iframe 
-        src="https://21st.dev" 
+        src={selectedSource} 
         className="w-full h-full border-0"
-        title="21st.dev Components"
+        title="Component Library"
         sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-modals"
         allow="clipboard-read; clipboard-write"
       />
       
-      {/* Floating button to capture components from iframe */}
-      <div className="absolute top-4 right-4 z-10">
+      {/* Floating buttons */}
+      <div className="absolute top-4 right-4 z-10 flex gap-2">
+        <Button 
+          variant="secondary" 
+          size="sm" 
+          className="shadow-lg"
+          onClick={() => setSelectedSource(null)}
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Retour
+        </Button>
+        
         <CreateComponentDialog onComponentCreated={() => {
-          // Optionally switch to saved components tab
           const event = new CustomEvent('switchToSavedComponents');
           window.dispatchEvent(event);
         }}>
