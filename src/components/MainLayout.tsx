@@ -17,6 +17,7 @@ import {
 import { LogOut, Home, Code, Sparkles, Scan, Image, Users, FolderOpen, X, CreditCard, BookmarkPlus, MessagesSquare, User, Moon, Sun, Calendar as CalendarIcon, Settings, Zap, HelpCircle, Keyboard, Bell } from 'lucide-react';
 import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
 import logo from '@/assets/logo.png';
+import { ThemeSwitcher } from '@/components/ThemeSwitcher';
 
 // Import all components
 import Dashboard from '@/pages/Dashboard';
@@ -186,6 +187,8 @@ const MainLayout = () => {
           
           {/* Theme Toggle, Notifications and User Avatar */}
           <div className="flex items-center gap-2">
+            <ThemeSwitcher />
+            
             <Button
               variant="ghost"
               size="sm"
