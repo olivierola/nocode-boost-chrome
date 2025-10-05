@@ -4,13 +4,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Copy, Plus, Search, ExternalLink, Check, Trash2, Type, ArrowLeft } from 'lucide-react';
+import { Copy, Plus, Search, ExternalLink, Check, Trash2, Type, ArrowLeft, Code2, Palette, Component as ComponentIcon, Smartphone, Box, Layout } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import CreateComponentDialog from '@/components/CreateComponentDialog';
 import { ComponentCard } from '@/components/ui/expandable-card';
-import { ButtonColorful } from '@/components/ui/button-colorful';
+import { Dock, DockIcon } from '@/components/ui/dock';
 
 interface Component {
   id: string;
@@ -33,12 +33,12 @@ const Components = () => {
   const { toast } = useToast();
 
   const componentSources = [
-    { name: 'React Bits', url: 'https://react-bits.dev/', label: 'React Bits' },
-    { name: '21st.dev', url: 'https://21st.dev', label: '21st.dev' },
-    { name: 'PrimeVue', url: 'https://primevue.org/', label: 'PrimeVue' },
-    { name: 'React Native', url: 'https://reactnative.dev/docs/components-and-apis', label: 'React Native' },
-    { name: 'Flutter', url: 'https://docs.flutter.dev/ui/widgets', label: 'Flutter Widgets' },
-    { name: 'Chakra UI', url: 'https://chakra-ui.com/docs/components', label: 'Chakra UI' },
+    { name: 'React Bits', url: 'https://react-bits.dev/', label: 'React Bits', icon: Code2 },
+    { name: '21st.dev', url: 'https://21st.dev', label: '21st.dev', icon: Palette },
+    { name: 'PrimeVue', url: 'https://primevue.org/', label: 'PrimeVue', icon: ComponentIcon },
+    { name: 'React Native', url: 'https://reactnative.dev/docs/components-and-apis', label: 'React Native', icon: Smartphone },
+    { name: 'Flutter', url: 'https://docs.flutter.dev/ui/widgets', label: 'Flutter Widgets', icon: Box },
+    { name: 'Chakra UI', url: 'https://chakra-ui.com/docs/components', label: 'Chakra UI', icon: Layout },
   ];
 
   const fetchComponents = async () => {
@@ -113,21 +113,27 @@ const Components = () => {
   if (selectedSource === null) {
     return (
       <div className="h-full w-full flex flex-col items-center justify-center bg-gradient-to-br from-background to-muted/20 p-8">
-        <div className="text-center mb-8">
+        <div className="text-center mb-12">
           <h1 className="text-4xl font-bold mb-2">Explorer les Composants</h1>
           <p className="text-muted-foreground">Choisissez une source pour rechercher des composants</p>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-w-4xl w-full">
-          {componentSources.map((source) => (
-            <ButtonColorful
-              key={source.name}
-              label={source.label}
-              onClick={() => setSelectedSource(source.url)}
-              className="h-24 text-lg"
-            />
-          ))}
-        </div>
+        <Dock iconSize={70}>
+          {componentSources.map((source) => {
+            const Icon = source.icon;
+            return (
+              <DockIcon
+                key={source.name}
+                name={source.label}
+                onClick={() => setSelectedSource(source.url)}
+              >
+                <div className="h-full w-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-primary/5 rounded-lg">
+                  <Icon className="h-8 w-8 text-primary" />
+                </div>
+              </DockIcon>
+            );
+          })}
+        </Dock>
       </div>
     );
   }
