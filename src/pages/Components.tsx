@@ -139,10 +139,10 @@ const Components = () => {
   }
 
   return (
-    <div className="h-full w-full relative">
+    <div className="flex-1 w-full relative flex flex-col">
       <iframe 
         src={selectedSource} 
-        className="w-full h-full border-0"
+        className="w-full flex-1 border-0"
         title="Component Library"
         sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-modals"
         allow="clipboard-read; clipboard-write"
