@@ -1,18 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { Plus, Component, Image, Type, Palette, Droplet } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
+import {
+  ResourceShiftingDropdown,
+  ComponentsGrid,
+  MediaGrid,
+  FontsGrid,
+  ColorsGrid,
+  PalettesGrid,
+} from '@/components/ui/resource-shifting-dropdown';
 
 interface ComponentItem {
   id: string;
@@ -149,139 +148,61 @@ const PromptResourceInserter: React.FC<PromptResourceInserterProps> = ({ onInser
     }
   };
 
+  const tabs = [
+    {
+      id: 1,
+      title: 'Composants',
+      icon: Component,
+      Component: (props: any) => (
+        <ComponentsGrid items={components} onSelect={handleInsertComponent} />
+      ),
+    },
+    {
+      id: 2,
+      title: 'Médias',
+      icon: Image,
+      Component: (props: any) => (
+        <MediaGrid items={mediaFiles} onSelect={handleInsertMedia} />
+      ),
+    },
+    {
+      id: 3,
+      title: 'Polices',
+      icon: Type,
+      Component: (props: any) => (
+        <FontsGrid items={fonts} onSelect={handleInsertFont} />
+      ),
+    },
+    {
+      id: 4,
+      title: 'Couleurs',
+      icon: Droplet,
+      Component: (props: any) => (
+        <ColorsGrid items={colors} onSelect={handleInsertColor} />
+      ),
+    },
+    {
+      id: 5,
+      title: 'Palettes',
+      icon: Palette,
+      Component: (props: any) => (
+        <PalettesGrid items={palettes} onSelect={handleInsertPalette} />
+      ),
+    },
+  ];
+
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="h-8 w-8 p-0 rounded-full hover:bg-accent"
-        >
-          <Plus className="h-5 w-5" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="z-50 w-56 bg-popover">
-        {/* Composants */}
-        <DropdownMenuSub>
-          <DropdownMenuSubTrigger>
-            <Component className="mr-2 h-4 w-4" />
-            <span>Composants</span>
-          </DropdownMenuSubTrigger>
-          <DropdownMenuSubContent className="z-50 max-h-[300px] overflow-y-auto bg-popover">
-            {components.length === 0 ? (
-              <DropdownMenuItem disabled>Aucun composant</DropdownMenuItem>
-            ) : (
-              components.map((component) => (
-                <DropdownMenuItem
-                  key={component.id}
-                  onClick={() => handleInsertComponent(component)}
-                >
-                  {component.nom}
-                </DropdownMenuItem>
-              ))
-            )}
-          </DropdownMenuSubContent>
-        </DropdownMenuSub>
-
-        {/* Médias */}
-        <DropdownMenuSub>
-          <DropdownMenuSubTrigger>
-            <Image className="mr-2 h-4 w-4" />
-            <span>Médias</span>
-          </DropdownMenuSubTrigger>
-          <DropdownMenuSubContent className="z-50 max-h-[300px] overflow-y-auto bg-popover">
-            {mediaFiles.length === 0 ? (
-              <DropdownMenuItem disabled>Aucun média</DropdownMenuItem>
-            ) : (
-              mediaFiles.map((media) => (
-                <DropdownMenuItem
-                  key={media.id}
-                  onClick={() => handleInsertMedia(media)}
-                >
-                  {media.nom}
-                </DropdownMenuItem>
-              ))
-            )}
-          </DropdownMenuSubContent>
-        </DropdownMenuSub>
-
-        {/* Polices */}
-        <DropdownMenuSub>
-          <DropdownMenuSubTrigger>
-            <Type className="mr-2 h-4 w-4" />
-            <span>Polices</span>
-          </DropdownMenuSubTrigger>
-          <DropdownMenuSubContent className="z-50 max-h-[300px] overflow-y-auto bg-popover">
-            {fonts.map((font, index) => (
-              <DropdownMenuItem
-                key={index}
-                onClick={() => handleInsertFont(font)}
-                style={{ fontFamily: font.nom }}
-              >
-                {font.nom}
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuSubContent>
-        </DropdownMenuSub>
-
-        {/* Couleurs */}
-        <DropdownMenuSub>
-          <DropdownMenuSubTrigger>
-            <Droplet className="mr-2 h-4 w-4" />
-            <span>Couleurs</span>
-          </DropdownMenuSubTrigger>
-          <DropdownMenuSubContent className="z-50 max-h-[300px] overflow-y-auto bg-popover">
-            {colors.map((color, index) => (
-              <DropdownMenuItem
-                key={index}
-                onClick={() => handleInsertColor(color)}
-              >
-                <div className="flex items-center gap-2">
-                  <div
-                    className="w-4 h-4 rounded border"
-                    style={{ backgroundColor: color.code }}
-                  />
-                  <span>{color.nom}</span>
-                  <span className="text-xs text-muted-foreground ml-auto">
-                    {color.code}
-                  </span>
-                </div>
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuSubContent>
-        </DropdownMenuSub>
-
-        {/* Palettes */}
-        <DropdownMenuSub>
-          <DropdownMenuSubTrigger>
-            <Palette className="mr-2 h-4 w-4" />
-            <span>Palettes</span>
-          </DropdownMenuSubTrigger>
-          <DropdownMenuSubContent className="z-50 max-h-[300px] overflow-y-auto bg-popover">
-            {palettes.map((palette, index) => (
-              <DropdownMenuItem
-                key={index}
-                onClick={() => handleInsertPalette(palette)}
-              >
-                <div className="flex items-center gap-2">
-                  <div className="flex gap-1">
-                    {palette.couleurs.slice(0, 3).map((color, i) => (
-                      <div
-                        key={i}
-                        className="w-3 h-3 rounded"
-                        style={{ backgroundColor: color }}
-                      />
-                    ))}
-                  </div>
-                  <span>{palette.nom}</span>
-                </div>
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuSubContent>
-        </DropdownMenuSub>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <div className="relative">
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        className="h-8 w-8 p-0 rounded-full hover:bg-accent"
+      >
+        <Plus className="h-5 w-5" />
+      </Button>
+      <ResourceShiftingDropdown tabs={tabs} className="absolute left-0 top-full mt-2" />
+    </div>
   );
 };
 
