@@ -112,7 +112,7 @@ const Components = () => {
 
   if (selectedSource === null) {
     return (
-      <div className="flex-1 w-full flex flex-col items-center justify-center bg-gradient-to-br from-background to-muted/20 p-8">
+      <div className="h-full w-full flex flex-col items-center justify-center bg-gradient-to-br from-background to-muted/20 p-8">
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold mb-2">Explorer les Composants</h1>
           <p className="text-muted-foreground">Choisissez une source pour rechercher des composants</p>
@@ -139,7 +139,7 @@ const Components = () => {
   }
 
   return (
-    <div className="flex-1 w-full flex flex-col">
+    <div className="flex-1 w-full relative flex flex-col">
       <iframe 
         src={selectedSource} 
         className="w-full flex-1 border-0"
