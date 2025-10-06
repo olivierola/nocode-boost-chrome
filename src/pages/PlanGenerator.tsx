@@ -23,6 +23,7 @@ import { TimelineStepper } from '@/components/ui/timeline-stepper';
 import { ProgressReportView } from '@/components/ProgressReportView';
 import { KnowledgeBaseManager } from '@/components/KnowledgeBaseManager';
 import { Label } from '@/components/ui/label';
+import PlanAutoExecutor from '@/components/PlanAutoExecutor';
 
 interface ChatMessage {
   id: string;
@@ -77,6 +78,8 @@ const PlanGenerator = () => {
   const [isOptimizeEnabled, setIsOptimizeEnabled] = useState(false);
   const [projectDocumentation, setProjectDocumentation] = useState<any>(null);
   const [isGeneratingDocs, setIsGeneratingDocs] = useState(false);
+  const [isExecutionDialogOpen, setIsExecutionDialogOpen] = useState(false);
+  const [executionMode, setExecutionMode] = useState<'manual' | 'auto' | 'full-auto'>('auto');
 
   useEffect(() => {
     if (selectedProject && user) {
@@ -879,12 +882,31 @@ const PlanGenerator = () => {
                 onPromptChange={(stepId, newPrompt) => {
                   console.log('Prompt changed for step:', stepId, newPrompt);
                 }}
-                isExecuting={false}
+                isExecuting={isExecutionDialogOpen}
                 onExecute={() => {
-                  toast.info('Exécution de la timeline à venir...');
+                  setIsExecutionDialogOpen(true);
                 }}
               />
             </div>
+
+            {/* Execution Dialog */}
+            <PlanAutoExecutor
+              steps={timelineSteps.map(step => ({
+                id: step.id,
+                titre: step.title,
+                description: step.description,
+                prompt: step.prompt,
+                status: step.status === 'current' ? 'in_progress' : 'pending'
+              }))}
+              isOpen={isExecutionDialogOpen}
+              onClose={() => setIsExecutionDialogOpen(false)}
+              mode={executionMode}
+              onUpdateSteps={(updatedSteps) => {
+                console.log('Updated steps:', updatedSteps);
+                // Vous pouvez ajouter une logique pour sauvegarder les étapes mises à jour
+                toast.success('Étapes mises à jour');
+              }}
+            />
           </div>
         ) : activeTab === 'rapport' ? (
           <div className="max-w-6xl mx-auto">
