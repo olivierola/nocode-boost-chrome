@@ -14,7 +14,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { LogOut, Home, Code, Sparkles, Scan, Image, Users, FolderOpen, X, CreditCard, BookmarkPlus, MessagesSquare, User, Moon, Sun, Calendar as CalendarIcon, Settings, Zap, HelpCircle, Keyboard, Bell } from 'lucide-react';
+import { LogOut, Home, Code, Sparkles, Scan, Image, Users, FolderOpen, X, CreditCard, BookmarkPlus, MessagesSquare, User, Moon, Sun, Calendar as CalendarIcon, Settings, Zap, HelpCircle, Keyboard, Bell, Bot } from 'lucide-react';
 import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
 import logo from '@/assets/logo.png';
 import { ThemeSwitcher } from '@/components/ThemeSwitcher';
@@ -30,6 +30,7 @@ import Collaboration from '@/pages/Collaboration';
 import Payment from '@/pages/Payment';
 import Posts from '@/pages/Posts';
 import Calendar from '@/pages/Calendar';
+import AgentExecution from '@/pages/AgentExecution';
 import NotificationCenter from '@/components/NotificationCenter';
 import ProjectSelector from '@/components/ProjectSelector';
 import { useCalendarEvents } from '@/hooks/useCalendarEvents';
@@ -181,6 +182,15 @@ const MainLayout = () => {
                     {upcomingEventsCount}
                   </Badge>
                 )}
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setActiveTab('agent')}
+                className={`h-7 w-7 p-0 rounded-xl hover:bg-transparent ${activeTab === 'agent' ? 'text-[#8B1538]' : 'text-muted-foreground'}`}
+                title="Agent AI"
+              >
+                <Bot className="h-4 w-4" />
               </Button>
             </div>
           )}
@@ -346,6 +356,10 @@ const MainLayout = () => {
 
               <TabsContent value="calendar" className="h-full m-0 data-[state=active]:flex data-[state=active]:flex-col">
                 <Calendar />
+              </TabsContent>
+
+              <TabsContent value="agent" className="h-full m-0 data-[state=active]:flex data-[state=active]:flex-col">
+                <AgentExecution />
               </TabsContent>
             </div>
           </Tabs>
