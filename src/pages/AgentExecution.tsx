@@ -1,198 +1,196 @@
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import AgentPlan, { Task } from "@/components/ui/agent-plan";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2, Send } from "lucide-react";
+import { Lightbulb, Send } from "lucide-react";
+import { useProjectContext } from "@/hooks/useProjectContext";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function AgentExecution() {
-  const [prompt, setPrompt] = useState("");
+  const [suggestion, setSuggestion] = useState("");
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [isGenerating, setIsGenerating] = useState(false);
   const [isExecuting, setIsExecuting] = useState(false);
+  const [isSending, setIsSending] = useState(false);
+  const { selectedProject } = useProjectContext();
 
-  const handleGeneratePlan = async () => {
-    if (!prompt.trim()) {
-      toast.error("Veuillez entrer un prompt");
+  // Load execution tasks from current plan
+  useEffect(() => {
+    if (selectedProject) {
+      loadExecutionTasks();
+    }
+  }, [selectedProject]);
+
+  const loadExecutionTasks = async () => {
+    if (!selectedProject) return;
+
+    try {
+      // Load current plan
+      const { data: plan, error } = await supabase
+        .from('plans')
+        .select('*')
+        .eq('project_id', selectedProject.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (error && error.code !== 'PGRST116') throw error;
+
+      const planData = plan?.plan_data as any;
+      if (planData?.plan_implementation) {
+        // Convert implementation steps to AgentPlan tasks
+        const steps = planData.plan_implementation;
+        const convertedTasks: Task[] = Array.isArray(steps) ? steps.map((step: any, index: number) => ({
+          id: String(index + 1),
+          title: step.titre || `Étape ${index + 1}`,
+          description: step.description || "",
+          status: step.status || "pending",
+          priority: "medium",
+          level: 0,
+          dependencies: [],
+          prompt: step.prompt_optimise || step.prompt || "",
+          subtasks: []
+        })) : [];
+        
+        setTasks(convertedTasks);
+      }
+    } catch (error) {
+      console.error('Error loading execution tasks:', error);
+    }
+  };
+
+  const handleSendSuggestion = async () => {
+    if (!suggestion.trim()) {
+      toast.error("Veuillez entrer une suggestion");
       return;
     }
 
-    setIsGenerating(true);
+    setIsSending(true);
     try {
+      // Send suggestion to agent to integrate in process
       const { data, error } = await supabase.functions.invoke('plan-agent', {
         body: {
-          action: 'generate',
-          prompt: prompt.trim()
+          action: 'monitor_progress',
+          planData: { tasks },
+          currentStep: tasks.find(t => t.status === "in-progress"),
+          suggestion: suggestion.trim(),
+          projectId: selectedProject?.id
         }
       });
 
       if (error) throw error;
 
-      if (data?.plan?.tasks) {
-        // Convert plan tasks to AgentPlan format
-        const convertedTasks: Task[] = data.plan.tasks.map((task: any, index: number) => ({
-          id: String(index + 1),
-          title: task.title,
-          description: task.description || "",
-          status: "pending",
-          priority: task.priority || "medium",
-          level: 0,
-          dependencies: [],
-          prompt: task.prompt,
-          subtasks: (task.subtasks || []).map((subtask: any, subIndex: number) => ({
-            id: `${index + 1}.${subIndex + 1}`,
-            title: subtask.title,
-            description: subtask.description || "",
-            status: "pending",
-            priority: subtask.priority || "medium",
-            tools: subtask.tools || [],
-            prompt: subtask.prompt,
-          }))
-        }));
-        
-        setTasks(convertedTasks);
-        toast.success("Plan généré avec succès");
-      }
+      toast.success("Suggestion envoyée à l'agent IA");
+      setSuggestion("");
     } catch (error) {
-      console.error('Error generating plan:', error);
-      toast.error("Erreur lors de la génération du plan");
+      console.error('Error sending suggestion:', error);
+      toast.error("Erreur lors de l'envoi de la suggestion");
     } finally {
-      setIsGenerating(false);
+      setIsSending(false);
     }
-  };
-
-  const handleExecutePlan = async () => {
-    if (tasks.length === 0) {
-      toast.error("Aucune tâche à exécuter");
-      return;
-    }
-
-    setIsExecuting(true);
-    try {
-      // Execute tasks sequentially
-      for (let i = 0; i < tasks.length; i++) {
-        const task = tasks[i];
-        
-        // Update task status to in-progress
-        setTasks(prev => prev.map(t => 
-          t.id === task.id ? { ...t, status: "in-progress" } : t
-        ));
-
-        const { data, error } = await supabase.functions.invoke('plan-agent', {
-          body: {
-            action: 'execute',
-            taskId: task.id,
-            prompt: task.prompt || task.title
-          }
-        });
-
-        if (error) {
-          setTasks(prev => prev.map(t => 
-            t.id === task.id ? { ...t, status: "failed" } : t
-          ));
-          throw error;
-        }
-
-        // Update task status to completed
-        setTasks(prev => prev.map(t => 
-          t.id === task.id ? { ...t, status: "completed" } : t
-        ));
-
-        // Small delay between tasks
-        await new Promise(resolve => setTimeout(resolve, 500));
-      }
-
-      toast.success("Toutes les tâches ont été exécutées");
-    } catch (error) {
-      console.error('Error executing plan:', error);
-      toast.error("Erreur lors de l'exécution du plan");
-    } finally {
-      setIsExecuting(false);
-    }
-  };
-
-  const handleReset = () => {
-    setPrompt("");
-    setTasks([]);
   };
 
   return (
     <div className="h-full flex flex-col gap-4 p-6 overflow-hidden">
-      <div>
-        <h2 className="text-2xl font-bold mb-2">Agent d'Exécution AI</h2>
-        <p className="text-muted-foreground text-sm">
-          Entrez un prompt pour générer un plan d'action que l'agent AI exécutera
-        </p>
-      </div>
+      {/* Header */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center">
+              <Lightbulb className="h-5 w-5 text-white" />
+            </div>
+            <div className="flex-1">
+              <CardTitle>Agent d'Exécution AI</CardTitle>
+              <CardDescription>
+                Suivez la progression de l'exécution des tâches avec animations en temps réel
+              </CardDescription>
+            </div>
+            <Badge variant={isExecuting ? "default" : "outline"} className="animate-pulse">
+              {isExecuting ? "En cours" : "En attente"}
+            </Badge>
+          </div>
+        </CardHeader>
+      </Card>
 
-      {/* Prompt Input Section */}
-      <div className="space-y-2 flex-shrink-0">
-        <label className="text-sm font-medium">Prompt</label>
-        <Textarea
-          placeholder="Décrivez ce que vous voulez que l'agent fasse..."
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-          className="min-h-[100px]"
-          disabled={isGenerating || isExecuting}
-        />
-        <div className="flex gap-2">
-          <Button
-            onClick={handleGeneratePlan}
-            disabled={isGenerating || isExecuting || !prompt.trim()}
-            className="flex-1"
-          >
-            {isGenerating ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Génération...
-              </>
-            ) : (
-              <>
-                <Send className="mr-2 h-4 w-4" />
-                Générer le Plan
-              </>
-            )}
-          </Button>
-          {tasks.length > 0 && (
-            <>
-              <Button
-                onClick={handleExecutePlan}
-                disabled={isGenerating || isExecuting}
-                variant="default"
-              >
-                {isExecuting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Exécution...
-                  </>
-                ) : (
-                  "Exécuter"
-                )}
-              </Button>
-              <Button
-                onClick={handleReset}
-                disabled={isGenerating || isExecuting}
-                variant="outline"
-              >
-                Réinitialiser
-              </Button>
-            </>
-          )}
-        </div>
-      </div>
+      {/* Suggestion Input Section */}
+      <Card className="flex-shrink-0">
+        <CardHeader>
+          <CardTitle className="text-sm flex items-center gap-2">
+            <Lightbulb className="h-4 w-4 text-amber-500" />
+            Suggérer une idée à l'agent
+          </CardTitle>
+          <CardDescription className="text-xs">
+            L'agent intégrera votre suggestion dans le processus d'exécution
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            <Textarea
+              placeholder="Ex: Ajoute une validation côté client pour améliorer l'UX..."
+              value={suggestion}
+              onChange={(e) => setSuggestion(e.target.value)}
+              className="min-h-[80px]"
+              disabled={isSending}
+            />
+            <Button
+              onClick={handleSendSuggestion}
+              disabled={isSending || !suggestion.trim()}
+              className="w-full"
+              size="sm"
+            >
+              {isSending ? (
+                <>
+                  <Send className="mr-2 h-4 w-4 animate-spin" />
+                  Envoi en cours...
+                </>
+              ) : (
+                <>
+                  <Send className="mr-2 h-4 w-4" />
+                  Envoyer la suggestion
+                </>
+              )}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
-      {/* Agent Plan Display */}
-      <div className="flex-1 overflow-hidden border rounded-lg">
-        <AgentPlan
-          tasks={tasks}
-          onTaskStatusChange={(taskId, newStatus) => {
-            console.log(`Task ${taskId} status changed to ${newStatus}`);
-          }}
-          onSubtaskStatusChange={(taskId, subtaskId, newStatus) => {
-            console.log(`Subtask ${subtaskId} of task ${taskId} status changed to ${newStatus}`);
-          }}
-        />
+      {/* Agent Plan Display - Execution Progress */}
+      <div className="flex-1 overflow-hidden border rounded-lg bg-card">
+        {tasks.length > 0 ? (
+          <AgentPlan
+            tasks={tasks}
+            onTaskStatusChange={(taskId, newStatus) => {
+              setTasks(prev => prev.map(t => 
+                t.id === taskId ? { ...t, status: newStatus } : t
+              ));
+            }}
+            onSubtaskStatusChange={(taskId, subtaskId, newStatus) => {
+              setTasks(prev => prev.map(t => {
+                if (t.id === taskId) {
+                  return {
+                    ...t,
+                    subtasks: t.subtasks.map(st =>
+                      st.id === subtaskId ? { ...st, status: newStatus } : st
+                    )
+                  };
+                }
+                return t;
+              }));
+            }}
+          />
+        ) : (
+          <div className="h-full flex items-center justify-center p-8">
+            <div className="text-center space-y-2">
+              <Lightbulb className="h-12 w-12 text-muted-foreground mx-auto" />
+              <h3 className="text-lg font-medium">Aucune tâche en cours</h3>
+              <p className="text-sm text-muted-foreground max-w-md">
+                Les tâches de la timeline apparaîtront ici avec leur progression en temps réel
+              </p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
