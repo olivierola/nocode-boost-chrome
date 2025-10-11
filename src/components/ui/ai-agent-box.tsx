@@ -1,93 +1,93 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { Send, Sparkles, CheckCircle2 } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { supabase } from "@/integrations/supabase/client"
-import { useProjectContext } from "@/hooks/useProjectContext"
+import { useState, useEffect } from "react";
+import { Send, Sparkles, CheckCircle2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { supabase } from "@/integrations/supabase/client";
+import { useProjectContext } from "@/hooks/useProjectContext";
 
 interface Task {
-  id: number
-  title: string
-  status: "pending" | "running" | "completed"
-  substeps?: Subtask[]
+  id: number;
+  title: string;
+  status: "pending" | "running" | "completed";
+  substeps?: Subtask[];
 }
 
 interface Subtask {
-  id: number
-  title: string
-  status: "pending" | "running" | "completed"
+  id: number;
+  title: string;
+  status: "pending" | "running" | "completed";
 }
 
 export function AIAgentBox() {
-  const { selectedProject } = useProjectContext()
-  const [tasks, setTasks] = useState<Task[]>([])
-  const [subtasks, setSubtasks] = useState<Subtask[]>([])
+  const { selectedProject } = useProjectContext();
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [subtasks, setSubtasks] = useState<Subtask[]>([]);
 
-  const [input, setInput] = useState("")
-  const [pulsePhase, setPulsePhase] = useState(0)
-  const [loading, setLoading] = useState(true)
+  const [input, setInput] = useState("");
+  const [pulsePhase, setPulsePhase] = useState(0);
+  const [loading, setLoading] = useState(true);
 
   // Load plan steps from database
   useEffect(() => {
     const loadPlanSteps = async () => {
       if (!selectedProject) {
-        setLoading(false)
-        return
+        setLoading(false);
+        return;
       }
 
       try {
         const { data: plans, error } = await supabase
-          .from('plans')
-          .select('*')
-          .eq('project_id', selectedProject.id)
-          .order('created_at', { ascending: false })
-          .limit(1)
+          .from("plans")
+          .select("*")
+          .eq("project_id", selectedProject.id)
+          .order("created_at", { ascending: false })
+          .limit(1);
 
-        if (error) throw error
+        if (error) throw error;
 
         if (plans && plans.length > 0) {
-          const plan = plans[0]
-          const planData = plan.plan_data as any
-          
+          const plan = plans[0];
+          const planData = plan.plan_data.plan_data as any;
+
           if (planData?.plan_implementation) {
             const steps = planData.plan_implementation.map((step: any, index: number) => ({
               id: index + 1,
               title: step.nom || step.title || `Étape ${index + 1}`,
-              status: index === 0 ? "running" : "pending" as const,
-              substeps: step.substeps || []
-            }))
-            
-            setTasks(steps)
-            
+              status: index === 0 ? "running" : ("pending" as const),
+              substeps: step.substeps || [],
+            }));
+
+            setTasks(steps);
+
             // Set subtasks from the first running task
             if (steps[0]?.substeps) {
               const mappedSubtasks = steps[0].substeps.map((sub: any, idx: number) => ({
                 id: idx + 1,
                 title: sub.description || sub.title || sub,
-                status: idx < 2 ? "completed" : idx === 2 ? "running" : "pending" as const
-              }))
-              setSubtasks(mappedSubtasks)
+                status: idx < 2 ? "completed" : idx === 2 ? "running" : ("pending" as const),
+              }));
+              setSubtasks(mappedSubtasks);
             }
           }
         }
       } catch (error) {
-        console.error('Error loading plan steps:', error)
+        console.error("Error loading plan steps:", error);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
 
-    loadPlanSteps()
-  }, [selectedProject])
+    loadPlanSteps();
+  }, [selectedProject]);
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setPulsePhase((prev) => (prev + 1) % 3)
-    }, 500)
-    return () => clearInterval(interval)
-  }, [])
+      setPulsePhase((prev) => (prev + 1) % 3);
+    }, 500);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleSendIdea = () => {
     if (input.trim()) {
@@ -95,13 +95,13 @@ export function AIAgentBox() {
         id: tasks.length + 1,
         title: input.trim(),
         status: "pending",
-      }
-      setTasks([...tasks, newTask])
-      setInput("")
+      };
+      setTasks([...tasks, newTask]);
+      setInput("");
     }
-  }
+  };
 
-  const currentTask = tasks.find((t) => t.status === "running")
+  const currentTask = tasks.find((t) => t.status === "running");
 
   return (
     <div className="w-[300px] h-[200px] bg-zinc-900 rounded-lg border border-zinc-800 flex flex-col overflow-hidden shadow-xl">
@@ -135,7 +135,7 @@ export function AIAgentBox() {
             <p className="text-xs text-zinc-500">Aucun plan en cours</p>
           </div>
         ) : null}
-        
+
         {!loading && currentTask && (
           <div className="bg-zinc-800/50 rounded border border-zinc-700 p-2 mb-2">
             <div className="flex items-start gap-2">
@@ -219,5 +219,5 @@ export function AIAgentBox() {
         </div>
       </div>
     </div>
-  )
+  );
 }
