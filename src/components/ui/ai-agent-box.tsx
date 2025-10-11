@@ -49,7 +49,7 @@ export function AIAgentBox() {
 
         if (plans && plans.length > 0) {
           const plan = plans[0];
-          const planData = plan.plan_data.plan_data as any;
+          const planData = (plan.plan_data as any)?.plan_data;
 
           if (planData?.plan_implementation) {
             const steps = planData.plan_implementation.map((step: any, index: number) => ({
