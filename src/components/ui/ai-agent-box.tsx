@@ -4,11 +4,14 @@ import { useState, useEffect } from "react"
 import { Send, Sparkles, CheckCircle2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { supabase } from "@/integrations/supabase/client"
+import { useProjectContext } from "@/hooks/useProjectContext"
 
 interface Task {
   id: number
   title: string
   status: "pending" | "running" | "completed"
+  substeps?: Subtask[]
 }
 
 interface Subtask {
@@ -18,22 +21,66 @@ interface Subtask {
 }
 
 export function AIAgentBox() {
-  const [tasks, setTasks] = useState<Task[]>([
-    { id: 1, title: "Analyzing user requirements", status: "running" },
-    { id: 2, title: "Generate component structure", status: "pending" },
-    { id: 3, title: "Implement styling", status: "pending" },
-  ])
-
-  const [subtasks, setSubtasks] = useState<Subtask[]>([
-    { id: 1, title: "Reading project files", status: "completed" },
-    { id: 2, title: "Parsing user input", status: "completed" },
-    { id: 3, title: "Identifying key requirements", status: "running" },
-    { id: 4, title: "Checking dependencies", status: "pending" },
-    { id: 5, title: "Validating constraints", status: "pending" },
-  ])
+  const { selectedProject } = useProjectContext()
+  const [tasks, setTasks] = useState<Task[]>([])
+  const [subtasks, setSubtasks] = useState<Subtask[]>([])
 
   const [input, setInput] = useState("")
   const [pulsePhase, setPulsePhase] = useState(0)
+  const [loading, setLoading] = useState(true)
+
+  // Load plan steps from database
+  useEffect(() => {
+    const loadPlanSteps = async () => {
+      if (!selectedProject) {
+        setLoading(false)
+        return
+      }
+
+      try {
+        const { data: plans, error } = await supabase
+          .from('plans')
+          .select('*')
+          .eq('project_id', selectedProject.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+
+        if (error) throw error
+
+        if (plans && plans.length > 0) {
+          const plan = plans[0]
+          const planData = plan.plan_data as any
+          
+          if (planData?.plan_implementation) {
+            const steps = planData.plan_implementation.map((step: any, index: number) => ({
+              id: index + 1,
+              title: step.nom || step.title || `Étape ${index + 1}`,
+              status: index === 0 ? "running" : "pending" as const,
+              substeps: step.substeps || []
+            }))
+            
+            setTasks(steps)
+            
+            // Set subtasks from the first running task
+            if (steps[0]?.substeps) {
+              const mappedSubtasks = steps[0].substeps.map((sub: any, idx: number) => ({
+                id: idx + 1,
+                title: sub.description || sub.title || sub,
+                status: idx < 2 ? "completed" : idx === 2 ? "running" : "pending" as const
+              }))
+              setSubtasks(mappedSubtasks)
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error loading plan steps:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadPlanSteps()
+  }, [selectedProject])
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -79,7 +126,17 @@ export function AIAgentBox() {
       </div>
 
       <div className="flex-1 px-3 py-2 overflow-y-auto scrollbar-hide">
-        {currentTask && (
+        {loading ? (
+          <div className="flex items-center justify-center h-full">
+            <p className="text-xs text-zinc-500">Chargement...</p>
+          </div>
+        ) : tasks.length === 0 ? (
+          <div className="flex items-center justify-center h-full">
+            <p className="text-xs text-zinc-500">Aucun plan en cours</p>
+          </div>
+        ) : null}
+        
+        {!loading && currentTask && (
           <div className="bg-zinc-800/50 rounded border border-zinc-700 p-2 mb-2">
             <div className="flex items-start gap-2">
               <div className="mt-0.5">
