@@ -194,7 +194,7 @@ export function AIAgentBox() {
                 style={{ animationDelay: `${index * 100}ms` }}
               >
                 <p className="text-[10px] text-zinc-500 leading-relaxed break-words">{task.title}</p>
-                <p className="text-[5px] text-zinc-500 leading-relaxed break-words">{task.desc}</p>
+                <p className="text-[8px] text-zinc-500 leading-relaxed break-words">{task.desc}</p>
               </div>
             ))}
         </div>
