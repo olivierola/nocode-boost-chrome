@@ -83,7 +83,7 @@ export function AIAgentBox() {
           <div className="bg-zinc-800/50 rounded border border-zinc-700 p-2 mb-2">
             <div className="flex items-start gap-2">
               <div className="mt-0.5">
-                <div className="w-2 h-2 rounded-full animate-pulse bg-chart-1" />
+                <div className="w-2 h-2 rounded-full animate-pulse bg-blue-500" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-xs text-zinc-300 leading-relaxed break-words">{currentTask.title}</p>
