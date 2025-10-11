@@ -54,7 +54,8 @@ export function AIAgentBox() {
           if (planData?.plan_implementation) {
             const steps = planData.plan_implementation.map((step: any, index: number) => ({
               id: index + 1,
-              title: step.nom || step.title || `Étape ${index + 1}`,
+              title: step.nom || step.titre || `Étape ${index + 1}`,
+              desc: step.description,
               status: index === 0 ? "running" : ("pending" as const),
               substeps: step.substeps || [],
             }));
@@ -185,7 +186,7 @@ export function AIAgentBox() {
         <div className="space-y-1">
           {tasks
             .filter((t) => t.status === "pending")
-            .slice(0, 2)
+            .slice(0, tasks.length - 1)
             .map((task, index) => (
               <div
                 key={task.id}
@@ -193,6 +194,7 @@ export function AIAgentBox() {
                 style={{ animationDelay: `${index * 100}ms` }}
               >
                 <p className="text-[10px] text-zinc-500 leading-relaxed break-words">{task.title}</p>
+                <p className="text-[5px] text-zinc-500 leading-relaxed break-words">{task.desc}</p>
               </div>
             ))}
         </div>
