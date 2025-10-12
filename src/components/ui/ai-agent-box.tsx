@@ -10,6 +10,7 @@ import { useProjectContext } from "@/hooks/useProjectContext";
 interface Task {
   id: number;
   title: string;
+  desc?: string;
   status: "pending" | "running" | "completed";
   substeps?: Subtask[];
 }
