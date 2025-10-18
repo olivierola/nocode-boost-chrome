@@ -8,8 +8,10 @@ const corsHeaders = {
 };
 
 
-// Appel IA avec fallback OpenAI -> Groq
+// Appel IA avec fallback OpenAI -> Groq -> Gemini
 async function callAIWithFallback(systemPrompt: string, OPENAI_API_KEY?: string, GROQ_API_KEY?: string) {
+  const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
+
   if (OPENAI_API_KEY) {
     try {
       const resp = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -62,6 +64,36 @@ async function callAIWithFallback(systemPrompt: string, OPENAI_API_KEY?: string,
       console.error('Groq error (report):', e);
     }
   }
+
+  // Fallback to Gemini via Lovable AI
+  if (lovableApiKey) {
+    try {
+      console.log('Attempting Gemini API call via Lovable AI...');
+      const resp = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${lovableApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'google/gemini-2.5-flash',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: "Génère le rapport d'avancement basé sur le contexte fourni." }
+          ],
+          max_tokens: 3000,
+          temperature: 0.7,
+        }),
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        return data.choices?.[0]?.message?.content as string;
+      }
+    } catch (e) {
+      console.error('Gemini error (report):', e);
+    }
+  }
+
   throw new Error('Aucune API IA disponible pour générer le rapport');
 }
 

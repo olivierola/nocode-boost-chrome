@@ -17,13 +17,17 @@ const GROQ_API_KEY = Deno.env.get('GROQ_API_KEY');
 
 // Fonction pour appeler l'IA avec fallback
 async function callAIWithFallback(messages: any[], model: string, maxTokens: number = 2000) {
+  const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+  const groqApiKey = Deno.env.get('GROQ_API_KEY');
+  const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
+
   // Essayer OpenAI d'abord
-  if (OPENAI_API_KEY) {
+  if (openAIApiKey) {
     try {
       const openAIResponse = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${OPENAI_API_KEY}`,
+          'Authorization': `Bearer ${openAIApiKey}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -37,6 +41,8 @@ async function callAIWithFallback(messages: any[], model: string, maxTokens: num
       if (openAIResponse.ok) {
         const data = await openAIResponse.json();
         return data.choices[0].message.content;
+      } else {
+        console.error('OpenAI error, trying Groq...');
       }
     } catch (error) {
       console.error('Erreur OpenAI:', error);
@@ -44,12 +50,12 @@ async function callAIWithFallback(messages: any[], model: string, maxTokens: num
   }
 
   // Fallback vers Groq
-  if (GROQ_API_KEY) {
+  if (groqApiKey) {
     try {
       const groqResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${GROQ_API_KEY}`,
+          'Authorization': `Bearer ${groqApiKey}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -63,9 +69,41 @@ async function callAIWithFallback(messages: any[], model: string, maxTokens: num
       if (groqResponse.ok) {
         const data = await groqResponse.json();
         return data.choices[0].message.content;
+      } else {
+        console.error('Groq error, trying Gemini...');
       }
     } catch (error) {
       console.error('Erreur Groq:', error);
+    }
+  }
+
+  // Fallback to Gemini via Lovable AI
+  if (lovableApiKey) {
+    try {
+      console.log('Attempting Gemini API call via Lovable AI...');
+      const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${lovableApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'google/gemini-2.5-flash',
+          messages: messages,
+          max_tokens: maxTokens,
+          temperature: 0.7,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        return data.choices[0].message.content;
+      } else {
+        throw new Error(`Gemini API error: ${response.status}`);
+      }
+    } catch (error) {
+      console.error('Gemini error:', error);
+      throw new Error('All AI providers (OpenAI, Groq, Gemini) failed');
     }
   }
 

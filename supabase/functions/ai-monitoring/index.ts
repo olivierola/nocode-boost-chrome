@@ -1,44 +1,36 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+// Helper function to call AI with fallback including Gemini
+async function callAI(planData: any, projectStatus: any, analysisType: string, context: any) {
+  const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+  const groqApiKey = Deno.env.get('GROQ_API_KEY');
+  const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
 
-  try {
-    const { planData, projectStatus, analysisType, context } = await req.json();
+  // Construire le prompt d'analyse en fonction du contexte
+  let systemPrompt = '';
+  let userPrompt = '';
 
-    if (!openAIApiKey) {
-      throw new Error('OpenAI API key not configured');
-    }
+  switch (analysisType) {
+    case 'progress_monitoring':
+      systemPrompt = `Tu es un assistant IA spécialisé dans le monitoring de projets en temps réel. 
+      Ton rôle est d'analyser l'état d'avancement d'un projet et de suggérer des actions concrètes pour optimiser le processus.
+      
+      Réponds TOUJOURS au format JSON avec cette structure:
+      {
+        "suggestion": "description de la suggestion",
+        "prompt": "prompt spécifique à exécuter",
+        "type": "action|warning|optimization|next_step",
+        "priority": "low|medium|high",
+        "metadata": {}
+      }`;
 
-    // Construire le prompt d'analyse en fonction du contexte
-    let systemPrompt = '';
-    let userPrompt = '';
-
-    switch (analysisType) {
-      case 'progress_monitoring':
-        systemPrompt = `Tu es un assistant IA spécialisé dans le monitoring de projets en temps réel. 
-        Ton rôle est d'analyser l'état d'avancement d'un projet et de suggérer des actions concrètes pour optimiser le processus.
-        
-        Réponds TOUJOURS au format JSON avec cette structure:
-        {
-          "suggestion": "description de la suggestion",
-          "prompt": "prompt spécifique à exécuter",
-          "type": "action|warning|optimization|next_step",
-          "priority": "low|medium|high",
-          "metadata": {}
-        }`;
-
-        userPrompt = `Analyse l'état du projet et suggère une action:
+      userPrompt = `Analyse l'état du projet et suggère une action:
 
 Plan du projet: ${JSON.stringify(planData, null, 2)}
 
@@ -50,54 +42,136 @@ Plan du projet: ${JSON.stringify(planData, null, 2)}
 - Erreurs: ${projectStatus.errors.join(', ')}
 
 Fournis une suggestion d'amélioration avec un prompt précis à exécuter.`;
-        break;
+      break;
 
-      case 'error_analysis':
-        systemPrompt = `Tu es un expert en résolution de problèmes pour des projets d'automatisation.
-        Analyse les erreurs et propose des solutions.`;
-        
-        userPrompt = `Erreurs détectées: ${projectStatus.errors.join('. ')}
-        Contexte: ${JSON.stringify(projectStatus)}
-        
-        Propose une solution avec un prompt de correction.`;
-        break;
+    case 'error_analysis':
+      systemPrompt = `Tu es un expert en résolution de problèmes pour des projets d'automatisation.
+      Analyse les erreurs et propose des solutions.`;
+      
+      userPrompt = `Erreurs détectées: ${projectStatus.errors.join('. ')}
+      Contexte: ${JSON.stringify(projectStatus)}
+      
+      Propose une solution avec un prompt de correction.`;
+      break;
 
-      case 'optimization':
-        systemPrompt = `Tu es un consultant en optimisation de processus.
-        Identifie les améliorations possibles dans l'exécution du projet.`;
-        
-        userPrompt = `Analyse l'efficacité du projet et suggère des optimisations:
-        ${JSON.stringify({ planData, projectStatus })}`;
-        break;
+    case 'optimization':
+      systemPrompt = `Tu es un consultant en optimisation de processus.
+      Identifie les améliorations possibles dans l'exécution du projet.`;
+      
+      userPrompt = `Analyse l'efficacité du projet et suggère des optimisations:
+      ${JSON.stringify({ planData, projectStatus })}`;
+      break;
 
-      default:
-        systemPrompt = `Tu es un assistant IA de monitoring généraliste.`;
-        userPrompt = `Analyse: ${JSON.stringify({ planData, projectStatus, context })}`;
+    default:
+      systemPrompt = `Tu es un assistant IA de monitoring généraliste.`;
+      userPrompt = `Analyse: ${JSON.stringify({ planData, projectStatus, context })}`;
+  }
+
+  const messages = [
+    { role: 'system', content: systemPrompt },
+    { role: 'user', content: userPrompt }
+  ];
+
+  // Try OpenAI first
+  if (openAIApiKey) {
+    try {
+      console.log('Attempting OpenAI API call...');
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openAIApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages,
+          temperature: 0.7,
+          max_tokens: 1000,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        return data.choices[0]?.message?.content;
+      } else {
+        console.log(`OpenAI failed with status ${response.status}, trying Groq...`);
+      }
+    } catch (error) {
+      console.log('OpenAI error:', error, 'trying Groq...');
     }
+  }
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
-        ],
-        temperature: 0.7,
-        max_tokens: 1000,
-      }),
-    });
+  // Fallback to Groq
+  if (groqApiKey) {
+    try {
+      console.log('Attempting Groq API call...');
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${groqApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'llama-3.1-70b-versatile',
+          messages,
+          temperature: 0.7,
+          max_tokens: 1000,
+        }),
+      });
 
-    if (!response.ok) {
-      throw new Error(`OpenAI API error: ${response.statusText}`);
+      if (response.ok) {
+        const data = await response.json();
+        return data.choices[0]?.message?.content;
+      } else {
+        console.log(`Groq failed with status ${response.status}, trying Gemini...`);
+      }
+    } catch (error) {
+      console.log('Groq error:', error, 'trying Gemini...');
     }
+  }
 
-    const data = await response.json();
-    const aiResponse = data.choices[0]?.message?.content;
+  // Fallback to Gemini via Lovable AI
+  if (lovableApiKey) {
+    try {
+      console.log('Attempting Gemini API call via Lovable AI...');
+      const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${lovableApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'google/gemini-2.5-flash',
+          messages,
+          temperature: 0.7,
+          max_tokens: 1000,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        return data.choices[0]?.message?.content;
+      } else {
+        throw new Error(`Gemini API error: ${response.status}`);
+      }
+    } catch (error) {
+      console.error('Gemini error:', error);
+      throw new Error('All AI providers (OpenAI, Groq, Gemini) failed');
+    }
+  }
+
+  throw new Error('No AI API keys configured');
+}
+
+serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const { planData, projectStatus, analysisType, context } = await req.json();
+
+    const aiResponse = await callAI(planData, projectStatus, analysisType, context);
 
     if (!aiResponse) {
       throw new Error('Empty response from AI');

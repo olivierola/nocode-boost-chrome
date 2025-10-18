@@ -10,6 +10,7 @@ const corsHeaders = {
 async function callAIWithFallback(messages: any[], model: string, temperature: number) {
   const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
   const groqApiKey = Deno.env.get('GROQ_API_KEY');
+  const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
 
   // Try OpenAI first
   if (openAIApiKey) {
@@ -50,9 +51,8 @@ async function callAIWithFallback(messages: any[], model: string, temperature: n
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'llama-3.1-8b-instant',
+          model: 'llama-3.1-70b-versatile',
           messages,
-          max_tokens: 2000,
           temperature,
         }),
       });
@@ -61,11 +61,39 @@ async function callAIWithFallback(messages: any[], model: string, temperature: n
         const data = await response.json();
         return data.choices[0].message.content;
       } else {
-        throw new Error(`Groq API error: ${response.status}`);
+        console.log(`Groq failed with status ${response.status}, trying Gemini...`);
       }
     } catch (error) {
-      console.error('Groq error:', error);
-      throw new Error('Both OpenAI and Groq APIs failed');
+      console.log('Groq error:', error, 'trying Gemini...');
+    }
+  }
+
+  // Fallback to Gemini via Lovable AI
+  if (lovableApiKey) {
+    try {
+      console.log('Attempting Gemini API call via Lovable AI...');
+      const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${lovableApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'google/gemini-2.5-flash',
+          messages,
+          temperature,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        return data.choices[0].message.content;
+      } else {
+        throw new Error(`Gemini API error: ${response.status}`);
+      }
+    } catch (error) {
+      console.error('Gemini error:', error);
+      throw new Error('All AI providers (OpenAI, Groq, Gemini) failed');
     }
   }
 

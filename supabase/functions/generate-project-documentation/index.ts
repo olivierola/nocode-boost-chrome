@@ -13,8 +13,10 @@ interface DocumentationRequest {
   planData?: any;
 }
 
-// Appel IA avec fallback OpenAI -> Groq
+// Appel IA avec fallback OpenAI -> Groq -> Gemini
 async function callAIWithFallback(systemPrompt: string, userPrompt: string, OPENAI_API_KEY?: string, GROQ_API_KEY?: string) {
+  const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
+
   // Essai OpenAI
   if (OPENAI_API_KEY) {
     try {
@@ -77,6 +79,45 @@ async function callAIWithFallback(systemPrompt: string, userPrompt: string, OPEN
       }
     } catch (e) {
       console.error('Groq error (doc):', e);
+    }
+  }
+
+  // Fallback to Gemini via Lovable AI
+  if (lovableApiKey) {
+    try {
+      console.log('Attempting Gemini API call via Lovable AI...');
+      const resp = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${lovableApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'google/gemini-2.5-flash',
+          messages: [
+            { role: 'system', content: systemPrompt + '\nRéponds STRICTEMENT en JSON valide.' },
+            { role: 'user', content: userPrompt }
+          ],
+          temperature: 0.7,
+          max_tokens: 3000
+        }),
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        const content = data.choices?.[0]?.message?.content || '{}';
+        try { 
+          return JSON.parse(content); 
+        } catch {
+          const start = content.indexOf('{');
+          const end = content.lastIndexOf('}');
+          if (start !== -1 && end !== -1) {
+            return JSON.parse(content.slice(start, end + 1));
+          }
+          throw new Error('Réponse Gemini non JSON');
+        }
+      }
+    } catch (e) {
+      console.error('Gemini error (doc):', e);
     }
   }
 
