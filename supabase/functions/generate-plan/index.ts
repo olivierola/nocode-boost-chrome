@@ -76,12 +76,48 @@ async function callAIWithFallback(messages: any[], model: string, maxTokens?: nu
         return data.choices[0].message.content;
       } else {
         const errorText = await response.text();
-        console.log(`Groq failed with status ${response.status}: ${errorText}`);
-        throw new Error(`Groq API failed: ${errorText}`);
+        console.log(`Groq failed with status ${response.status}: ${errorText}, trying Gemini...`);
       }
     } catch (error) {
-      console.log('Groq error:', error);
-      throw error;
+      console.log('Groq error:', error, 'trying Gemini...');
+    }
+  }
+
+  // Fallback to Gemini Direct API
+  const googleApiKey = Deno.env.get('GOOGLE_API_KEY');
+  if (googleApiKey) {
+    try {
+      console.log('Attempting Gemini Direct API call...');
+      
+      // Convert messages to Gemini format
+      const geminiMessages = messages.map((msg: any) => ({
+        role: msg.role === 'user' ? 'user' : 'model',
+        parts: [{ text: msg.content }]
+      }));
+      
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${googleApiKey}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: geminiMessages,
+          generationConfig: {
+            temperature: temperature || 0.7,
+            maxOutputTokens: maxTokens || 4000,
+          }
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      } else {
+        throw new Error(`Gemini API error: ${response.status}`);
+      }
+    } catch (error) {
+      console.error('Gemini error:', error);
+      throw new Error('All AI providers (OpenAI, Groq, Gemini) failed');
     }
   }
 
