@@ -82,29 +82,33 @@ async function callAIWithFallback(systemPrompt: string, userPrompt: string, OPEN
     }
   }
 
-  // Fallback to Gemini via Lovable AI
-  if (lovableApiKey) {
+  // Fallback to Gemini Direct API
+  const googleApiKey = Deno.env.get('GOOGLE_API_KEY');
+  if (googleApiKey) {
     try {
-      console.log('Attempting Gemini API call via Lovable AI...');
-      const resp = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      console.log('Attempting Gemini Direct API call...');
+      
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${googleApiKey}`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${lovableApiKey}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'google/gemini-2.5-flash',
-          messages: [
-            { role: 'system', content: systemPrompt + '\nRéponds STRICTEMENT en JSON valide.' },
-            { role: 'user', content: userPrompt }
+          contents: [
+            {
+              role: 'user',
+              parts: [{ text: systemPrompt + '\nRéponds STRICTEMENT en JSON valide.\n\n' + userPrompt }]
+            }
           ],
-          temperature: 0.7,
-          max_tokens: 3000
+          generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 3000,
+          }
         }),
       });
-      if (resp.ok) {
-        const data = await resp.json();
-        const content = data.choices?.[0]?.message?.content || '{}';
+      if (response.ok) {
+        const data = await response.json();
+        const content = data.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
         try { 
           return JSON.parse(content); 
         } catch {

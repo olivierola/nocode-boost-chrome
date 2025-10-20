@@ -130,27 +130,35 @@ Fournis une suggestion d'amélioration avec un prompt précis à exécuter.`;
     }
   }
 
-  // Fallback to Gemini via Lovable AI
-  if (lovableApiKey) {
+  // Fallback to Gemini Direct API
+  const googleApiKey = Deno.env.get('GOOGLE_API_KEY');
+  if (googleApiKey) {
     try {
-      console.log('Attempting Gemini API call via Lovable AI...');
-      const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      console.log('Attempting Gemini Direct API call...');
+      
+      // Convert messages to Gemini format
+      const geminiMessages = messages.map(msg => ({
+        role: msg.role === 'user' ? 'user' : 'model',
+        parts: [{ text: msg.content }]
+      }));
+      
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${googleApiKey}`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${lovableApiKey}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'google/gemini-2.5-flash',
-          messages,
-          temperature: 0.7,
-          max_tokens: 1000,
+          contents: geminiMessages,
+          generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 1000,
+          }
         }),
       });
 
       if (response.ok) {
         const data = await response.json();
-        return data.choices[0]?.message?.content;
+        return data.candidates?.[0]?.content?.parts?.[0]?.text;
       } else {
         throw new Error(`Gemini API error: ${response.status}`);
       }
