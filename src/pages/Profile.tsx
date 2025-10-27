@@ -90,6 +90,8 @@ const Profile = () => {
           avatar_url: publicUrl,
           email: user.email,
           updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'user_id'
         });
 
       if (updateError) throw updateError;
@@ -118,6 +120,8 @@ const Profile = () => {
           twitter_link: twitterLink,
           avatar_url: avatarUrl,
           updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'user_id'
         });
 
       if (error) throw error;
