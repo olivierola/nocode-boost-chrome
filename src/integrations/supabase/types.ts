@@ -503,27 +503,36 @@ export type Database = {
         Row: {
           avatar_url: string | null
           created_at: string
+          description: string | null
           email: string | null
           full_name: string | null
           id: string
+          tags: string[] | null
+          twitter_link: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
           avatar_url?: string | null
           created_at?: string
+          description?: string | null
           email?: string | null
           full_name?: string | null
           id?: string
+          tags?: string[] | null
+          twitter_link?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
           avatar_url?: string | null
           created_at?: string
+          description?: string | null
           email?: string | null
           full_name?: string | null
           id?: string
+          tags?: string[] | null
+          twitter_link?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -577,6 +586,7 @@ export type Database = {
           owner_id: string
           password: string | null
           project_type: string | null
+          status: string
           tech_stack: string | null
           updated_at: string
           url: string | null
@@ -590,6 +600,7 @@ export type Database = {
           owner_id: string
           password?: string | null
           project_type?: string | null
+          status?: string
           tech_stack?: string | null
           updated_at?: string
           url?: string | null
@@ -603,6 +614,7 @@ export type Database = {
           owner_id?: string
           password?: string | null
           project_type?: string | null
+          status?: string
           tech_stack?: string | null
           updated_at?: string
           url?: string | null
@@ -798,10 +810,7 @@ export type Database = {
         Args: { p_action_type: string; p_user_id: string }
         Returns: boolean
       }
-      delete_post: {
-        Args: { p_post_id: string }
-        Returns: boolean
-      }
+      delete_post: { Args: { p_post_id: string }; Returns: boolean }
       get_conversation_history: {
         Args: {
           p_conversation_type: string
@@ -906,10 +915,7 @@ export type Database = {
         Args: { _project_id: string }
         Returns: boolean
       }
-      user_owns_project: {
-        Args: { _project_id: string }
-        Returns: boolean
-      }
+      user_owns_project: { Args: { _project_id: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never
