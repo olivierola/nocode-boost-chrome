@@ -31,6 +31,7 @@ import Payment from '@/pages/Payment';
 import Posts from '@/pages/Posts';
 import Calendar from '@/pages/Calendar';
 import AgentExecution from '@/pages/AgentExecution';
+import Profile from '@/pages/Profile';
 import NotificationCenter from '@/components/NotificationCenter';
 import ProjectSelector from '@/components/ProjectSelector';
 import { useCalendarEvents } from '@/hooks/useCalendarEvents';
@@ -259,7 +260,7 @@ const MainLayout = () => {
                 
                 <DropdownMenuSeparator />
                 
-                <DropdownMenuItem onClick={() => console.log('Profil')}>
+                <DropdownMenuItem onClick={() => setActiveTab('profile')}>
                   <User className="mr-2 h-4 w-4" />
                   <span>Mon Profil</span>
                 </DropdownMenuItem>
@@ -360,6 +361,10 @@ const MainLayout = () => {
 
               <TabsContent value="agent" className="h-full m-0 data-[state=active]:flex data-[state=active]:flex-col">
                 <AgentExecution />
+              </TabsContent>
+
+              <TabsContent value="profile" className="h-full m-0 data-[state=active]:flex data-[state=active]:flex-col">
+                <Profile />
               </TabsContent>
             </div>
           </Tabs>
